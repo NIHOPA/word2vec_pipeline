@@ -1,6 +1,6 @@
 import glob, sqlite3, string, os, collections
-from os_utils import grab_files, mkdir
-import db_utils
+from utils.os_utils import grab_files, mkdir
+import utils.db_utils
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     ABR = collections.Counter()
     P = parenthesis_nester()
-    dfunc = db_utils.database_iterator
+    dfunc = utils.db_utils.database_iterator
 
     import itertools
     import multiprocessing

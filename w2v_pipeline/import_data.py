@@ -1,5 +1,5 @@
 import os
-from os_utils import mkdir, grab_files
+from utils.os_utils import mkdir, grab_files
 
 import pandas as pd
 from sqlalchemy import create_engine

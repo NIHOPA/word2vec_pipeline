@@ -10,4 +10,6 @@ def test():
     local("python w2v_pipeline/phrases_from_abbrs.py")
 
 def clean():
+    local('find . -name "*~" | xargs -I {} rm {}')
     local("rm -rf sql_data collated")
+
