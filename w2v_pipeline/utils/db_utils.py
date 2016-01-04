@@ -10,7 +10,7 @@ def database_iterator(
 ):
 
     cmd  = "SELECT [index],{} FROM {}".format(column_name, table_name)
-
+    
     if limit: cmd += " LIMIT {}".format(limit)
     if offset: cmd += " OFFSET {}".format(offset)
 

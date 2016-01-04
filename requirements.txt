@@ -2,3 +2,4 @@ pandas
 sqlalchemy
 unidecode
 pyparsing
+pattern
