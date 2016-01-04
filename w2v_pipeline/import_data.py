@@ -1,6 +1,5 @@
 import os
-from glob import glob
-from os_utils import mkdir
+from os_utils import mkdir, grab_files
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -10,8 +9,7 @@ _DEFAULT_IMPORT_DIRECTORY = "csv_data"
 _DEFAULT_EXPORT_DIRECTORY = "sql_data"
 _DEBUG = False
 
-global_output_table = "original"
-
+output_table = "original"
 
 def map_to_unicode(s):
     # Helper function to fix input format
@@ -46,10 +44,7 @@ def load_csv(f_csv):
 def import_directory_csv(d_in=_DEFAULT_IMPORT_DIRECTORY,
                          add_column_from_filename=[]):
 
-    FILES = sorted(glob("{}/*.csv".format(d_in)))
-
-    msg = "Found {} files to import in {}."
-    print msg.format(len(FILES),d_in)
+    FILES = grab_files("*.csv",d_in)   
 
     if not FILES:
         print "No matching CSV files found, exiting"
@@ -77,7 +72,7 @@ def import_directory_csv(d_in=_DEFAULT_IMPORT_DIRECTORY,
         f_sql = os.path.join('sql_data',f_sql)
         engine = create_engine('sqlite:///'+f_sql)
 
-        df.to_sql(global_output_table,
+        df.to_sql(output_table,
                   engine,
                   if_exists='replace')
 

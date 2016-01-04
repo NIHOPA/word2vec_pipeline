@@ -1,3 +1,11 @@
+# Generated files
+collated/*
+csv_data/*
+sql_data/*
+
+# Temp UNIX files
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -47,5 +55,3 @@ coverage.xml
 *.mo
 *.pot
 
-# Temp UNIX files
-*~
