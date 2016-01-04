@@ -7,7 +7,6 @@
 
 ### Still importing
 
-3. merge_abbrs.py
 3. replace_phrases.py
 4. remove_parenthesis.py
 5. token_replacement.py
@@ -15,5 +14,4 @@
 7. pos_tokenizer.py
 8. tf_idf.py
 9. build_features.py
-11. score_documents.py
-
+10. score_documents.py

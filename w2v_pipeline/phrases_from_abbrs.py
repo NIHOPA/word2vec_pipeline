@@ -41,7 +41,7 @@ class parenthesis_nester(object):
         try:
             tokens = self.grammar.parseString(line)
         except:
-            return ["nothing","to","see"]
+            return []
         return tokens
 
 
@@ -108,13 +108,44 @@ def evaluate_document(item):
 
     return results
 
-def pretty_counter(C,min_count=1):
-    for item in C.most_common():
-        (phrase, abbr),count = item
-        if count>min_count:
-            s = "{:10s} {: 10d} {}".format(abbr,count,' '.join(phrase))
-            yield s
+def dedupe_abbr(ABR):
+    data = {}
 
+    for key1,c1 in ABR.most_common():
+        phrase,abbr1 = key1
+        p1 = ' '.join(phrase)
+        FLAG_continue = False
+        
+        for key2,c2 in data.items():
+            p2,abbr2  = key2
+            save_key2 = (p2,abbr2)
+
+            # Only merge when abbreviations match
+            if abbr1 != abbr2:
+                continue
+        
+            # If lower cased phrases match merge them
+            if p1.lower() == p2.lower():
+                data[save_key2] = c1+c2
+                FLAG_continue = True
+                print "Merging case '{}', '{}'".format(p1, p2)
+                break
+
+            # If phrase without trailing 's' matches, merge
+            if p1.rstrip('s') == p2.rstrip('s'):
+                data[save_key2] = c1+c2
+                FLAG_continue = True
+                print "Merging plural '{}', '{}'".format(p1, p2)
+                break
+
+        if FLAG_continue: continue
+
+        save_key1 = (p1,abbr1)
+        data[save_key1] = c1
+
+    ABR = collections.Counter(data)
+    return ABR
+    
 
 if __name__ == "__main__":
     F_SQL = grab_files("*.sqlite", _DEFAULT_IMPORT_DIRECTORY)
@@ -150,8 +181,12 @@ if __name__ == "__main__":
         msg = "Completed {} {}. {} total abbrs found."
         print msg.format(f_sql,column_name,len(ABR))
 
+    # Merge abbreviations that are similar
+    print "Deduping list"
+    ABR = dedupe_abbr(ABR)
+
     # Convert abbrs to a list
-    data_insert = [(' '.join(phrase),abbr,count) 
+    data_insert = [(phrase,abbr,count) 
                    for (phrase,abbr),count in ABR.most_common()]
 
     # Convert the list to a dataframe for insert

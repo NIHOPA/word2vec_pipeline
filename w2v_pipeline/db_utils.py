@@ -19,3 +19,11 @@ def database_iterator(
         if verbose and k and k%1000==0:
             print k
         yield item
+
+
+def pretty_counter(C,min_count=1):
+    for item in C.most_common():
+        (phrase, abbr),count = item
+        if count>min_count:
+            s = "{:10s} {: 10d} {}".format(abbr,count,' '.join(phrase))
+            yield s
