@@ -2,12 +2,6 @@ import sqlite3
 import itertools, multiprocessing
 import db_utils
 
-def parse_item((item, func)):
-    # This function has to be outside the pipeline class for 
-    # multiprocessing to work
-    index, text = item
-    return func(text), index
-
 class text_pipeline(object):
     def __init__(self, target_column, func, 
                  input_table, output_table,
@@ -76,11 +70,25 @@ class text_pipeline(object):
             self.conn.execute(cmd)
             self.conn.commit()
 
-        INPUT_ITR = self.get_input_iter()
+        # Find out which rows have been completed
+        cmd_search = '''SELECT [index] FROM {out_table}
+        WHERE {target_column} IS NOT NULL'''.format(out_table=t_out, 
+                                                    target_column=target_column)
+        cursor = self.conn.execute(cmd_search)
+        known_index = cursor.fetchall()
+        if known_index:
+            known_index = set(zip(*known_index)[0])
+
+        INPUT_ITR = ((index,text) for (index,text) in
+                     self.get_input_iter() if index not in known_index)
 
         # Group the data and function together
         func_iter = itertools.cycle([self.func])
         data_iter = itertools.izip(INPUT_ITR, func_iter)
+
+        def parse_item((item, func)):
+            index, text = item
+            return func(text), index
 
         ITR = itertools.imap(parse_item, data_iter)
 

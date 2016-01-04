@@ -11,7 +11,7 @@ f_abbreviations = "collated/abbreviations.sqlite"
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 _DEBUG    = False
-_PARALLEL = False
+_PARALLEL = True
 
 global_limit = 0
 
