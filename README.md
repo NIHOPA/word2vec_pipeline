@@ -10,9 +10,8 @@
 6. Drop case for sentence starts with `decaps_text.py`
 7. Remove specific POS with `pos_tokenizer.py`
 8. (Optional) term-frequency `compute_TF.py`
+8. Compute word2vec features `compute_features.py`
 
 ### Still importing
 
-
-9. build_features.py
 10. score_documents.py

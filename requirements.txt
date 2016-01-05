@@ -3,3 +3,5 @@ sqlalchemy
 unidecode
 pyparsing
 pattern
+gensim
+numpy

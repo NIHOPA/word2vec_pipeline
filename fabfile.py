@@ -1,6 +1,6 @@
 from fabric.api import local
 
-target = "w2v_pipeline/compute_TF.py"
+target = "w2v_pipeline/compute_features.py"
 
 def push():
     local('git commit -a')
@@ -25,6 +25,7 @@ def test():
     local("python w2v_pipeline/decaps_text.py")
     local("python w2v_pipeline/pos_tokenizer.py")
     local("python w2v_pipeline/compute_TF.py")
+    local("python w2v_pipeline/compute_features.py")
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
