@@ -11,12 +11,16 @@ def database_iterator(
 
     cmd  = "SELECT [index],{} FROM {}".format(column_name, table_name)
     
-    if limit: cmd += " LIMIT {}".format(limit)
-    if offset: cmd += " OFFSET {}".format(offset)
+    if limit: cmd  += " LIMIT {}  ".format(limit)
+    if offset: cmd += " OFFSET {} ".format(offset)
+
+    if not limit and offset:
+        msg = "If offset is > 0, limit must be set"
+        raise SyntaxError(msg)
 
     cursor = conn.execute(cmd)
     for k,item in enumerate(cursor):
-        if verbose and k and k%1000==0:
+        if verbose and k and k%10000==0:
             print k
         yield item
 

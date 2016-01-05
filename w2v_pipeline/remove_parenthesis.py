@@ -10,7 +10,8 @@ _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 _DEBUG    = False
 _PARALLEL = True
 
-global_limit = 0
+global_limit  = 0
+global_offset = 0
 
 class parenthesis_nester(object):
     def __init__(self):
@@ -33,7 +34,7 @@ class parenthesis_nester(object):
     def __call__(self,line):
         try:
             tokens = self.grammar.parseString(line)
-        except pypar.ParseException:
+        except (pypar.ParseException, RuntimeError):
             # On fail simply remove all parens
             line = line.replace('(','')
             line = line.replace(')','')
@@ -62,6 +63,7 @@ def compute(f_sqlite):
                                  input_table, output_table,
                                  debug=_DEBUG,
                                  limit=global_limit, 
+                                 offset=global_offset,
                                  verbose=True)
         pipeline(f_sqlite)
 
