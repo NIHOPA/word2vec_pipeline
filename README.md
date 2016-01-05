@@ -12,6 +12,6 @@
 
 ### Still importing
 
-8. [Optoinal] tf_idf.py
+8. (Optional) tf_idf.py
 9. build_features.py
 10. score_documents.py
