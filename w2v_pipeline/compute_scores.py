@@ -25,7 +25,7 @@ limit_global = 0
 global_debug = False + args.debug
 
 #args.force = True
-#global_debug = True
+global_debug = True
 
 M = None
 
@@ -145,13 +145,13 @@ class word2vec_score_model(object):
         #doc_vec = self.M.infer_vector(valid_tokens)
 
         # Renormalize onto the hypersphere
-        doc_vec /= np.linalg.norm(doc_vec)
-
-        # Renormalize onto the hypersphere
         #doc_vec /= np.linalg.norm(doc_vec, ord=1)
 
+        # Renormalize onto the hypersphere
+        doc_vec /= np.linalg.norm(doc_vec)
+
         # Sanity check
-        #assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+        assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
        
         # Add on extra dimensions
         kappa = von_Mises_Fisher_kappa(DV)
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         F_SQL = grab_files("*.sqlite", _DEFAULT_SQL_DIRECTORY)
 
         INPUT_ITR  = list(itertools.product(F_SQL, target_columns))
-        TOKEN_ITRS = [list(token_iterator(item)) for item in INPUT_ITR]
+        TOKEN_ITRS = [token_iterator(item) for item in INPUT_ITR]
         RESULT_ITR = itertools.imap(S, TOKEN_ITRS)
 
         if not global_debug:
