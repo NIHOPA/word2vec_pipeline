@@ -1,6 +1,6 @@
 from fabric.api import local
 
-target = "w2v_pipeline/remove_parenthesis.py"
+target = "w2v_pipeline/token_replacement.py"
 
 def push():
     local('git commit -a')
@@ -21,6 +21,7 @@ def test():
     local("python w2v_pipeline/phrases_from_abbrs.py")
     local("python w2v_pipeline/replace_phrases.py")
     local("python w2v_pipeline/remove_parenthesis.py")
+    local("python w2v_pipeline/token_replacement.py")
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')

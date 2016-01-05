@@ -6,11 +6,10 @@
 2. Identify the abbr phrases with `phrases_from_abbrs.py`
 3. Replace known phrase from step 2 `replace_phrases.py`
 4. Remove parenthesis with `remove_parenthesis.py`
+5. Remove speical tokens with `token_replacement.py`
 
 ### Still importing
-
-
-5. token_replacement.py
+ 
 6. decaps_text.py
 7. pos_tokenizer.py
 8. tf_idf.py
