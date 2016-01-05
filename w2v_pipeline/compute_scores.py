@@ -10,6 +10,7 @@ from utils.db_utils import database_iterator
 parser = argparse.ArgumentParser()
 parser.add_argument("-f","--force",default=False,action="store_true")
 parser.add_argument("-d","--debug",default=False,action="store_true")
+parser.add_argument("-p","--parallel",default=False,action="store_true")
 args = parser.parse_args()
 
 input_table = "parsed5_pos_tokenized"
@@ -23,9 +24,7 @@ F_MODELS = grab_files("*.word2vec",_DEFAULT_MODEL_DIRECTORY)
 
 limit_global = 0
 global_debug = False + args.debug
-
-#args.force = True
-global_debug = True
+global_parallel = args.parallel
 
 M = None
 
@@ -201,9 +200,7 @@ def token_iterator(item):
     for idx, text in ITR:
         yield idx, text.split()
 
-
-
-if not global_debug:
+if global_parallel:
     import multiprocessing
     MP = multiprocessing.Pool()
 
@@ -249,7 +246,7 @@ if __name__ == "__main__":
         TOKEN_ITRS = [token_iterator(item) for item in INPUT_ITR]
         RESULT_ITR = itertools.imap(S, TOKEN_ITRS)
 
-        if not global_debug:
+        if global_parallel:
             RESULT_ITR = MP.imap(S, TOKEN_ITRS)
 
         for item,result in zip(INPUT_ITR, RESULT_ITR):
