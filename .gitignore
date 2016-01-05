@@ -2,7 +2,7 @@
 collated/*
 csv_data/*
 sql_data/*
-modles/*
+models/*
 
 # Temp UNIX files
 *~

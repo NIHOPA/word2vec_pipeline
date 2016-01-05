@@ -3,5 +3,9 @@ sqlalchemy
 unidecode
 pyparsing
 pattern
+
 gensim
+
 numpy
+h5py
+scipy
