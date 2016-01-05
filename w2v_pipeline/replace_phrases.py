@@ -81,11 +81,13 @@ class phrase_replacement(object):
 
         return doc
 
+target_function = phrase_replacement()
+
 ######################################################################
 
 def compute(f_sqlite):
 
-    func = phrase_replacement()
+    func = target_function
 
     for col in target_columns:
         pipeline = text_pipeline(col, func,
