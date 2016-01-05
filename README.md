@@ -9,9 +9,10 @@
 5. Remove speical tokens with `token_replacement.py`
 6. Drop case for sentence starts with `decaps_text.py`
 7. Remove specific POS with `pos_tokenizer.py`
+8. (Optional) term-frequency `compute_TF.py`
 
 ### Still importing
 
-8. (Optional) tf_idf.py
+
 9. build_features.py
 10. score_documents.py
