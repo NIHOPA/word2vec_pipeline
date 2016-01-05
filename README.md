@@ -7,10 +7,10 @@
 3. Replace known phrase from step 2 `replace_phrases.py`
 4. Remove parenthesis with `remove_parenthesis.py`
 5. Remove speical tokens with `token_replacement.py`
+6. Drop case for sentence starts with `decaps_text.py`
 
 ### Still importing
  
-6. decaps_text.py
 7. pos_tokenizer.py
 8. tf_idf.py
 9. build_features.py
