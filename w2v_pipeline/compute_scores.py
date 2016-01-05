@@ -263,14 +263,3 @@ if __name__ == "__main__":
                               compression="gzip")
 
             print "Completed", item
-
-
-        #for (year,scores, extra_info) in ITR:
-        #    # Save the scores
-        #    g3 = g2.create_group(year)#
-        #    g3.create_dataset("scores", data=scores, compression="gzip")
-        #    g3.create_dataset("extra_info", data=extra_info, compression="gzip")
-
-
-#####################################################################
-
