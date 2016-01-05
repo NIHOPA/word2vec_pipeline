@@ -27,6 +27,8 @@ global_debug = False + args.debug
 #args.force = True
 #global_debug = True
 
+M = None
+
 ######################################################################
 
 global_w2v_summation = "simple"
@@ -174,15 +176,19 @@ class word2vec_score_model(object):
 
 #####################################################################
 
-def score_set(M, document_iterator):
-    SCORES, EXTRA_INFO = [], []
+class scorer(object):
+    def __init__(self, M):
+        self.M = M
+    
+    def __call__(self, document_iterator):
+        SCORES, EXTRA_INFO = [], []
+        
+        for idx, tokens in document_iterator:
+            score, extra_info = self.M(tokens)
+            SCORES.append(score)
+            EXTRA_INFO.append(extra_info)
 
-    for idx, tokens in document_iterator:
-        score, extra_info = M(tokens)
-        SCORES.append(score)
-        EXTRA_INFO.append(extra_info)
-
-    return SCORES, EXTRA_INFO
+        return SCORES, EXTRA_INFO
     
 
 def token_iterator(item):
@@ -195,56 +201,14 @@ def token_iterator(item):
     for idx, text in ITR:
         yield idx, text.split()
 
-def compute_model(h5, f_model):
-    print "Starting model", f_model
 
-    M = word2vec_score_model(f_model)
-    g = h5.create_group(f_model)
-
-    # Save the embedding matrix
-    g.create_dataset("syn0", data=M.get_embedding_matrix(),
-                     compression='gzip')
-
-    # Save the vocabulary
-    vocab = np.array(M.get_vocabulary(),dtype="S40")
-    g.create_dataset("vocab",data=vocab)
-
-    # Save the counts
-    g.create_dataset("counts",data=M.get_counts_vector())
-
-    g2 = g.create_group("embeddings")
-
-    F_SQL = grab_files("*.sqlite", _DEFAULT_SQL_DIRECTORY)
-
-    INPUT_ITR = itertools.product(F_SQL, target_columns)
-    for item in INPUT_ITR:
-        f_sqlite, col = item
-        print '/'.join(item)
-        group_name = os.path.basename(f_sqlite) + '/' + col
-        g3 = g2.create_group(group_name)
-
-        document_tokens = token_iterator(item)
-        SCORES, EXTRA_INFO  = score_set(M,document_tokens)
-
-        g3.create_dataset("scores", data=SCORES, 
-                          compression="gzip")
-        g3.create_dataset("extra_info", data=EXTRA_INFO, 
-                          compression="gzip")
-
-    #if not global_debug:
-    #    ITR = MP.imap(compute_model_file, INPUT_ITR)
-    #for (year,scores, extra_info) in ITR:
-    #    # Save the scores
-    #    g3 = g2.create_group(year)#
-    #    g3.create_dataset("scores", data=scores, compression="gzip")
-    #    g3.create_dataset("extra_info", data=extra_info, compression="gzip")
-
-
-#####################################################################
 
 if not global_debug:
     import multiprocessing
     MP = multiprocessing.Pool()
+
+
+#########################################################################
 
 if __name__ == "__main__":
 
@@ -258,4 +222,58 @@ if __name__ == "__main__":
     h5 = h5py.File(f_h5,'w')
 
     for f_model in F_MODELS:
-        compute_model(h5, f_model)
+
+        print "Starting model", f_model
+
+        M = word2vec_score_model(f_model)
+        g = h5.create_group(f_model)
+
+        S = scorer(M)
+
+        # Save the embedding matrix
+        g.create_dataset("syn0", data=M.get_embedding_matrix(),
+                         compression='gzip')
+
+        # Save the vocabulary
+        vocab = np.array(M.get_vocabulary(),dtype="S40")
+        g.create_dataset("vocab",data=vocab)
+
+        # Save the counts
+        g.create_dataset("counts",data=M.get_counts_vector())
+
+        g2 = g.create_group("embeddings")
+
+        F_SQL = grab_files("*.sqlite", _DEFAULT_SQL_DIRECTORY)
+
+        INPUT_ITR  = list(itertools.product(F_SQL, target_columns))
+        TOKEN_ITRS = [list(token_iterator(item)) for item in INPUT_ITR]
+        RESULT_ITR = itertools.imap(S, TOKEN_ITRS)
+
+        if not global_debug:
+            RESULT_ITR = MP.imap(S, TOKEN_ITRS)
+
+        for item,result in zip(INPUT_ITR, RESULT_ITR):
+
+            SCORES, EXTRA_INFO = result
+
+            f_sqlite, col = item
+            group_name = os.path.basename(f_sqlite) + '/' + col
+            g3 = g2.create_group(group_name)           
+
+            g3.create_dataset("scores", data=SCORES, 
+                              compression="gzip")
+            g3.create_dataset("extra_info", data=EXTRA_INFO, 
+                              compression="gzip")
+
+            print "Completed", item
+
+
+        #for (year,scores, extra_info) in ITR:
+        #    # Save the scores
+        #    g3 = g2.create_group(year)#
+        #    g3.create_dataset("scores", data=scores, compression="gzip")
+        #    g3.create_dataset("extra_info", data=extra_info, compression="gzip")
+
+
+#####################################################################
+
