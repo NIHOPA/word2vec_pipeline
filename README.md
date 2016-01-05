@@ -8,10 +8,10 @@
 4. Remove parenthesis with `remove_parenthesis.py`
 5. Remove speical tokens with `token_replacement.py`
 6. Drop case for sentence starts with `decaps_text.py`
+7. Remove specific POS with `pos_tokenizer.py`
 
 ### Still importing
- 
-7. pos_tokenizer.py
-8. tf_idf.py
+
+8. [Optoinal] tf_idf.py
 9. build_features.py
 10. score_documents.py
