@@ -51,12 +51,13 @@ class text_pipeline(object):
 
             self.conn.execute(cmd_template)
 
-            # Insert the index from one column into another
-            cmd_insert = '''
-            INSERT INTO {out_table} ([index])
-            SELECT [index] FROM {in_table};
-            '''.format(in_table=self.t_in, out_table=t_out)
-            self.conn.execute(cmd_insert)
+        # Insert the index from one column into another
+        cmd_insert = '''
+        INSERT OR IGNORE INTO {out_table} ([index])
+        SELECT [index] FROM {in_table};
+        '''.format(in_table=self.t_in, out_table=t_out)
+        self.conn.execute(cmd_insert)
+        self.conn.commit()
 
         # Determine if the column is new or not
         cmd = "SELECT * FROM {out_table} LIMIT 0".format(out_table=t_out)
