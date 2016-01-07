@@ -39,19 +39,19 @@ class text_pipeline(object):
 
         print "Starting", f_sqlite, target_column
         self.connect(f_sqlite)
-        
-        cmd_template = '''
-        CREATE TABLE {out_table} (
-        [index] INTEGER PRIMARY KEY);
-        '''.format(out_table=t_out)
-        try:
-            self.conn.execute(cmd_template)
-            FLAG_new_table = True
-        except sqlite3.OperationalError:
-            FLAG_new_table = False
 
-        # Insert the index from one column into another
-        if FLAG_new_table:
+        cmd = "SELECT name FROM sqlite_master WHERE type='table'"
+        table_names = zip(*self.conn.execute(cmd).fetchall())[0]
+
+        if t_out not in table_names:
+            cmd_template = '''
+            CREATE TABLE {out_table} (
+            [index] INTEGER PRIMARY KEY);
+            '''.format(out_table=t_out)
+
+            self.conn.execute(cmd_template)
+
+            # Insert the index from one column into another
             cmd_insert = '''
             INSERT INTO {out_table} ([index])
             SELECT [index] FROM {in_table};

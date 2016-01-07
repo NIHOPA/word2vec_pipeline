@@ -4,12 +4,12 @@ from utils.os_utils import grab_files
 input_table  = "parsed2_no_paren"
 output_table = "parsed3_removed_special_tokens"
 
-target_columns = ["abstract", "specificAims"]
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
+_DEBUG = cargs["debug"]
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
-_DEBUG    = False
-_PARALLEL = True
-
 global_limit = 0
 
 class token_replacement(object):
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     import itertools
     ITR = itertools.imap(compute, F_SQL)
 
-    if _PARALLEL:
+    if not _DEBUG:
         import multiprocessing
         MP  = multiprocessing.Pool(len(F_SQL))
         ITR = MP.imap(compute, F_SQL)

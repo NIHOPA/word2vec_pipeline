@@ -10,7 +10,9 @@ input_table = "parsed5_pos_tokenized"
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "models"
 
-target_columns = ["abstract", "specificAims"]
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
 
 limit_global = 0
 epoch_n = 20

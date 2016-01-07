@@ -5,12 +5,12 @@ import pattern.en
 input_table  = "parsed4_decaps_text"
 output_table = "parsed5_POS_tokenized"
 
-target_columns = ["abstract", "specificAims"]
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
+_DEBUG = cargs["debug"]
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
-_DEBUG    = False
-_PARALLEL = True
-
 global_limit = 0
 
 class POS_tokenizer(object):
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     import itertools
     ITR = itertools.imap(compute, F_SQL)
 
-    if _PARALLEL:
+    if not _DEBUG:
         import multiprocessing
         MP  = multiprocessing.Pool(len(F_SQL))
         ITR = MP.imap(compute, F_SQL)

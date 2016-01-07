@@ -19,9 +19,14 @@ _DEFAULT_SQL_DIRECTORY    = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "collated"
 f_output = "scores.h5"
 
-target_columns = ["abstract", "specificAims"]
-F_MODELS = grab_files("*.word2vec",_DEFAULT_MODEL_DIRECTORY)
+## Using both config parser and argparse, should fix this
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
+_DEBUG = cargs["debug"]
 
+
+F_MODELS = grab_files("*.word2vec",_DEFAULT_MODEL_DIRECTORY)
 limit_global = 0
 global_debug = False + args.debug
 global_parallel = args.parallel

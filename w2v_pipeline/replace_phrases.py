@@ -5,14 +5,15 @@ from utils.os_utils import grab_files, mkdir
 
 input_table  = "original"
 output_table = "parsed1_abbr_tokens"
-target_columns = ["abstract", "specificAims"]
+
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
+_DEBUG = cargs["debug"]
 
 f_abbreviations = "collated/abbreviations.sqlite"
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
-_DEBUG    = False
-_PARALLEL = True
-
 global_limit = 0
 
 word_tokenizer = lambda x:pattern.en.parse(x,chunks=False,tags=False)
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     import itertools
     ITR = itertools.imap(compute, F_SQL)
 
-    if _PARALLEL:
+    if not _DEBUG:
         import multiprocessing
         MP  = multiprocessing.Pool(len(F_SQL))
         ITR = MP.imap(compute, F_SQL)

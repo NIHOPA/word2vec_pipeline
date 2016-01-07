@@ -10,12 +10,14 @@ from utils.os_utils import grab_files, mkdir
 #####################################################################
 
 input_table = "parsed5_pos_tokenized"
-target_columns = ["abstract", "specificAims"]
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "collated"
-_DEBUG    = False
-_PARALLEL = True
+
+from utils.config_reader import load_config
+cargs = load_config()
+target_columns = cargs["target_columns"]
+_DEBUG = cargs["debug"]
 
 global_limit = 0
 f_db_TF = "TF.sqlite"
@@ -68,7 +70,7 @@ ITR = itertools.imap(word_counter, INPUT_ITR)
 
 C = collections.Counter()
 
-if _PARALLEL and not _DEBUG:
+if not _DEBUG:
     import multiprocessing
     P = multiprocessing.Pool()
     ITR = P.imap(word_counter, INPUT_ITR)
