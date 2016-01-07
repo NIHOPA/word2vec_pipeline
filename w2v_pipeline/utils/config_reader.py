@@ -5,7 +5,7 @@ _DEFAULT_INT = "config_w2v_pipeline.ini"
 def load_config(f_config=_DEFAULT_INT):
     if not os.path.exists(f_config):
         print "{} not found! Need to create one!".format(f_config)
-        exit()
+        exit(1)
         
     config = ConfigParser.ConfigParser()
     config.read(f_config)

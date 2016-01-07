@@ -17,8 +17,8 @@
 
 Assumes that all data is started in a directory csv_data.
 
-	python pipeline_word2vec/w2v_pipeline/import_data.py
-	python pipeline_word2vec/w2v_pipeline/phrases_from_abbrs.py
+    python pipeline_word2vec/w2v_pipeline/import_data.py
+    python pipeline_word2vec/w2v_pipeline/phrases_from_abbrs.py
 
     python pipeline_word2vec/w2v_pipeline/replace_phrases.py
     python pipeline_word2vec/w2v_pipeline/remove_parenthesis.py
@@ -28,3 +28,13 @@ Assumes that all data is started in a directory csv_data.
     python pipeline_word2vec/w2v_pipeline/compute_features.py
     python pipeline_word2vec/w2v_pipeline/compute_scores.py
 
+### Sample `config_w2v_pipeline.ini`
+
+    [PIPELINE_ARGS]
+    
+    # Turns off debuging and commits to the database
+    debug = False
+
+    # Which columns from the database will be used for w2v
+    # keep them as a space-separated list
+    target_columns = abstract specificAims
