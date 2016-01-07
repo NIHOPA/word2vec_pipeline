@@ -1,18 +1,22 @@
 import glob, sqlite3, string, os, collections
 from utils.os_utils import grab_files, mkdir
 import utils.db_utils
+from utils.config_reader import load_config
 
 import pandas as pd
 from sqlalchemy import create_engine
 import pyparsing as pypar
 
+cargs = load_config()
+
 input_table    = "original"
 output_table   = "abbreviations"
-target_columns = ["abstract", "specificAims"]
+#target_columns = ["abstract", "specificAims"]
+target_columns = cargs["target_columns"]
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "collated"
-_DEBUG = False
+_DEBUG = cargs["debug"]
 
 global_limit  = 0
 global_offset = 0
@@ -171,6 +175,8 @@ if __name__ == "__main__":
                           offset=global_offset)
 
         ITR = itertools.imap(evaluate_document, INPUT_ITR)
+
+        print _DEBUG
 
         if not _DEBUG:
             ITR = MP.imap(evaluate_document, INPUT_ITR)
