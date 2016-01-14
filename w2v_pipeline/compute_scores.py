@@ -19,6 +19,8 @@ _DEFAULT_SQL_DIRECTORY    = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "collated"
 f_output = "scores.h5"
 
+w2v_summations = ["simple", "unique", "TF_IDF"]
+
 ## Using both config parser and argparse, should fix this
 from utils.config_reader import load_config
 cargs = load_config()
@@ -30,23 +32,24 @@ limit_global = 0
 global_debug = False + args.debug
 global_parallel = args.parallel
 
-# Load the TF global model 
+f_TF_db = "collated/TF.sqlite"
 
+# Load the TF global model 
+conn_TF = sqlite3.connect(f_TF_db,check_same_thread=False)
+cmd = "SELECT word, count FROM DF"
+cursor = conn_TF.execute(cmd)
+document_freq = dict(cursor)
+total_documents = document_freq[""]
+IDF = {}
+for word,count in document_freq.items():
+    IDF[word] = np.log(total_documents / float(count))
+del document_freq
 
 M = None
+if global_debug: limit_global = 100
 
 ######################################################################
 
-global_w2v_summation = "simple"
-#global_w2v_summation = "unique"
-#global_w2v_summation = "log"
-#global_w2v_summation = "local_TF_IDF"
-#global_w2v_summation = "TF_IDF"
-#global_w2v_summation = "ratio_TF_IDF"
-#global_w2v_summation = "square"
-#global_w2v_summation = "max_eigen"
-
-if global_debug: limit_global = 100
 
 def von_Mises_Fisher_kappa(X):
     # points,dimension
@@ -80,22 +83,22 @@ def von_Mises_Fisher_kappa(X):
     return k2
 
 class word2vec_score_model(object):
-    def __init__(self, f_model):
+    def __init__(self, f_model, method=None):
 
         # Load the model from disk
         self.M = Word2Vec.load(f_model)       
         self.shape = self.M.syn0.shape
 
-        # Build TF_IDF
+        # Build total counts
         self.counts = {}
         for key,val in self.M.vocab.items():
             self.counts[key] = val.count
 
-        total = float(sum(self.counts.values()))
-        self.TF_IDF = {}
+        if method is not None:
+            self.set_w2v_method(method)
 
-        for key in self.counts:
-            self.TF_IDF[key] = self.counts[key]/total
+    def set_w2v_method(self, method):
+        self.w2v_method = method
 
     def score_document(self,tokens):
 
@@ -103,6 +106,7 @@ class word2vec_score_model(object):
         valid_tokens = [w for w in tokens if w in self.M]
         local_counts = collections.Counter(valid_tokens)
         tokens = set(valid_tokens)
+
 
         # If doc_vec is empty choose random vector
         if not len(tokens):
@@ -116,43 +120,25 @@ class word2vec_score_model(object):
         
         local_total = float(sum(local_counts.values()))
 
-        if global_w2v_summation in ["unique","max_eigen"]:
+        method = self.w2v_method
+
+        if method in ["unique"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif global_w2v_summation in ["simple",]:
+        elif method in ["simple"]:
             weights = dict([(w,local_counts[w]) for w in tokens])
-        elif global_w2v_summation == "square":
-            weights = dict([(w,local_counts[w]**2) for w in tokens])
-        elif global_w2v_summation == "log":
-            weights = dict([(w,np.log(1+local_counts[w])) for w in tokens])
-        elif global_w2v_summation == "local_TF_IDF":
-            weights = dict([(w,local_counts[w]/local_total) for w in tokens])
-        elif global_w2v_summation == "ratio_TF_IDF":
-            weights = dict([(w,self.TF_IDF[w]/(local_counts[w]/local_total)) 
-                            for w in tokens])
-        elif global_w2v_summation == "TF_IDF":
-            weights = dict([(w,self.TF_IDF[w]) for w in tokens])           
+        elif method in ["TF_IDF"]:
+            weights = dict([(w,IDF[w]*c) 
+                            for w,c in local_counts.items()])
         else:
-            print "UNKNOWN w2v summation method", global_w2v_summation         
+            print "UNKNOWN w2v method", method         
 
         # Lookup each word that is in the model
         DV = np.array([self.M[w] for w in tokens])
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
 
-        if global_w2v_summation == "max_eigen":
-            U,s,V = np.linalg.svd(DV)
-            doc_vec = np.array([V[0,:]])
-            doc_vec = (doc_vec).sum(axis=0)            
-        else:
-            # Sum all the vectors with their weights
-            doc_vec = (W*DV).sum(axis=0)        
+        # Sum all the vectors with their weights
+        doc_vec = (W*DV).sum(axis=0)        
         
-        # DEBUG FOR DOC2VEC
-        #DV = np.array([self.M[w] for w in valid_tokens])
-        #doc_vec = self.M.infer_vector(valid_tokens)
-
-        # Renormalize onto the hypersphere
-        #doc_vec /= np.linalg.norm(doc_vec, ord=1)
-
         # Renormalize onto the hypersphere
         doc_vec /= np.linalg.norm(doc_vec)
 
@@ -223,7 +209,9 @@ if __name__ == "__main__":
     if os.path.exists(f_h5) and not args.force:
         print "File {} already exists, exiting".format(f_h5)
         exit(1)
+        
     h5 = h5py.File(f_h5,'w')
+
 
     for f_model in F_MODELS:
 
@@ -244,29 +232,36 @@ if __name__ == "__main__":
 
         # Save the counts
         g.create_dataset("counts",data=M.get_counts_vector())
-
         g2 = g.create_group("embeddings")
 
-        F_SQL = grab_files("*.sqlite", _DEFAULT_SQL_DIRECTORY)
+        for w2v_method in w2v_summations:
 
-        INPUT_ITR  = list(itertools.product(F_SQL, target_columns))
-        TOKEN_ITRS = [token_iterator(item) for item in INPUT_ITR]
-        RESULT_ITR = itertools.imap(S, TOKEN_ITRS)
+            print "Starting method", w2v_method
 
-        if global_parallel:
-            RESULT_ITR = MP.imap(S, TOKEN_ITRS)
+            M.set_w2v_method(w2v_method)
 
-        for item,result in zip(INPUT_ITR, RESULT_ITR):
+            g3 = g2.create_group(w2v_method)
 
-            SCORES, EXTRA_INFO = result
+            F_SQL = grab_files("*.sqlite", _DEFAULT_SQL_DIRECTORY)
 
-            f_sqlite, col = item
-            group_name = os.path.basename(f_sqlite) + '/' + col
-            g3 = g2.create_group(group_name)           
+            INPUT_ITR  = list(itertools.product(F_SQL, target_columns))
+            TOKEN_ITRS = [token_iterator(item) for item in INPUT_ITR]
+            RESULT_ITR = itertools.imap(S, TOKEN_ITRS)
 
-            g3.create_dataset("scores", data=SCORES, 
-                              compression="gzip")
-            g3.create_dataset("extra_info", data=EXTRA_INFO, 
-                              compression="gzip")
+            if global_parallel:
+                RESULT_ITR = MP.imap(S, TOKEN_ITRS)
 
-            print "Completed", item
+            for item,result in zip(INPUT_ITR, RESULT_ITR):
+
+                SCORES, EXTRA_INFO = result
+
+                f_sqlite, col = item
+                group_name = os.path.basename(f_sqlite) + '/' + col
+                g4 = g3.create_group(group_name)           
+
+                g4.create_dataset("scores", data=SCORES, 
+                                  compression="gzip")
+                g4.create_dataset("extra_info", data=EXTRA_INFO, 
+                                  compression="gzip")
+
+                print "Completed", item
