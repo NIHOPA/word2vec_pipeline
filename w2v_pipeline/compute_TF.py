@@ -40,12 +40,18 @@ def word_counter(item):
 
 
     C = collections.Counter()
+    DF = collections.Counter()
     for k,(idx,text) in enumerate(ITR):
         tokens = text.split()
         C.update(tokens)
+        DF.update(set(tokens))
+
+        # Add an empty string token to keep track of total documents
+        DF[""] += 1
 
     conn.close()   
-    return C
+
+    return C, DF
 
 ######################################################################
 
@@ -54,10 +60,18 @@ conn = sqlite3.connect(f_db, check_same_thread=False)
 
 cmd = '''
 DROP TABLE IF EXISTS TF;
+DROP TABLE IF EXISTS DF;
+
 DROP INDEX IF EXISTS idx_TF_word;
+
 CREATE TABLE IF NOT EXISTS TF ( 
     rank INTEGER PRIMARY KEY AUTOINCREMENT,
     word TEXT,
+    count INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS DF ( 
+    word TEXT PRIMARY KEY,
     count INTEGER
 );
 '''
@@ -68,31 +82,36 @@ conn.executescript(cmd)
 INPUT_ITR = itertools.product(F_SQL, target_columns)
 ITR = itertools.imap(word_counter, INPUT_ITR)
 
-C = collections.Counter()
+C  = collections.Counter()
+DF = collections.Counter()
 
 if not _DEBUG:
     import multiprocessing
     P = multiprocessing.Pool()
     ITR = P.imap(word_counter, INPUT_ITR)
 
-for C_result in ITR:
-    C.update(C_result)
+for item in ITR:
+    C_out, DF_out = item
+    C.update(C_out)
+    DF.update(DF_out)
 
-print "Found {} tokens".format(len(C))
+msg = "Found {} tokens, {} words and {} DF words"
+print msg.format(len(C), sum(C.values()), sum(DF.values()))
 
-
-cmd_insert = '''
-INSERT INTO TF (word, count) VALUES (?,?)
-'''
-
+cmd_insert = '''INSERT INTO TF (word, count) VALUES (?,?)'''
 data = C.most_common()
-print "Inserting"
+print "Inserting counts"
+conn.executemany(cmd_insert, data)
+
+cmd_insert = '''INSERT INTO DF (word, count) VALUES (?,?)'''
+data = DF.most_common()
+print "Inserting document frequency"
 conn.executemany(cmd_insert, data)
 
 print "Building index"
 conn.executescript('''
 CREATE INDEX IF NOT EXISTS 
-idx_tf_word ON TF(word)
+idx_tf_word ON TF(word);
 ''')
 
 print "Illustrating top 10 words"

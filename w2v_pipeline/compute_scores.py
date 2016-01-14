@@ -25,11 +25,13 @@ cargs = load_config()
 target_columns = cargs["target_columns"]
 _DEBUG = cargs["debug"]
 
-
 F_MODELS = grab_files("*.word2vec",_DEFAULT_MODEL_DIRECTORY)
 limit_global = 0
 global_debug = False + args.debug
 global_parallel = args.parallel
+
+# Load the TF global model 
+
 
 M = None
 
