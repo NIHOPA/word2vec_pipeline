@@ -30,5 +30,5 @@ def test():
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
-    local("rm -rf sql_data collated")
+    local("rm -rf sql_data collated models")
 
