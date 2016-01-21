@@ -9,3 +9,5 @@ gensim
 numpy
 h5py
 scipy
+
+pyksvd
