@@ -19,7 +19,9 @@ _DEFAULT_SQL_DIRECTORY    = "sql_data"
 _DEFAULT_EXPORT_DIRECTORY = "collated"
 f_output = "scores.h5"
 
-w2v_summations = ["simple", "unique", "TF_IDF"]
+w2v_summations = ["simple", "unique", "TF_IDF","kSVD"]
+#w2v_summations = ["kSVD"]
+#w2v_summations = ["simple"]
 
 ## Using both config parser and argparse, should fix this
 from utils.config_reader import load_config
@@ -33,6 +35,7 @@ global_debug = False + args.debug
 global_parallel = args.parallel
 
 f_TF_db = "collated/TF.sqlite"
+f_kSVD  = "collated/kSVD.h5"
 
 # Load the TF global model 
 conn_TF = sqlite3.connect(f_TF_db,check_same_thread=False)
@@ -49,7 +52,6 @@ M = None
 if global_debug: limit_global = 100
 
 ######################################################################
-
 
 def von_Mises_Fisher_kappa(X):
     # points,dimension
@@ -97,8 +99,19 @@ class word2vec_score_model(object):
         if method is not None:
             self.set_w2v_method(method)
 
+        vocab_n = self.shape[0]
+        self.word2index = dict(zip(self.M.index2word,range(vocab_n)))
+
     def set_w2v_method(self, method):
         self.w2v_method = method
+
+        if method == 'kSVD':
+            print "Loading kSVD dataset"
+            # Load the kSVD model
+            assert(os.path.exists(f_kSVD))
+            h5 = h5py.File(f_kSVD,'r')[f_model]
+            g  = h5['0'] # Use the first group
+            self.kSVD_gamma = g["gamma"][:]
 
     def score_document(self,tokens):
 
@@ -106,11 +119,17 @@ class word2vec_score_model(object):
         valid_tokens = [w for w in tokens if w in self.M]
         local_counts = collections.Counter(valid_tokens)
         tokens = set(valid_tokens)
-
+        method = self.w2v_method
 
         # If doc_vec is empty choose random vector
         if not len(tokens):
-            doc_vec = np.random.uniform(-1,1,size=self.shape[1])
+
+            if method in ["unique","simple","TF_IDF"]:
+                size = self.shape[1] 
+            elif method in ["kSVD"]:
+                size = self.kSVD_gamma.shape[1] 
+
+            doc_vec = np.random.uniform(-1,1,size=size)
             doc_vec /= np.linalg.norm(doc_vec)
 
             # Add on one extra dimension
@@ -120,21 +139,29 @@ class word2vec_score_model(object):
         
         local_total = float(sum(local_counts.values()))
 
-        method = self.w2v_method
-
         if method in ["unique"]:
             weights = dict.fromkeys(tokens, 1.0)
         elif method in ["simple"]:
             weights = dict([(w,local_counts[w]) for w in tokens])
-        elif method in ["TF_IDF"]:
+        elif method in ["TF_IDF","kSVD"]:
             weights = dict([(w,IDF[w]*c) 
                             for w,c in local_counts.items()])
         else:
-            print "UNKNOWN w2v method", method         
+            msg = "UNKNOWN w2v method '{}'".format(method)
+            raise KeyError(msg)
+
+        # Build the weight matrix
+        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
 
         # Lookup each word that is in the model
-        DV = np.array([self.M[w] for w in tokens])
-        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+        if method in ["unique","simple","TF_IDF"]:
+            DV = np.array([self.M[w] for w in tokens])
+        elif method in ["kSVD"]:
+            word_idx = [self.word2index[w] for w in tokens]
+            DV = np.array([self.kSVD_gamma[n] for n in word_idx])
+        else:
+            msg = "UNKNOWN w2v method '{}'".format(method)
+            raise KeyError(msg)
 
         # Sum all the vectors with their weights
         doc_vec = (W*DV).sum(axis=0)        
@@ -180,7 +207,7 @@ class scorer(object):
             SCORES.append(score)
             EXTRA_INFO.append(extra_info)
 
-        return SCORES, EXTRA_INFO
+        return np.array(SCORES), EXTRA_INFO
     
 
 def token_iterator(item):
@@ -257,7 +284,7 @@ if __name__ == "__main__":
 
                 f_sqlite, col = item
                 group_name = os.path.basename(f_sqlite) + '/' + col
-                g4 = g3.create_group(group_name)           
+                g4 = g3.create_group(group_name)
 
                 g4.create_dataset("scores", data=SCORES, 
                                   compression="gzip")
