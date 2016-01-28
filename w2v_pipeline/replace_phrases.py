@@ -10,6 +10,7 @@ from utils.config_reader import load_config
 cargs = load_config()
 target_columns = cargs["target_columns"]
 _DEBUG = cargs["debug"]
+_FORCE = cargs["force"]
 
 f_abbreviations = "collated/abbreviations.sqlite"
 
@@ -94,6 +95,7 @@ def compute(f_sqlite):
         pipeline = text_pipeline(col, func,
                                  input_table, output_table,
                                  debug=_DEBUG,
+                                 force=_FORCE,
                                  limit=global_limit, 
                                  verbose=True)
         pipeline(f_sqlite)

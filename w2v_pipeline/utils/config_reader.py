@@ -17,6 +17,7 @@ def load_config(f_config=_DEFAULT_INT):
 
     args = {
         "debug" : config.getboolean('PIPELINE_ARGS',"debug"),
+        "force" : config.getboolean('PIPELINE_ARGS',"force"),
         "target_columns" : config.get('PIPELINE_ARGS',
                                       "target_columns",
                                       "text"),

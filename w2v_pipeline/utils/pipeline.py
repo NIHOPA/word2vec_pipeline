@@ -5,7 +5,7 @@ import db_utils
 class text_pipeline(object):
     def __init__(self, target_column, func, 
                  input_table, output_table,
-                 verbose=False, debug=False, 
+                 verbose=False, debug=False, force=False,
                  limit=0,
                  offset=0,
     ):
@@ -17,6 +17,7 @@ class text_pipeline(object):
         self.limit = limit
         self.offset = offset
         self.debug = debug
+        self.force = force
         self.insert_size = 400
 
         self.conn = None
@@ -75,10 +76,15 @@ class text_pipeline(object):
         cmd_search = '''SELECT [index] FROM {out_table}
         WHERE {target_column} IS NOT NULL'''.format(out_table=t_out, 
                                                     target_column=target_column)
+
         cursor = self.conn.execute(cmd_search)
         known_index = cursor.fetchall()
         if known_index:
             known_index = set(zip(*known_index)[0])
+
+        # If forcing, compute all columns
+        if self.force:
+            known_index = []                    
 
         INPUT_ITR = ((index,text) for (index,text) in
                      self.get_input_iter() if index not in known_index)
