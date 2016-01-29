@@ -11,13 +11,22 @@ def load_configfile(f_config):
     config.read(f_config)
     return config
 
+def load_optional_bool(config,cat,name,default_value=False):
+    try:
+        value = config.getboolean(cat,name)
+    except:
+        value = default_value
+
+    return value
+
+
 def load_config(f_config=_DEFAULT_INT):
 
     config = load_configfile(f_config)
 
     args = {
+        "force" : load_optional_bool(config,'PIPELINE_ARGS','force'),
         "debug" : config.getboolean('PIPELINE_ARGS',"debug"),
-        "force" : config.getboolean('PIPELINE_ARGS',"force"),
         "target_columns" : config.get('PIPELINE_ARGS',
                                       "target_columns",
                                       "text"),
@@ -39,7 +48,7 @@ def load_kSVD_config(f_config=_DEFAULT_INT):
         "sparsity"   : config.getint('kSVD',"sparsity"),
         "iterations" : config.getint('kSVD',"iterations"),
         "samples"    : config.getint('kSVD',"samples"),
-        "FLAG_FORCE" : FORCE,
+        "FLAG_FORCE" : load_optional_bool(config,'kSVD','FLAG_FORCE'),
     }
 
     return args    
