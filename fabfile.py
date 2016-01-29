@@ -26,6 +26,7 @@ def test():
     local("python w2v_pipeline/pos_tokenizer.py")
     local("python w2v_pipeline/compute_TF.py")
     local("python w2v_pipeline/compute_features.py")
+    local("python w2v_pipeline/compute_kSVD.py")
     local("python w2v_pipeline/compute_scores.py")
 
 def clean():
