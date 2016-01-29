@@ -29,9 +29,16 @@ class token_replacement(object):
         doc = doc.replace('|', ' ')
         doc = doc.replace('$', '')
 
+        # Remove empty :
+        doc = doc.replace(' : ', ' ')
+        
+        # Remove double dashes
+        doc = doc.replace('--', ' ')
+
         # Remove possesive splits
         doc = doc.replace(" 's ", ' ')
 
+        # Remove quotes
         doc = doc.replace("'", '')
         doc = doc.replace('"', '')
 
