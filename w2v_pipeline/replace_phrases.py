@@ -1,7 +1,7 @@
 import sqlite3, glob
-import pattern.en
 from utils.pipeline import text_pipeline
 from utils.os_utils import grab_files, mkdir
+from utils.tokenizer_utils import word_tokenizer
 
 input_table  = "original"
 output_table = "parsed1_abbr_tokens"
@@ -17,7 +17,6 @@ f_abbreviations = "collated/abbreviations.sqlite"
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 global_limit = 0
 
-word_tokenizer = lambda x:pattern.en.parse(x,chunks=False,tags=False)
 
 class phrase_replacement(object):
     def __init__(self):
@@ -54,7 +53,7 @@ class phrase_replacement(object):
     def __call__(self,org_doc):
 
         doc = org_doc
-        tokens = unicode(word_tokenizer(doc)).split()
+        tokens = word_tokenizer(doc)
 
         # First pass, identify which phrases are used
         iden_abbr = {}
@@ -72,7 +71,7 @@ class phrase_replacement(object):
             doc = doc.replace(substring,newstring)
 
         # Now find any abbrs used in the document and replace them       
-        tokens = unicode(word_tokenizer(doc)).split()
+        tokens = word_tokenizer(doc)
         
         for phrase,abbr in iden_abbr.items():
             tokens = [self.phrase_sub(phrase) 
@@ -80,7 +79,6 @@ class phrase_replacement(object):
 
         # This returns word split phrase string
         doc = ' '.join(tokens)
-
         return doc
 
 target_function = phrase_replacement()

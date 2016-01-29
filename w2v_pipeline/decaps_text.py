@@ -1,10 +1,9 @@
 from utils.pipeline import text_pipeline
 from utils.os_utils import grab_files
-import pattern.en
+from utils.tokenizer_utils import sentence_tokenizer
 
 input_table  = "parsed3_removed_special_tokens"
 output_table = "parsed4_decaps_text"
-
 
 from utils.config_reader import load_config
 cargs = load_config()
@@ -13,8 +12,6 @@ _DEBUG = cargs["debug"]
 
 _DEFAULT_IMPORT_DIRECTORY = "sql_data"
 global_limit = 0
-
-word_tokenizer = lambda x:pattern.en.parse(x,chunks=False,tags=False)
 
 class decaps_text(object):
 
@@ -35,16 +32,17 @@ class decaps_text(object):
                                         
     def __call__(self,doc):
 
-        sentences = word_tokenizer(doc).split()
+        sentences = sentence_tokenizer(doc)
+
         doc2 = []
 
         for sent in sentences:
-            sent = [' '.join(x) for x in sent]
-            if sent:
-                sent[0] = self.modify_word(sent[0])
-
+            
+            sent = [self.modify_word(w) for w in sent]
             doc2.append(' '.join(sent))
+
         doc2 = '\n'.join(doc2)
+
         return doc2
 
 target_function = decaps_text()
