@@ -10,4 +10,4 @@ numpy
 h5py
 scipy
 
-pyksvd
+#pyksvd
