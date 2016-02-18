@@ -1,4 +1,4 @@
-name = w2v_pipeline/import.py
+name = w2v_pipeline/phrases_from_abbrs.py
 
 all:
 	python $(name)
