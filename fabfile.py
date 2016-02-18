@@ -18,19 +18,17 @@ def view():
 
 def test():
     clean()
-    local("python w2v_pipeline/import_data.py")
+    
+    local("python w2v_pipeline/import.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")
-    local("python w2v_pipeline/replace_phrases.py")
-    local("python w2v_pipeline/remove_parenthesis.py")
-    local("python w2v_pipeline/token_replacement.py")
-    local("python w2v_pipeline/decaps_text.py")
-    local("python w2v_pipeline/pos_tokenizer.py")
-    local("python w2v_pipeline/compute_TF.py")
-    local("python w2v_pipeline/compute_features.py")
-    local("python w2v_pipeline/compute_kSVD.py")
-    local("python w2v_pipeline/compute_scores.py")
+    local("python w2v_pipeline/parse.py")
+
+    #local("python w2v_pipeline/compute_TF.py")
+    #local("python w2v_pipeline/compute_features.py")
+    #local("python w2v_pipeline/compute_kSVD.py")
+    #local("python w2v_pipeline/compute_scores.py")
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
-    local("rm -rf sql_data collated models")
+    local("rm -rf data_sql data_parsed")
 

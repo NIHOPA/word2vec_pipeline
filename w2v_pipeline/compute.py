@@ -12,16 +12,20 @@ def dispatcher(item):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("parse")
+    config = simple_config.load("compute")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
     if _PARALLEL:
         import multiprocessing
 
-    import_config = simple_config.load("import_data")
-    input_data_dir = import_config["output_data_directory"]
-    output_dir = config["output_data_directory"]
+
+    print config["commands"]
+    exit()
+
+    #import_config = simple_config.load("import_data")
+    #input_data_dir = import_config["output_data_directory"]
+    #output_dir = config["output_data_directory"]
 
     mkdir(output_dir)
 
