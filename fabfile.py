@@ -13,7 +13,8 @@ def edit():
     local("emacs {} &".format(target))
 
 def view():
-    local("sqlitebrowser sql_data/PLoS_bio.sqlite")
+    #local("sqlitebrowser data_sql/PLoS_bio.sqlite")
+    local("sqlitebrowser data_parsed/PLoS_bio.sqlite")
 
 def test():
     clean()

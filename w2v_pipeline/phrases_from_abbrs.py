@@ -148,10 +148,10 @@ if __name__ == "__main__":
     target_columns = config["target_columns"]
 
     import_config = simple_config.load("import_data")
-    data_dir     = import_config["output_data_directory"]
+    input_data_dir = import_config["output_data_directory"]
     input_table = import_config["output_table"]
     
-    F_SQL = grab_files("*.sqlite", data_dir)
+    F_SQL = grab_files("*.sqlite", input_data_dir)
 
     ABR = collections.Counter()
     P = parenthesis_nester()

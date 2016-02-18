@@ -65,7 +65,7 @@ def import_directory_csv(d_in, d_out, output_table):
     if _PARALLEL:
         import multiprocessing
         P = multiprocessing.Pool()
-        ITR = P.imap(load_csv, F_CSV)
+        ITR = P.imap(load_csv, F_CSV, chunksize=10)
 
     # Create the output directory if needed
     mkdir(d_out)
