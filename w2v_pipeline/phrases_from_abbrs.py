@@ -118,14 +118,14 @@ def dedupe_abbr(ABR):
             if p1.lower() == p2.lower():
                 data[save_key2] = c1+c2
                 FLAG_continue = True
-                print "Merging case '{}', '{}'".format(p1, p2)
+                #print "Merging case '{}', '{}'".format(p1, p2)
                 break
 
             # If phrase without trailing 's' matches, merge
             if p1.rstrip('s') == p2.rstrip('s'):
                 data[save_key2] = c1+c2
                 FLAG_continue = True
-                print "Merging plural '{}', '{}'".format(p1, p2)
+                #print "Merging plural '{}', '{}'".format(p1, p2)
                 break
 
         if FLAG_continue: continue
@@ -143,9 +143,9 @@ if __name__ == "__main__":
     config = simple_config.load("phrase_identification")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
+    output_dir = config["output_data_directory"]
 
     target_columns = config["target_columns"]
-
 
     import_config = simple_config.load("import_data")
     data_dir     = import_config["output_data_directory"]
@@ -161,7 +161,6 @@ if __name__ == "__main__":
     if _PARALLEL:
         import multiprocessing
         MP = multiprocessing.Pool()
-
 
     FILE_COL_ITR = itertools.product(F_SQL, target_columns)
 
@@ -197,8 +196,10 @@ if __name__ == "__main__":
     # Convert the list to a dataframe for insert
     df = pd.DataFrame(data_insert, 
                       columns=("phrase","abbr","count"))
-    
-    engine = create_engine('sqlite:///'+config["f_abbreviations"])
+
+    mkdir(output_dir)
+    f_sql = os.path.join(output_dir, config["f_abbreviations"])
+    engine = create_engine('sqlite:///'+f_sql)
 
     # Save the abbrs to a table
     df.to_sql(config["output_table"],
