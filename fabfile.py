@@ -25,7 +25,6 @@ def test():
 
     local("python w2v_pipeline/compute.py")
 
-    #local("python w2v_pipeline/compute_features.py")
     #local("python w2v_pipeline/compute_kSVD.py")
     #local("python w2v_pipeline/compute_scores.py")
 

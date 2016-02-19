@@ -44,18 +44,18 @@ if __name__ == "__main__":
 
 
     # Fill the pipeline with function objects
-    compute_functions = []
-    for name in config["commands"]:
+    mapreduce_functions = []
+    for name in config["mapreduce_commands"]:
         obj  = getattr(mb,name)
 
         # Load any kwargs in the config file
         kwargs = {}
         if name in config:
             kwargs = config[name]
-        compute_functions.append( obj(**kwargs) )
+        mapreduce_functions.append( obj(**kwargs) )
 
 
-    for func in compute_functions:
+    for func in mapreduce_functions:
 
         INPUT_ITR = item_iterator()
         
@@ -70,6 +70,28 @@ if __name__ == "__main__":
             func.reduce(result)
 
         func.save(config)
+
+
+    # Fill the pipeline with function objects
+    globaldata_functions = []
+    for name in config["globaldata_commands"]:
+        obj  = getattr(mb,name)
+
+        # Load any kwargs in the config file
+        kwargs = {}
+        if name in config:
+            kwargs = config[name]
+        globaldata_functions.append( obj(**kwargs) )
+
+
+    for func in globaldata_functions:
+        func.set_iterator_function(item_iterator)
+
+        func.compute()
+        func.save(config)
+        print func
+        exit()
+
 
 
 
