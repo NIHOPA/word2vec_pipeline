@@ -1,13 +1,36 @@
 import sqlite3, glob, os, itertools
-from utils.db_utils import database_iterator
 from utils.os_utils import mkdir
-import preprocessing as pre
+import model_building as mb
+from utils.db_utils import database_iterator
+import simple_config
 
 global_limit = 0
 
-def dispatcher(item):
-    idx,x  = item
-    return idx, reduce(lambda x, f: f(x), parser_functions, x)
+def item_iterator():
+
+    parse_config = simple_config.load("parse")
+    input_data_dir = parse_config["output_data_directory"]
+    
+    F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
+    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+    
+    for f_sql, target_col in DB_ITR:
+        print "Computing {}:{}".format(f_sql, target_col)
+        
+        conn = sqlite3.connect(f_sql, check_same_thread=False)
+
+        args = {
+            "column_name":"text",
+            "table_name" :target_col,
+            "conn":conn,
+            "limit":global_limit,
+        }
+            
+        INPUT_ITR = database_iterator(**args)
+
+        for idx,text in INPUT_ITR:
+            yield (text,idx,f_sql)
+
 
 if __name__ == "__main__":
 
@@ -20,8 +43,38 @@ if __name__ == "__main__":
         import multiprocessing
 
 
-    print config["commands"]
+    # Fill the pipeline with function objects
+    compute_functions = []
+    for name in config["commands"]:
+        obj  = getattr(mb,name)
+
+        # Load any kwargs in the config file
+        kwargs = {}
+        if name in config:
+            kwargs = config[name]
+        compute_functions.append( obj(**kwargs) )
+
+
+    for func in compute_functions:
+
+        INPUT_ITR = item_iterator()
+        
+        if _PARALLEL:
+            MP = multiprocessing.Pool()
+            ITR = MP.imap(func, INPUT_ITR, chunksize=200)
+        else:
+            ITR = itertools.imap(func, INPUT_ITR)
+
+        for item in ITR:            
+            result,idx,f_sql = item
+            func.reduce(result)
+
+        func.save(config)
+
+
+
     exit()
+
 
     #import_config = simple_config.load("import_data")
     #input_data_dir = import_config["output_data_directory"]
@@ -29,17 +82,6 @@ if __name__ == "__main__":
 
     mkdir(output_dir)
 
-    # Fill the pipeline with function objects
-    parser_functions = []
-    for name in config["pipeline"]:
-        obj  = getattr(pre,name)
-
-        # Load any kwargs in the config file
-        kwargs = {}
-        if name in config:
-            kwargs = config[name]
-
-        parser_functions.append( obj(**kwargs) )
 
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
