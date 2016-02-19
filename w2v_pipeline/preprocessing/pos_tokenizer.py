@@ -26,7 +26,7 @@ class pos_tokenizer(object):
             "modal_verb"  : ["MD"],
             "verb"        : ["VB","VBZ","VBP","VBD","VBG","VBN"],
             "w_word"      : ["WDT","WP","WP$","WRB","EX"],
-            "unknown"     : ["FW"],
+            "unknown"     : ["FW", "``"],
         }
 
         self.filtered_POS = POS_blacklist
@@ -63,7 +63,7 @@ class pos_tokenizer(object):
                 try:
                     pos = self.POS_map[tag]
                 except:
-                    print "UNKNOWN POS", tag
+                    print "UNKNOWN POS *{}*".format(tag)
                     pos = "unknown"
 
                 if pos in self.filtered_POS:
