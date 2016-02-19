@@ -1,6 +1,9 @@
 from gensim.models.word2vec import Word2Vec
 from mapreduce import simple_mapreduce
 
+import psutil
+CPU_CORES = psutil.cpu_count()
+
 class w2v_embedding(simple_mapreduce):
 
     def set_iterator_function(self, iter_func):
@@ -17,14 +20,15 @@ class w2v_embedding(simple_mapreduce):
     def __init__(self,*args,**kwargs):
         super(w2v_embedding, self).__init__(*args,**kwargs)
 
-        self.epoch_n = 1
+        self.epoch_n = int(kwargs["epoch_n"])
 
-        self.clf = Word2Vec(workers=8,
-                            window=5,
-                            negative=5,
-                            sample=1e-5,
-                            size=200,
-                            min_count=30)
+        self.clf = Word2Vec(workers=CPU_CORES,
+                            window =int(kwargs["window"]),
+                            negative=int(kwargs["negative"]),
+                            sample=float(kwargs["sample"]),
+                            size=int(kwargs["size"]),
+                            min_count=int(kwargs["min_count"])
+        )
         
 
     def compute(self, config):

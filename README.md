@@ -7,13 +7,14 @@
     [x] compute pipeline
     [ ] plots
     [ ] clustering
+    [ ] k-svd
     [ ] predicting w/cross-validation
 
 ### Small bugs
 
     [ ] UNKNOWN POS `` error?
     [ ] parallize scoring
-    [ ] bring arguments into w2v_embedding    
+    [x] bring arguments into w2v_embedding    
 
 ### Summary
 

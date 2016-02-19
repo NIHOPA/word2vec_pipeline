@@ -22,8 +22,8 @@ def test():
     local("python w2v_pipeline/import.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")
     local("python w2v_pipeline/parse.py")
-
     local("python w2v_pipeline/compute.py")
+    
     #local("python w2v_pipeline/compute_kSVD.py")
 
 def clean():
