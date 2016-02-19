@@ -6,11 +6,6 @@ import h5py
 from gensim.models.word2vec import Word2Vec
 from mapreduce import simple_mapreduce
 
-#import multiprocessing_on_dill
-#exit()
-
-
-
 class document_scores(simple_mapreduce):
 
     def set_iterator_function(self, iter_func):

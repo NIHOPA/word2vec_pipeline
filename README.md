@@ -1,4 +1,19 @@
-# Pipeline
+# Improved Pipeline!
+
+## To do
+
+    [x] import pipeline
+    [x] parse pipeline
+    [x] compute pipeline
+    [ ] plots
+    [ ] clustering
+    [ ] predicting w/cross-validation
+
+### Small bugs
+
+    [ ] UNKNOWN POS `` error?
+    [ ] parallize scoring
+    [ ] bring arguments into w2v_embedding    
 
 ### Summary
 

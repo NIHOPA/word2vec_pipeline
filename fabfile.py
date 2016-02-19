@@ -24,11 +24,9 @@ def test():
     local("python w2v_pipeline/parse.py")
 
     local("python w2v_pipeline/compute.py")
-
     #local("python w2v_pipeline/compute_kSVD.py")
-    #local("python w2v_pipeline/compute_scores.py")
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
-    local("rm -rf data_sql data_parsed")
+    local("rm -rf data_sql data_parsed collated")
 

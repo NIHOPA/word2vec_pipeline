@@ -42,7 +42,6 @@ if __name__ == "__main__":
     if _PARALLEL:
         import multiprocessing
 
-
     ###########################################################
     # Fill the pipeline with function objects
 
@@ -74,8 +73,8 @@ if __name__ == "__main__":
         func.save(config)
 
     ###########################################################
-    # Fill the pipeline with function objects
-    globaldata_functions = []
+    # Run the functions that act globally on the data
+
     for name in config["globaldata_commands"]:
         obj  = getattr(mb,name)
 
@@ -83,9 +82,7 @@ if __name__ == "__main__":
         kwargs = config
         if name in config:
             kwargs.update(config[name])
-        globaldata_functions.append( obj(**kwargs) )
-
-
-    for func in globaldata_functions:
+            
+        func = obj(**kwargs)
         func.set_iterator_function(item_iterator)
         func.compute(config)        
