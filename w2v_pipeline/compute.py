@@ -8,8 +8,7 @@ global_limit = 0
 
 def item_iterator():
 
-    parse_config = simple_config.load("parse")
-    input_data_dir = parse_config["output_data_directory"]
+    input_data_dir = simple_config.load("parse")["output_data_directory"]
     
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
     DB_ITR = itertools.product(F_SQL, config["target_columns"])

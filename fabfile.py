@@ -26,14 +26,16 @@ def compute():
 def parse():
     local("python w2v_pipeline/parse.py")
 
+def predict():
+    local("python w2v_pipeline/predict.py")
+
 def test():
     clean()
     
     _import()
     parse()
     compute()
-    
-    #local("python w2v_pipeline/compute_kSVD.py")
+    predict()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
