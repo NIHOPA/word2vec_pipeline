@@ -6,11 +6,15 @@ CPU_CORES = psutil.cpu_count()
 
 class w2v_embedding(simple_mapreduce):
 
-    def set_iterator_function(self, iter_func):
+    def set_iterator_function(self, iter_func, *args):
         self.iter_func = iter_func
+        self.iter_args = args
+
+    def get_iterator_function(self):
+        return self.iter_func(*self.iter_args)
 
     def sentence_iterator(self):
-        for item in self.iter_func():
+        for item in self.get_iterator_function():
             text,idx,f_sql = item
             yield text.split()
 

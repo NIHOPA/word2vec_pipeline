@@ -6,11 +6,27 @@ import simple_config
 
 global_limit = 0
 
-def item_iterator(**kwargs):
+def item_iterator(cmd_config=None):
 
-    input_data_dir = simple_config.load("parse")["output_data_directory"]
+    compute_config = simple_config.load("compute")
+    input_data_dir = compute_config["input_data_directory"]
     
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
+
+    # If there is a whitelist only keep the matching filename
+    if "command_whitelist" in cmd_config:
+
+        whitelist = cmd_config["command_whitelist"]
+        assert(type(whitelist)==list)
+
+        F_SQL2 = set()
+        for f_sql in F_SQL:
+            for token in whitelist:
+                if token in f_sql:
+                    F_SQL2.add(f_sql)
+        F_SQL = F_SQL2
+
+    
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
     
     for f_sql, target_col in DB_ITR:
@@ -52,11 +68,13 @@ if __name__ == "__main__":
         kwargs = {}
         if name in config:
             kwargs = config[name]
-        mapreduce_functions.append( obj(**kwargs) )
 
-    for func in mapreduce_functions:
+        val = name, obj(**kwargs)
+        mapreduce_functions.append(val)
 
-        INPUT_ITR = item_iterator()
+    for name, func in mapreduce_functions:
+
+        INPUT_ITR = item_iterator(config[name])
         
         if _PARALLEL:
             MP = multiprocessing.Pool()
@@ -82,5 +100,5 @@ if __name__ == "__main__":
             kwargs.update(config[name])
             
         func = obj(**kwargs)
-        func.set_iterator_function(item_iterator)
+        func.set_iterator_function(item_iterator,config[name])
         func.compute(config)        
