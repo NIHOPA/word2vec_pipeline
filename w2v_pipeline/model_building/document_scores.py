@@ -126,15 +126,15 @@ class document_scores(simple_mapreduce):
         else:
             h5 = h5py.File(f_db,'r+')
 
-        for key,V in df.groupby("f_sql"):
+        for key,data_group in df.groupby("f_sql"):
 
             # Save into the group of the base file name
             name = '.'.join(os.path.basename(key).split('.')[:-1])
             
             g  = h5.require_group(method)
 
+            V = np.array(data_group["V"].tolist())
             print "Saving", name, method, V.shape
-            V = np.array(V.sort_values("idx")["V"].tolist())
             
             if name in g:
                 del g[name]
