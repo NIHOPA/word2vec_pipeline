@@ -2,7 +2,7 @@ import predictions as pred
 import numpy as np
 import pandas as pd
 import h5py
-import os, glob, itertools
+import os, glob, itertools, collections
 from sqlalchemy import create_engine
 
 from predictions import categorical_predict
@@ -53,8 +53,13 @@ if __name__ == "__main__":
 
         Y = np.hstack(Y)
 
+        # Determine the baseline prediction
+        y_counts = collections.Counter(Y).values()
+        baseline_score = max(y_counts) / float(sum(y_counts))
+
         # Predict
         scores = categorical_predict(X,Y)
 
-        text = "Predicting [{}] [{}] {:0.4f}"
-        print text.format(method, column, scores.mean())
+        text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
+        print text.format(method, column,
+                          scores.mean(), baseline_score)
