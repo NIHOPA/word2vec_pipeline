@@ -136,8 +136,8 @@ class document_scores(simple_mapreduce):
             print "Saving", name, method, V.shape
             V = np.array(V.sort_values("idx")["V"].tolist())
             
-            if method in g:
-                del g[method]
+            if name in g:
+                del g[name]
 
             g.create_dataset(name,
                              data=V,

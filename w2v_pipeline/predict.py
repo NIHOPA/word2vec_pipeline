@@ -58,7 +58,7 @@ if __name__ == "__main__":
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores = categorical_predict(X,Y)
+        scores = categorical_predict(X,Y,config)
 
         text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
         print text.format(method, column,

@@ -16,17 +16,28 @@ def view():
     #local("sqlitebrowser data_sql/PLoS_bio.sqlite")
     local("sqlitebrowser data_parsed/PLoS_bio.sqlite")
 
+def _import():
+    local("python w2v_pipeline/import.py")
+    local("python w2v_pipeline/phrases_from_abbrs.py")  
+
+def compute():
+    local("python w2v_pipeline/compute.py")
+
+def parse():
+    local("python w2v_pipeline/parse.py")
+
 def test():
     clean()
     
-    local("python w2v_pipeline/import.py")
-    local("python w2v_pipeline/phrases_from_abbrs.py")
-    local("python w2v_pipeline/parse.py")
-    local("python w2v_pipeline/compute.py")
+    _import()
+    parse()
+    compute()
     
     #local("python w2v_pipeline/compute_kSVD.py")
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local("rm -rf data_sql data_parsed collated")
+
+    
 
