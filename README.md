@@ -5,16 +5,19 @@
     [x] import pipeline
     [x] parse pipeline
     [x] compute pipeline
+    [x] predicting w/cross-validation    
     [ ] plots
     [ ] clustering
     [ ] k-svd
-    [ ] predicting w/cross-validation
 
 ### Small bugs
-
-    [ ] UNKNOWN POS `` error?
+   
+    [ ] allow other classifiers 
+    [ ] bring arguments into predict
     [ ] parallize scoring
-    [x] bring arguments into w2v_embedding    
+    [x] bring arguments into w2v_embedding
+    [x] UNKNOWN POS `` error?
+
 
 ### Summary
 
