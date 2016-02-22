@@ -93,10 +93,14 @@ if __name__ == "__main__":
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
-    data_in  = config["input_data_directory"]
     data_out = config["output_data_directory"]
     output_table = config["output_table"]
 
-    import_directory_csv(data_in, data_out, output_table)
+    # Require `input_data_directories` to be a list
+    data_in_list  = config["input_data_directories"]
+    assert(type(data_in_list) == list)
+  
+    for d_in in data_in_list:
+        import_directory_csv(d_in, data_out, output_table)
 
 

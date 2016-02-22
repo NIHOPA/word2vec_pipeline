@@ -6,7 +6,7 @@ import simple_config
 
 global_limit = 0
 
-def item_iterator():
+def item_iterator(**kwargs):
 
     input_data_dir = simple_config.load("parse")["output_data_directory"]
     
@@ -53,7 +53,6 @@ if __name__ == "__main__":
         if name in config:
             kwargs = config[name]
         mapreduce_functions.append( obj(**kwargs) )
-
 
     for func in mapreduce_functions:
 
