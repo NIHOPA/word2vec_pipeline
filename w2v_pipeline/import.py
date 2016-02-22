@@ -80,8 +80,7 @@ def import_directory_csv(d_in, d_out, output_table):
                   if_exists='replace')
 
         print "Finished", f_csv
-
-
+        print df.describe()
 
 
 if __name__ == "__main__":
