@@ -33,6 +33,9 @@ def load_csv(f_csv):
     df = pd.read_csv(f_csv)
     df = clean_dataframe(df)
 
+    # Add the filename as a column
+    df["input_filename"] = f_csv
+
     return f_csv, df
 
 def import_directory_csv(d_in, d_out, output_table):

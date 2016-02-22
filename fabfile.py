@@ -1,6 +1,6 @@
 from fabric.api import local
 
-target = "w2v_pipeline/compute_scores.py -f"
+target = "w2v_pipeline/predict.py"
 
 def push():
     local('git commit -a')

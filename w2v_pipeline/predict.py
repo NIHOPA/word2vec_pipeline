@@ -1,0 +1,60 @@
+import predictions as pred
+import numpy as np
+import pandas as pd
+import h5py
+import os, glob, itertools
+from sqlalchemy import create_engine
+
+from predictions import categorical_predict
+
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load("predict")
+    
+    #_PARALLEL = config.as_bool("_PARALLEL")
+    #_FORCE = config.as_bool("_FORCE")
+    #pred.predict_column(None,None)
+
+    f_h5 = config["f_db_scores"]
+    h5 = h5py.File(f_h5,'r')
+
+    methods = h5.keys()
+
+    pred_dir = config["predict_target_directory"]
+
+    input_glob  = os.path.join(pred_dir,'*')
+    input_files = glob.glob(input_glob)
+    input_names = ['.'.join(os.path.basename(x).split('.')[:-1])
+                   for x in input_files]
+
+    ITR = itertools.product(methods, config["categorical_columns"])
+
+    for (method, column) in ITR:
+
+        # Make sure every file has been scored
+        for f in input_names:
+            assert(f in h5[method])
+
+        # Load document score data
+        X = np.vstack([h5[method][name][:]
+                       for name in input_names])
+
+        # Load the categorical columns
+        Y = []
+        for name in input_names:
+            f_sql = os.path.join(pred_dir,name) + '.sqlite'
+            engine = create_engine('sqlite:///'+f_sql)
+            df = pd.read_sql_table("original",engine,
+                                   columns=[column,])
+            y = df[column].values
+            Y.append(y)
+
+        Y = np.hstack(Y)
+
+        # Predict
+        scores = categorical_predict(X,Y)
+
+        text = "Predicting [{}] [{}] {:0.4f}"
+        print text.format(method, column, scores.mean())

@@ -101,35 +101,45 @@ class document_scores(simple_mapreduce):
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
                     
-            ITR = itertools.imap(self.score_document, self.iter_func())
+            ITR = itertools.imap(self.score_document,
+                                 self.iter_func())
+            
             data = []
             for k,result in enumerate(ITR):
                 data.append(result)
 
-            self.df = pd.DataFrame(data=data,
-                                   columns=["V","idx","f_sql"])      
+            df = pd.DataFrame(data=data,
+                              columns=["V","idx","f_sql"])
 
-    def save(self, config):
+            self.save(config, df)
+
+    def save(self, config, df):
 
         method = self.current_method
 
-        print "Saving the scored documents"       
+        print "Saving the scored documents"
         f_db = config["document_scores"]["f_db"]
+
+        # Create the h5 file if it doesn't exist
         if not os.path.exists(f_db):
             h5 = h5py.File(f_db,'w')
         else:
             h5 = h5py.File(f_db,'r+')
 
-        for key,V in self.df.groupby("f_sql"):
+        for key,V in df.groupby("f_sql"):
+
+            # Save into the group of the base file name
+            name = '.'.join(os.path.basename(key).split('.')[:-1])
             
-            g  = h5.require_group(key)
+            g  = h5.require_group(method)
 
-            V = np.array(self.df.sort_values("idx")["V"].tolist())
-
+            print "Saving", name, method, V.shape
+            V = np.array(V.sort_values("idx")["V"].tolist())
+            
             if method in g:
                 del g[method]
 
-            g.create_dataset(method,
+            g.create_dataset(name,
                              data=V,
                              compression='gzip')
 
