@@ -8,11 +8,6 @@ from mapreduce import corpus_iterator
 
 class document_scores(corpus_iterator):
 
-    def sentence_iterator(self):
-        for item in self:
-            text,idx,f_sql = item
-            yield text.split()
-
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
 
