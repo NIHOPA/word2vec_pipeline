@@ -20,8 +20,8 @@ def _import():
     local("python w2v_pipeline/import.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")  
 
-def compute():
-    local("python w2v_pipeline/compute.py")
+def train():
+    local("python w2v_pipeline/train.py")
 
 def parse():
     local("python w2v_pipeline/parse.py")
