@@ -33,17 +33,22 @@ if __name__ == "__main__":
 
     for (method, column) in ITR:
 
-        # Make sure every file has been scored
+        # Make sure every file has been scored or skip it.
+        saved_input_names = []
         for f in input_names:
-            assert(f in h5[method])
+            if f not in h5[method]:
+                msg = "'{}' not in {}:{} skipping"
+                print msg.format(f,method,column)
+                continue
+            saved_input_names.append(f)
 
         # Load document score data
         X = np.vstack([h5[method][name][:]
-                       for name in input_names])
+                       for name in saved_input_names])
 
         # Load the categorical columns
         Y = []
-        for name in input_names:
+        for name in saved_input_names:
             f_sql = os.path.join(pred_dir,name) + '.sqlite'
             engine = create_engine('sqlite:///'+f_sql)
             df = pd.read_sql_table("original",engine,
