@@ -14,7 +14,8 @@
    
     [ ] allow other classifiers 
     [ ] bring arguments into predict
-    [ ] parallize scoring
+    [ ] parallelize scoring
+    [x] allow for multiple directories for dataset
     [x] bring arguments into w2v_embedding
     [x] UNKNOWN POS `` error?
 
