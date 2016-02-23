@@ -8,8 +8,8 @@ global_limit = 0
 
 def item_iterator(cmd_config=None):
 
-    compute_config = simple_config.load("compute")
-    input_data_dir = compute_config["input_data_directory"]
+    train_config = simple_config.load("train")
+    input_data_dir = train_config["input_data_directory"]
     
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
 
@@ -50,7 +50,7 @@ def item_iterator(cmd_config=None):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("compute")
+    config = simple_config.load("train")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
