@@ -4,19 +4,12 @@ import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
-from mapreduce import simple_mapreduce
+from mapreduce import corpus_iterator
 
-class document_scores(simple_mapreduce):
-
-    def set_iterator_function(self, iter_func, *args):
-        self.iter_func = iter_func
-        self.iter_args = args
-
-    def get_iterator_function(self):
-        return self.iter_func(*self.iter_args)
+class document_scores(corpus_iterator):
 
     def sentence_iterator(self):
-        for item in self.get_iterator_function():
+        for item in self:
             text,idx,f_sql = item
             yield text.split()
 
@@ -105,8 +98,7 @@ class document_scores(simple_mapreduce):
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
                     
-            ITR = itertools.imap(self.score_document,
-                                 self.get_iterator_function())
+            ITR = itertools.imap(self.score_document, self)
             
             data = []
             for k,result in enumerate(ITR):
