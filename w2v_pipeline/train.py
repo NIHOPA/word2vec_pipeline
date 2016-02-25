@@ -1,4 +1,4 @@
-import sqlite3, glob, os, itertools
+import sqlite3, glob, os, itertools, random
 from utils.os_utils import mkdir
 import model_building as mb
 from utils.db_utils import database_iterator
@@ -26,7 +26,9 @@ def item_iterator(cmd_config=None):
                     F_SQL2.add(f_sql)
         F_SQL = F_SQL2
 
-    
+    # Randomize the order of the input files
+    F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
+   
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
     
     for f_sql, target_col in DB_ITR:
@@ -39,6 +41,7 @@ def item_iterator(cmd_config=None):
             "table_name" :target_col,
             "conn":conn,
             "limit":global_limit,
+            "shuffle":False,
         }
             
         INPUT_ITR = database_iterator(**args)

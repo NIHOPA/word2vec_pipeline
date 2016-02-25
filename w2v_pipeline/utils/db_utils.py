@@ -1,10 +1,11 @@
-import sqlite3
+import sqlite3, random
 
 def database_iterator(
         column_name,
         table_name,
         conn,
-        verbose=False, 
+        verbose=False,
+        shuffle=False,
         limit=0,
         offset=0,
 ):
@@ -19,10 +20,18 @@ def database_iterator(
         raise SyntaxError(msg)
 
     cursor = conn.execute(cmd)
-    for k,item in enumerate(cursor):
-        if verbose and k and k%10000==0:
-            print k
-        yield item
+    
+    # If shuffle is true, load the entire set selection into memory, then
+    # give permuted results
+    if shuffle:
+        results = cursor.fetchall()
+        random.shuffle(results)
+        for k,item in enumerate(results):
+            yield item
+    else:
+        for k,item in enumerate(cursor):
+            yield item
+
 
 
 def pretty_counter(C,min_count=1):
