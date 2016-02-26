@@ -9,29 +9,26 @@ def random_hypersphere_point(dim):
     pts = np.random.normal(size=dim)
     return pts / np.linalg.norm(pts)
 
-h5 = h5py.File("collated/document_scores.h5",'r')
-X2 = h5["unique"]["PLoS_bio"][:]
-dist2 = pdist(X2[1000:2000],metric='cosine')
-
 #exit()
 from gensim.models.word2vec import Word2Vec
 f_features = "collated/w2v.h5"
 clf = Word2Vec.load(f_features)
-X1 = clf.syn0
-
-
-X1 = X1[1000:2000]
-dist1 = pdist(X1,metric='cosine')
-n,dim = X1.shape
-print X1.shape
+X_word = clf.syn0[1000:2000]
+dist_word = pdist(X_word,metric='cosine')
+n,dim = X_word.shape
+print X_word.shape
 
 rand_pts = [random_hypersphere_point(dim) for _ in xrange(n)]
 dist_rand = pdist(rand_pts,metric='cosine')
 
+h5 = h5py.File("collated/document_scores.h5",'r')
+X_doc = h5["unique"]["PLoS_bio"]
+dist_doc = pdist(X_doc[1000:2000],metric='cosine')
+
 
 import seaborn as sns
-sns.distplot(dist1, label="word tokens")
-sns.distplot(dist2, label="w2vec document sums")
+sns.distplot(dist_word, label="word tokens")
+sns.distplot(dist_doc, label="w2vec document sums")
 sns.distplot(dist_rand, label="random points")
 sns.plt.legend()
 sns.plt.show()
