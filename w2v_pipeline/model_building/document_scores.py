@@ -46,17 +46,17 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["unique"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple"]:
+        elif method in ["simple",]:
             weights = dict([(w,local_counts[w]) for w in tokens])
         elif method in ["TF_IDF","kSVD"]:
             weights = dict([(w,IDF[w]*c) 
                             for w,c in local_counts.items()])
         else:
-            msg = "UNKNOWN w2v method '{}'".format(method)
+            msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","TF_IDF"]:
+        if method in ["unique","simple","TF_IDF",]:
             DV = [self.M[w] for w in tokens]
         elif method in ["kSVD"]:
             word_idx = [self.word2index[w] for w in tokens]

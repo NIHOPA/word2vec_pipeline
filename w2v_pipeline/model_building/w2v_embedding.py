@@ -16,7 +16,7 @@ class w2v_embedding(corpus_iterator):
                             negative=int(kwargs["negative"]),
                             sample=float(kwargs["sample"]),
                             size=int(kwargs["size"]),
-                            min_count=int(kwargs["min_count"])
+                            min_count=int(kwargs["min_count"]),
         )
         
 

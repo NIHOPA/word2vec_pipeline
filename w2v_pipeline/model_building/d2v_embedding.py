@@ -7,9 +7,7 @@ CPU_CORES = psutil.cpu_count()
 import gensim.models
 assert gensim.models.doc2vec.FAST_VERSION > -1
 
-class d2v_embedding(corpus_iterator):
-
-    
+class d2v_embedding(corpus_iterator):   
 
     def __init__(self,*args,**kwargs):
         super(d2v_embedding, self).__init__(*args,**kwargs)
