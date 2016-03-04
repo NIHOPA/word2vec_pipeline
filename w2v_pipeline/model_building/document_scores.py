@@ -11,6 +11,10 @@ class document_scores(corpus_iterator):
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
 
+        # Load the affinity model
+        h5_aff = h5py.File(kwargs["f_affinity"],'r')
+        self.AFF = h5_aff["affinity_vectors"][:]
+
          # Load the model from disk
         self.M = Word2Vec.load(kwargs["f_w2v"])       
         self.shape = self.M.syn0.shape
@@ -46,18 +50,20 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["unique"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple",]:
+        elif method in ["simple"]:
             weights = dict([(w,local_counts[w]) for w in tokens])
         elif method in ["TF_IDF","kSVD"]:
             weights = dict([(w,IDF[w]*c) 
                             for w,c in local_counts.items()])
+        elif method in ["affinity"]:
+            weights = None
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","TF_IDF",]:
-            DV = [self.M[w] for w in tokens]
+        if method in ["unique","simple","TF_IDF","affinity"]:
+            DV = np.array([self.M[w] for w in tokens])
         elif method in ["kSVD"]:
             word_idx = [self.word2index[w] for w in tokens]
             DV = [self.kSVD_gamma[n] for n in word_idx]
@@ -65,12 +71,17 @@ class document_scores(corpus_iterator):
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
-        # Build the weight matrix
-        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-        DV = np.array(DV)
+        if method in ["affinity"]:
+            # THIS IS WRONG, HOW DO WE PROJECT TO ONLY ONE...?
+            doc_vec = self.AFF.dot(DV.T).mean(axis=1).shape
 
-        # Sum all the vectors with their weights
-        doc_vec = (W*DV).sum(axis=0)        
+        else:
+            # Build the weight matrix
+            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+            DV = np.array(DV)
+
+            # Sum all the vectors with their weights
+            doc_vec = (W*DV).sum(axis=0)        
         
         # Renormalize onto the hypersphere
         doc_vec /= np.linalg.norm(doc_vec)
