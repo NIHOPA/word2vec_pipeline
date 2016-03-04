@@ -7,7 +7,9 @@ import sklearn.ensemble
 def categorical_predict(X,y_org,config):
 
     # Make sure the sizes match
-    assert( X.shape[0] == y_org.shape[0] )
+    msg = "X shape {}, y_org shape {} (mismatch!)"
+    assert X.shape[0] == y_org.shape[0], msg.format(X.shape[0],
+                                                    y_org.shape[0])
 
     enc = LabelEncoder()
     y = enc.fit_transform(y_org)
