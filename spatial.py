@@ -43,6 +43,13 @@ print X_word.shape
 rand_pts = [random_hypersphere_point(dim) for _ in xrange(n)]
 dist_rand = pdist(rand_pts,metric='cosine')
 
+print dist_rand.max()
+print dist_word.max()
+import itertools
+for x,y in itertools.product(rand_pts,repeat=2):
+    print 1-x.dot(y)/np.linalg.norm(x)/np.linalg.norm(y)
+exit()
+
 h5 = h5py.File("collated/document_scores.h5",'r')
 X_doc = h5["unique"]["PLoS_bio"]
 dist_doc = pdist(X_doc[low_cut:high_cut],metric='cosine')
