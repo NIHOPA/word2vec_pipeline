@@ -34,7 +34,7 @@ def test():
     
     _import()
     parse()
-    compute()
+    train()
     predict()
 
 def clean():

@@ -33,7 +33,6 @@ def database_iterator(
             yield item
 
 
-
 def pretty_counter(C,min_count=1):
     for item in C.most_common():
         (phrase, abbr),count = item

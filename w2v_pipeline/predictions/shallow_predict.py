@@ -4,7 +4,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import cross_val_score
 import sklearn.ensemble 
 
-def categorical_predict(X,y_org,config):
+def categorical_predict(X,y_org,method_name,config):
 
     # Make sure the sizes match
     msg = "X shape {}, y_org shape {} (mismatch!)"
@@ -14,7 +14,8 @@ def categorical_predict(X,y_org,config):
     enc = LabelEncoder()
     y = enc.fit_transform(y_org)
 
-    print " Number of unique entries in [y]", np.unique(y).shape[0]
+    msg = "[{}] number of unique entries in [y {}]: {}"
+    print msg.format(method_name, X.shape, np.unique(y).shape[0])
     
     clf_args = {
         "n_jobs" : -1,

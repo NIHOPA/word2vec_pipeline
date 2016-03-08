@@ -6,14 +6,12 @@ import h5py
 from gensim.models.word2vec import Word2Vec
 from mapreduce import corpus_iterator
 
+import tqdm
+
 class document_scores(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
-
-        # Load the affinity model
-        h5_aff = h5py.File(kwargs["f_affinity"],'r')
-        self.AFF = h5_aff["affinity_vectors"][:]
 
          # Load the model from disk
         self.M = Word2Vec.load(kwargs["f_w2v"])       
@@ -55,8 +53,6 @@ class document_scores(corpus_iterator):
         elif method in ["TF_IDF","kSVD"]:
             weights = dict([(w,IDF[w]*c) 
                             for w,c in local_counts.items()])
-        elif method in ["affinity"]:
-            weights = None
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
@@ -71,17 +67,16 @@ class document_scores(corpus_iterator):
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
-        if method in ["affinity"]:
-            # THIS IS WRONG, HOW DO WE PROJECT TO ONLY ONE...?
-            doc_vec = self.AFF.dot(DV.T).mean(axis=1).shape
+        #if method in ["affinity"]:
+        #    # THIS IS WRONG, HOW DO WE PROJECT TO ONLY ONE...?
+        #    #doc_vec = self.AFF.dot(DV.T).mean(axis=1).shape
 
-        else:
-            # Build the weight matrix
-            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-            DV = np.array(DV)
+        # Build the weight matrix
+        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+        DV = np.array(DV)
 
-            # Sum all the vectors with their weights
-            doc_vec = (W*DV).sum(axis=0)        
+        # Sum all the vectors with their weights
+        doc_vec = (W*DV).sum(axis=0)        
         
         # Renormalize onto the hypersphere
         doc_vec /= np.linalg.norm(doc_vec)
@@ -107,7 +102,7 @@ class document_scores(corpus_iterator):
             ITR = itertools.imap(self.score_document, self)
             
             data = []
-            for k,result in enumerate(ITR):
+            for result in tqdm.tqdm(ITR):
                 data.append(result)
 
             df = pd.DataFrame(data=data,

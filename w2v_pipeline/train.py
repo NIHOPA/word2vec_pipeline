@@ -15,8 +15,8 @@ def item_iterator(cmd_config=None):
 
     # If there is a whitelist only keep the matching filename
     if "command_whitelist" in cmd_config:
-
         whitelist = cmd_config["command_whitelist"]
+        
         assert(type(whitelist)==list)
 
         F_SQL2 = set()
@@ -26,12 +26,13 @@ def item_iterator(cmd_config=None):
                     F_SQL2.add(f_sql)
         F_SQL = F_SQL2
 
-    # Randomize the order of the input files
-    F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
-   
-    DB_ITR = itertools.product(F_SQL, config["target_columns"])
     
+    # Randomize the order of the input files
+    F_SQL = random.sample(sorted(F_SQL), len(F_SQL))  
+    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+
     for f_sql, target_col in DB_ITR:
+
         #print ("Computing {}:{}".format(f_sql, target_col))
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
@@ -46,8 +47,11 @@ def item_iterator(cmd_config=None):
             
         INPUT_ITR = database_iterator(**args)
 
+
         for idx,text in INPUT_ITR:
             yield (text,idx,f_sql)
+
+            #print f_sql, F_SQL, "PROBLEM HERE compbio never choosen"
 
 
 if __name__ == "__main__":

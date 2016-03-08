@@ -4,6 +4,8 @@ from mapreduce import corpus_iterator
 import psutil
 CPU_CORES = psutil.cpu_count()
 
+from tqdm import tqdm
+
 class w2v_embedding(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
@@ -26,8 +28,8 @@ class w2v_embedding(corpus_iterator):
         self.clf.build_vocab(ITR)
 
         print "Training the features"
-        for n in range(self.epoch_n):
-            print " - Epoch {}".format(n)
+        for n in tqdm(range(self.epoch_n)):
+            #print " - Epoch {}".format(n)
             ITR = self.sentence_iterator()
             self.clf.train(ITR)
 
