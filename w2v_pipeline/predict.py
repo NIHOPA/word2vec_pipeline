@@ -33,6 +33,8 @@ if __name__ == "__main__":
 
     for (method, column) in ITR:
 
+        #method = "simple"
+
         # Make sure every file has been scored or skip it.
         saved_input_names = []
         for f in input_names:
@@ -68,3 +70,5 @@ if __name__ == "__main__":
         text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
         print text.format(method, column,
                           scores.mean(), baseline_score)
+
+        #exit()

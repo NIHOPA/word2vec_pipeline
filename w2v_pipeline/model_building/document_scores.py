@@ -48,7 +48,7 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["unique"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple"]:
+        elif method in ["simple","svd_stack"]:
             weights = dict([(w,local_counts[w]) for w in tokens])
         elif method in ["TF_IDF","kSVD"]:
             weights = dict([(w,IDF[w]*c) 
@@ -58,7 +58,7 @@ class document_scores(corpus_iterator):
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","TF_IDF","affinity"]:
+        if method in ["unique","simple","TF_IDF","affinity","svd_stack"]:
             DV = np.array([self.M[w] for w in tokens])
         elif method in ["kSVD"]:
             word_idx = [self.word2index[w] for w in tokens]
@@ -76,13 +76,23 @@ class document_scores(corpus_iterator):
         DV = np.array(DV)
 
         # Sum all the vectors with their weights
-        doc_vec = (W*DV).sum(axis=0)        
-        
-        # Renormalize onto the hypersphere
-        doc_vec /= np.linalg.norm(doc_vec)
+        if method in ["simple","unique"]:
+            doc_vec = (W*DV).sum(axis=0)
 
-        # Sanity check, L1 norm
-        assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            # Renormalize onto the hypersphere
+            doc_vec /= np.linalg.norm(doc_vec)
+
+            # Sanity check, L1 norm
+            assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+
+        elif method in ["svd_stack"]:
+            n = 2
+            _U,_s,_V = np.linalg.svd(DV)
+            doc_vec = np.hstack([np.hstack(_V[:n]), _s[:n]])
+        else:
+            msg = "UNKNOWN w2v method '{}'".format(method)
+            raise KeyError(msg)
+        
 
         return doc_vec,idx,f_sql
 

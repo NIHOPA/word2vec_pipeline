@@ -81,7 +81,7 @@ class affinity_mapping(corpus_iterator):
         self._PARALLEL = ast.literal_eval(kwargs["_PARALLEL"])
 
         self.damping = float(kwargs["damping"])
-
+        
         if not os.path.exists(kwargs["f_affinity"]):
             h5 = h5py.File(kwargs["f_affinity"],'w')
             h5.close()
@@ -257,7 +257,7 @@ class affinity_grouping(corpus_iterator):
 
         if name in self.h5:
             del self.h5[name]
-            
+
         self.h5[name] = result
         
 #####################################################################
@@ -307,10 +307,13 @@ class affinity_scoring(affinity_mapping):
         super(affinity_scoring, self).__init__(*args,**kwargs)
         self.A = self.h5["clustered_affinity"][:]
 
+        global damping
+        damping = float(kwargs["affinity_grouping"]["damping"])
+
         global sparse_coder
         nzero = kwargs["n_nonzero_coeffs"]
         
-        sparse_coder = SparseCoder(self.A, split_sign=True,
+        sparse_coder = SparseCoder(self.A, split_sign=False,
                                    transform_n_nonzero_coefs=nzero)
 
         
@@ -352,9 +355,8 @@ class affinity_scoring(affinity_mapping):
 
             # Save into the group of the base file name
             name = '.'.join(os.path.basename(key).split('.')[:-1])
-            
-            g  = h5.require_group(method)
 
+            g  = h5.require_group(method)
             V = np.array(data_group["V"].tolist())
             print "Saving", name, method, V.shape
             
