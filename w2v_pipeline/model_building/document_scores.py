@@ -58,7 +58,7 @@ class document_scores(corpus_iterator):
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","TF_IDF","affinity","svd_stack"]:
+        if method in ["unique","simple","TF_IDF","svd_stack"]:
             DV = np.array([self.M[w] for w in tokens])
         elif method in ["kSVD"]:
             word_idx = [self.word2index[w] for w in tokens]
@@ -66,10 +66,6 @@ class document_scores(corpus_iterator):
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
-
-        #if method in ["affinity"]:
-        #    # THIS IS WRONG, HOW DO WE PROJECT TO ONLY ONE...?
-        #    #doc_vec = self.AFF.dot(DV.T).mean(axis=1).shape
 
         # Build the weight matrix
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)

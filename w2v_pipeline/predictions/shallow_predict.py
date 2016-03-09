@@ -15,8 +15,9 @@ def clf_extratree_predictor(item):
     clf.fit(X_train,y_train)
     
     pred   = clf.predict(X_test)
+    pred_proba = clf.predict_proba(X_test)
 
-    return clf,idx,pred
+    return idx,pred,pred_proba
 
 
 def categorical_predict(X,y_org,method_name,config):
@@ -29,8 +30,9 @@ def categorical_predict(X,y_org,method_name,config):
     enc = LabelEncoder()
     y = enc.fit_transform(y_org)
 
+    label_n = np.unique(y).shape[0]
     msg = "[{}] number of unique entries in [y {}]: {}"
-    print msg.format(method_name, X.shape, np.unique(y).shape[0])
+    print msg.format(method_name, X.shape, label_n)
     
     clf_args = {
         "n_jobs" : -1,
@@ -49,22 +51,27 @@ def categorical_predict(X,y_org,method_name,config):
     MP = multiprocessing.Pool()
     ITR = MP.imap(clf_extratree_predictor, INPUT_ITR)
 
+    error_counts   = np.zeros(y.size,dtype=float)
+    predict_scores = np.zeros([y.size,label_n],dtype=float)
+
     for result in ITR:
-        clf,idx,pred = result
+        idx,pred,pred_proba = result
         train_index, test_index = idx
 
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         
-        errors = y_test==pred
-        scores.append(errors.mean())
+        errors = y_test!=pred
+        
+        scores.append(1-errors.mean())        
+        error_counts[test_index[errors]] += 1
 
-    return np.array(scores)
+        predict_scores[test_index] = pred_proba
 
-    '''
-    CV_args = {
-        "cv" : int(config["cross_validation_folds"]),
-        "n_jobs" : 10,
-    }
-    scores = cross_val_score(clf,X,y,**CV_args)
-    '''
+    # For StratifiedKFold, each test set is hit only once
+    # so normalization is simple
+    error_counts /= 1.0
+
+    MP.close()
+        
+    return np.array(scores), error_counts, predict_scores

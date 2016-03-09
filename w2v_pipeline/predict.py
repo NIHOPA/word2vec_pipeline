@@ -7,21 +7,21 @@ from sqlalchemy import create_engine
 
 from predictions import categorical_predict
 
+ERROR_MATRIX = {}
+PREDICTIONS = {}
 
 if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load("predict")
-    
-    #_PARALLEL = config.as_bool("_PARALLEL")
-    #_FORCE = config.as_bool("_FORCE")
-    #pred.predict_column(None,None)
+
+    # For now, we can only deal with one column using meta!
+    assert(len(config["categorical_columns"])==1)
 
     f_h5 = config["f_db_scores"]
     h5 = h5py.File(f_h5,'r')
 
     methods = h5.keys()
-
     pred_dir = config["predict_target_directory"]
 
     input_glob  = os.path.join(pred_dir,'*')
@@ -32,8 +32,6 @@ if __name__ == "__main__":
     ITR = itertools.product(methods, config["categorical_columns"])
 
     for (method, column) in ITR:
-
-        #method = "simple"
 
         # Make sure every file has been scored or skip it.
         saved_input_names = []
@@ -65,10 +63,46 @@ if __name__ == "__main__":
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores = categorical_predict(X,Y,method,config)
+        scores,errors,pred = categorical_predict(X,Y,method,config)
 
         text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
         print text.format(method, column,
                           scores.mean(), baseline_score)
 
-        #exit()
+        PREDICTIONS[method] = pred
+        ERROR_MATRIX[method] = errors
+
+    # Build meta predictor
+    META_X = np.hstack([PREDICTIONS[method] for method
+                        in config["meta_methods"]])
+    
+    method = "meta"
+    scores,errors,pred = categorical_predict(META_X,Y,method,config)
+
+    text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
+    print text.format(method, column,
+                      scores.mean(), baseline_score)
+
+    PREDICTIONS[method] = pred
+    ERROR_MATRIX[method] = errors
+
+
+names = methods + ["meta",]
+df = pd.DataFrame(0, index=names,columns=names)
+
+max_offdiagonal = 0
+for na,nb in itertools.product(names,repeat=2):
+    if na!=nb:
+        idx = (ERROR_MATRIX[na]==0) * (ERROR_MATRIX[nb]==1)
+        max_offdiagonal = max(max_offdiagonal, idx.sum())
+    else:
+        idx = ERROR_MATRIX[na]==0
+
+    df[na][nb] = idx.sum()
+
+print df
+
+import seaborn as sns
+plt = sns.plt
+sns.heatmap(df,annot=True,vmin=0,vmax=1.2*max_offdiagonal,fmt="d")
+plt.show()
