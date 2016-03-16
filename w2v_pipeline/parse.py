@@ -6,8 +6,20 @@ import preprocessing as pre
 global_limit = 0
 
 def dispatcher(item):
-    idx,x  = item
-    return idx, reduce(lambda x, f: f(x), parser_functions, x)
+    idx,text  = item
+    meta = {}
+    
+    for f in parser_functions:
+        result = f(text)
+        text   = unicode(result)
+        
+        if hasattr(result,"meta"):
+            meta.update(result.meta)
+
+    # Convert the meta information into a unicode string for serialization
+    meta = unicode(meta)
+
+    return idx, text, meta
 
 if __name__ == "__main__":
 
@@ -72,15 +84,16 @@ if __name__ == "__main__":
         DROP TABLE IF EXISTS {table_name};
         CREATE TABLE IF NOT EXISTS {table_name} (
         [index] INTEGER PRIMARY KEY,
-        text STRING
+        text STRING,
+        meta STRING
         );
         '''.format(table_name=target_col)
         
         conn_out.executescript(cmd_create)
 
         cmd_insert = '''
-        INSERT INTO {table_name} ([index],text)
-        VALUES (?,?)
+        INSERT INTO {table_name} ([index],text,meta)
+        VALUES (?,?,?)
         '''.format(table_name=target_col)
 
         conn_out.executemany(cmd_insert, ITR)

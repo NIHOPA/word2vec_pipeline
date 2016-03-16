@@ -22,3 +22,16 @@ def word_tokenizer(raw):
     tokens = [w for s in sentences for w in s]
     
     return tokens
+
+class meta_text(object):
+    '''
+    Helper class to hold a unicode string with metadata.
+    '''
+    
+    def __init__(self,text,**kwargs):
+        self.text = text
+        self.meta = kwargs
+
+    def __unicode__(self):
+        return unicode(self.text)
+

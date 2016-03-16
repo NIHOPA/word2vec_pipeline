@@ -1,5 +1,12 @@
 import pattern.en
+from tokenizers import meta_text
 
+_POS_shorthand = {
+    "adjective"   : "ADJ",
+    "noun"        : "N",
+    "verb"        : "V",
+    "unknown"     : "UNK",
+}
 
 class pos_tokenizer(object):
     
@@ -48,6 +55,7 @@ class pos_tokenizer(object):
             for y in L: self.POS_map[y]=pos
                                         
     def __call__(self,doc,force_lemma=True):
+        pos_tags = []
         tokens = self.parse(doc)
         doc2 = []
         for sentence in tokens.split():
@@ -56,6 +64,7 @@ class pos_tokenizer(object):
 
                 if "PHRASE_" in word:
                     sent2.append(word)
+                    pos_tags.append(_POS_shorthand["noun"])
                     continue
 
                 tag = tag.split('|')[0].split('-')[0].split("&")[0]
@@ -78,6 +87,14 @@ class pos_tokenizer(object):
                     if lem is not None: word = lem
 
                 sent2.append(word)
+                pos_tags.append(_POS_shorthand[pos])
+                
             doc2.append(' '.join(sent2))
 
-        return '\n'.join(doc2)
+        doc2 = '\n'.join(doc2)
+
+        # The number of POS tokens should match the number of word tokens
+        assert(len(pos_tags) == len(doc2.split()))
+
+        result = meta_text(doc2,POS=pos_tags)
+        return result
