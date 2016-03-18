@@ -33,8 +33,6 @@ def item_iterator(cmd_config=None):
 
     for f_sql, target_col in DB_ITR:
 
-        print f_sql
-
         #print ("Computing {}:{}".format(f_sql, target_col))
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
@@ -47,13 +45,9 @@ def item_iterator(cmd_config=None):
             "shuffle":False,
         }
 
-
-        print cmd_config
-
         if "require_meta" in cmd_config:
             args["include_meta"] = True
             INPUT_ITR = database_iterator(**args)
-            print INPUT_ITR.next()
             for idx,text,meta in INPUT_ITR:
                 yield (text,meta,idx,f_sql)
 
