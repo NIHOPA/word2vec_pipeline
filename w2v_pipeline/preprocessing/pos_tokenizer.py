@@ -5,6 +5,7 @@ _POS_shorthand = {
     "adjective"   : "ADJ",
     "noun"        : "N",
     "verb"        : "V",
+    "adverb"      : "RB",
     "unknown"     : "UNK",
 }
 
@@ -75,6 +76,7 @@ class pos_tokenizer(object):
                     print "UNKNOWN POS *{}*".format(tag)
                     pos = "unknown"
 
+                                
                 if pos in self.filtered_POS:
                     continue
 
@@ -88,6 +90,7 @@ class pos_tokenizer(object):
 
                 sent2.append(word)
                 pos_tags.append(_POS_shorthand[pos])
+
                 
             doc2.append(' '.join(sent2))
 

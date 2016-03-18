@@ -1,4 +1,4 @@
-import collections, itertools, os
+import collections, itertools, os, ast
 import numpy as np
 import pandas as pd
 import h5py
@@ -32,7 +32,7 @@ class document_scores(corpus_iterator):
 
     def score_document(self, item):
 
-        text,idx,f_sql = item
+        text,meta,idx,f_sql = item
         tokens = text.split()
 
         # Find out which tokens are defined
@@ -45,8 +45,13 @@ class document_scores(corpus_iterator):
             msg = "Document has no valid tokens! This is problem."
             raise ValueError(msg)
 
+
+        # If scoring function requires meta, convert it
+        if method in ["pos_split"]:
+            meta = ast.literal_eval(meta)
+
         # Lookup the weights (model dependent)
-        if method in ["unique"]:
+        if method in ["unique","pos_split"]:
             weights = dict.fromkeys(tokens, 1.0)
         elif method in ["simple","svd_stack"]:
             weights = dict([(w,local_counts[w]) for w in tokens])
@@ -63,16 +68,41 @@ class document_scores(corpus_iterator):
         elif method in ["kSVD"]:
             word_idx = [self.word2index[w] for w in tokens]
             DV = [self.kSVD_gamma[n] for n in word_idx]
+        elif method in ["pos_split"]:
+
+            known_tags = ["N","ADJ","V"]
+            dim = self.M.syn0.shape[1]
+            pos_vecs = {}
+            pos_totals = {}
+            for pos in known_tags:
+                pos_vecs[pos] = np.zeros((dim,),dtype=float)
+                pos_totals[pos] = 0
+
+            POS = meta["POS"]
+            ordered_tokens = [t for t in text.split()]
+            for token,pos in zip(text.split(),meta["POS"]):
+                if token in valid_tokens and pos in known_tags:
+
+                    # This is the "unique" weights
+                    if token in pos_vecs:
+                        continue
+                    pos_vecs[pos]   += self.M[token]
+                    pos_totals[pos] += 1
+
+            # Normalize
+            for pos in known_tags:
+                pos_vecs[pos] /= pos_totals[pos]
+            
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
-        # Build the weight matrix
-        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-        DV = np.array(DV)
-
         # Sum all the vectors with their weights
         if method in ["simple","unique"]:
+            # Build the weight matrix
+            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+            DV = np.array(DV)
+
             doc_vec = (W*DV).sum(axis=0)
 
             # Renormalize onto the hypersphere
@@ -80,8 +110,16 @@ class document_scores(corpus_iterator):
 
             # Sanity check, L1 norm
             assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+        elif method in ["pos_split"]:
+            
+            # Concatenate
+            doc_vec = np.hstack([pos_vecs[pos] for pos in known_tags])
 
         elif method in ["svd_stack"]:
+            # Build the weight matrix
+            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+            DV = np.array(DV)
+
             n = 2
             _U,_s,_V = np.linalg.svd(DV)
             doc_vec = np.hstack([np.hstack(_V[:n]), _s[:n]])

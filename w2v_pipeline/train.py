@@ -10,7 +10,7 @@ def item_iterator(cmd_config=None):
 
     train_config = simple_config.load("train")
     input_data_dir = train_config["input_data_directory"]
-    
+
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
 
     # If there is a whitelist only keep the matching filename
@@ -33,6 +33,8 @@ def item_iterator(cmd_config=None):
 
     for f_sql, target_col in DB_ITR:
 
+        print f_sql
+
         #print ("Computing {}:{}".format(f_sql, target_col))
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
@@ -44,14 +46,23 @@ def item_iterator(cmd_config=None):
             "limit":global_limit,
             "shuffle":False,
         }
-            
-        INPUT_ITR = database_iterator(**args)
 
 
-        for idx,text in INPUT_ITR:
-            yield (text,idx,f_sql)
+        print cmd_config
 
-            #print f_sql, F_SQL, "PROBLEM HERE compbio never choosen"
+        if "require_meta" in cmd_config:
+            args["include_meta"] = True
+            INPUT_ITR = database_iterator(**args)
+            print INPUT_ITR.next()
+            for idx,text,meta in INPUT_ITR:
+                yield (text,meta,idx,f_sql)
+
+        else:
+            INPUT_ITR = database_iterator(**args)
+
+            for idx,text in INPUT_ITR:
+                yield (text,idx,f_sql)
+                
 
 
 if __name__ == "__main__":
@@ -89,7 +100,7 @@ if __name__ == "__main__":
         else:
             ITR = itertools.imap(func, INPUT_ITR)
 
-        for item in ITR:            
+        for item in ITR:
             result,idx,f_sql = item
             func.reduce(result)
 

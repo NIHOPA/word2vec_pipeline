@@ -8,9 +8,13 @@ def database_iterator(
         shuffle=False,
         limit=0,
         offset=0,
+        include_meta=False,
 ):
 
-    cmd  = "SELECT [index],{} FROM {}".format(column_name, table_name)
+    meta_field = "" if not include_meta else ",meta"
+    cmd  = "SELECT [index],{} {} FROM {}".format(column_name,
+                                                 meta_field,
+                                                 table_name)
     
     if limit: cmd  += " LIMIT {}  ".format(limit)
     if offset: cmd += " OFFSET {} ".format(offset)
