@@ -28,6 +28,9 @@ def parse():
 
 def predict():
     local("python w2v_pipeline/predict.py")
+    
+def cluster():
+    local("python w2v_pipeline/cluster.py")
 
 def test():
     clean()
@@ -36,6 +39,7 @@ def test():
     parse()
     train()
     predict()
+    cluster()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
