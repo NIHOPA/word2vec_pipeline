@@ -16,7 +16,7 @@ def view():
     #local("sqlitebrowser data_sql/PLoS_bio.sqlite")
     local("sqlitebrowser data_parsed/PLoS_bio.sqlite")
 
-def _import():
+def import_data():
     local("python w2v_pipeline/import.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")  
 
@@ -32,7 +32,7 @@ def predict():
 def test():
     clean()
     
-    _import()
+    import_data()
     parse()
     train()
     predict()
