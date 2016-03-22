@@ -62,6 +62,7 @@ if __name__ == "__main__":
             "table_name":import_config["output_table"],
             "conn":conn,
             "limit":global_limit,
+            "progress_bar":True,
         }
             
         INPUT_ITR = database_iterator(**args)
@@ -72,12 +73,11 @@ if __name__ == "__main__":
         if _PARALLEL:
             import multiprocessing
             P = multiprocessing.Pool()
-            ITR = P.imap(dispatcher, INPUT_ITR,chunksize=5)
+            ITR = P.imap(dispatcher, INPUT_ITR, chunksize=5)
 
         mkdir(output_dir)
         f_sql_out = os.path.join(output_dir, os.path.basename(f_sql))
         conn_out  = sqlite3.connect(f_sql_out)
-
         #engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
 
         cmd_create = '''
