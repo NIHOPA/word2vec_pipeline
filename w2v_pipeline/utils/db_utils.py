@@ -26,6 +26,10 @@ def database_iterator(
     if progress_bar:
         count_cmd = "SELECT MAX(ROWID) FROM {}".format(table_name)
         total = conn.execute(count_cmd).next()[0]
+
+        if limit: 
+            total = min(limit, total)
+                
         progress_bar = tqdm.tqdm(total=total)
 
     cursor = conn.execute(cmd)
