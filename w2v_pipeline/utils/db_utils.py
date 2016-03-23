@@ -1,5 +1,28 @@
 import sqlite3, random, tqdm
 
+def list_tables(conn):
+    cmd = "SELECT name FROM sqlite_master WHERE type='table';"
+    result = conn.execute(cmd).fetchall()
+    
+    if not result:
+        return []
+
+    tables = zip(*result)[0]
+    return tables
+
+def count_rows(conn, table):
+    '''
+    Not the true row count, but the maxID. Useful for sanity checks.
+    '''
+    if table not in list_tables(conn):
+        return None
+        
+    #cmd = "SELECT MAX(_ROWID_) FROM {} LIMIT 1;"
+    cmd = "SELECT COUNT(*) FROM {}"
+    cursor = conn.execute(cmd.format(table))
+    result = cursor.fetchall()[0][0]
+    return result
+
 def database_iterator(
         column_name,
         table_name,

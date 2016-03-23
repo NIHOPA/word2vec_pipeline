@@ -1,5 +1,5 @@
 import sqlite3, glob, os, itertools
-from utils.db_utils import database_iterator
+from utils.db_utils import database_iterator, list_tables, count_rows
 from utils.os_utils import mkdir
 import preprocessing as pre
 
@@ -35,6 +35,8 @@ if __name__ == "__main__":
     input_data_dir = import_config["output_data_directory"]
     output_dir = config["output_data_directory"]
 
+    import_column = import_config["output_table"]
+
     mkdir(output_dir)
 
     # Fill the pipeline with function objects
@@ -53,9 +55,35 @@ if __name__ == "__main__":
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
     for f_sql, target_col in DB_ITR:
-        print "Parsing {}:{}".format(f_sql, target_col)
-        
+
+        f_sql_out = os.path.join(output_dir, os.path.basename(f_sql))
+        mkdir(output_dir)
+        conn_out  = sqlite3.connect(f_sql_out)
         conn = sqlite3.connect(f_sql, check_same_thread=False)
+
+        tables = list_tables(conn_out)
+
+        if target_col in tables:
+
+            if not _FORCE:
+
+                row_n_conn = count_rows(conn, import_column)
+                row_n_conn_out = count_rows(conn_out, target_col)
+
+                if row_n_conn == row_n_conn_out:
+                    msg = "{}:{} already exists, skipping"
+                    print msg.format(f_sql,target_col)
+                    continue
+
+                msg = "{} already exists but there is a size mismatch {} to {}"
+                print msg.format(target_col, row_n_conn, row_n_conn_out)
+
+            # Remove the table if it exists
+            print "Removing table {}:{}".format(f_sql,target_col)
+            conn_out.execute("DROP TABLE {}".format(target_col))
+        
+        
+        print "Parsing {}:{}".format(f_sql, target_col)       
 
         args = {
             "column_name":target_col,
@@ -74,11 +102,6 @@ if __name__ == "__main__":
             import multiprocessing
             P = multiprocessing.Pool()
             ITR = P.imap(dispatcher, INPUT_ITR, chunksize=5)
-
-        mkdir(output_dir)
-        f_sql_out = os.path.join(output_dir, os.path.basename(f_sql))
-        conn_out  = sqlite3.connect(f_sql_out)
-        #engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
 
         cmd_create = '''
         DROP TABLE IF EXISTS {table_name};
@@ -99,4 +122,10 @@ if __name__ == "__main__":
         conn_out.executemany(cmd_insert, ITR)
         conn_out.commit()
         conn_out.close()
+        conn.close()
 
+        if _PARALLEL:
+            del P
+            
+        del ITR, conn, conn_out
+        
