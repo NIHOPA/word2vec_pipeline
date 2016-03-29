@@ -32,6 +32,7 @@ def database_iterator(
         limit=0,
         offset=0,
         include_meta=False,
+        include_table_name=False,
 ):
 
     meta_field = "" if not include_meta else ",meta"
@@ -67,6 +68,10 @@ def database_iterator(
         cursor = random.shuffle(cursor.fetchall())
     
     for k,item in enumerate(cursor):
+
+        if include_table_name:
+            item = list(item) + [table_name,]
+        
         yield item
             
         if progress_bar:

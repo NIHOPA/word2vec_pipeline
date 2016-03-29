@@ -43,6 +43,7 @@ def item_iterator(name,cmd_config=None):
             "conn":conn,
             "limit":global_limit,
             "shuffle":False,
+            "include_table_name":True,
         }
 
         requires_meta = ["document_scores",]

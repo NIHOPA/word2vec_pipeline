@@ -32,7 +32,11 @@ class document_scores(corpus_iterator):
 
     def score_document(self, item):
 
-        text,meta,idx,f_sql = item
+        text = item[0]
+        idx  = item[1]
+        meta = item[2]
+        other_args = item[3:]
+        
         tokens = text.split()
 
         # Find out which tokens are defined
@@ -151,7 +155,7 @@ class document_scores(corpus_iterator):
         # Sanity check
         assert(not np.isnan(doc_vec).any()) 
 
-        return doc_vec,idx,f_sql
+        return [doc_vec,idx,] + other_args
 
     def compute(self, config):
         '''
@@ -173,7 +177,18 @@ class document_scores(corpus_iterator):
                 data.append(result)
 
             df = pd.DataFrame(data=data,
-                              columns=["V","idx","f_sql"])
+                              columns=["V","idx","table_name","f_sql"])
+
+            # Fold over the table_names
+            data = []
+            for idx,rows in df.groupby(["idx",]):
+                item = {
+                    "idx"  :idx,
+                    "f_sql":rows.f_sql.values[0],
+                    "V":np.hstack(rows.V.values),
+                }
+                data.append(item)
+            df = pd.DataFrame.from_dict(data)
 
             self.save(config, df)
 
