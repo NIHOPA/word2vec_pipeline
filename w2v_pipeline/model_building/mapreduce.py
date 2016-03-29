@@ -31,12 +31,13 @@ class corpus_iterator(simple_mapreduce):
     def sentence_iterator(self):
         for item in self:
             text,idx,f_sql = item
-            yield text.split()
+            yield unicode(text).split()
 
     def labelized_sentence_iterator(self):
         for item in self:
             text,idx,f_sql = item
             for sentence in text.split('\n'):
+                sentence = unicode(sentence)
                 tokens = sentence.split()
                 label  = "{}_{}".format(f_sql,idx)
                 yield LabeledSentence(tokens, [label,])

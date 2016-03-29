@@ -6,7 +6,7 @@ import simple_config
 
 global_limit = 0
 
-def item_iterator(cmd_config=None):
+def item_iterator(name,cmd_config=None):
 
     train_config = simple_config.load("train")
     input_data_dir = train_config["input_data_directory"]
@@ -43,21 +43,17 @@ def item_iterator(cmd_config=None):
             "conn":conn,
             "limit":global_limit,
             "shuffle":False,
+            "include_table_name":True,
         }
 
-        if "require_meta" in cmd_config:
+        requires_meta = ["document_scores",]
+
+        if name in requires_meta:
             args["include_meta"] = True
-            INPUT_ITR = database_iterator(**args)
-            for idx,text,meta in INPUT_ITR:
-                yield (text,meta,idx,f_sql)
 
-        else:
-            INPUT_ITR = database_iterator(**args)
-
-            for idx,text in INPUT_ITR:
-                yield (text,idx,f_sql)
-                
-
+        INPUT_ITR = database_iterator(**args)
+        for item in INPUT_ITR:
+            yield list(item) + [f_sql,]
 
 if __name__ == "__main__":
 
@@ -86,7 +82,7 @@ if __name__ == "__main__":
 
     for name, func in mapreduce_functions:
 
-        INPUT_ITR = item_iterator(config[name])
+        INPUT_ITR = item_iterator(name, config[name])
         
         if _PARALLEL:
             MP = multiprocessing.Pool()
@@ -112,5 +108,5 @@ if __name__ == "__main__":
             kwargs.update(config[name])
             
         func = obj(**kwargs)
-        func.set_iterator_function(item_iterator,config[name])
+        func.set_iterator_function(item_iterator,name,config[name])
         func.compute(config)        

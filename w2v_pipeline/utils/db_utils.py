@@ -32,13 +32,14 @@ def database_iterator(
         limit=0,
         offset=0,
         include_meta=False,
+        include_table_name=False,
 ):
 
     meta_field = "" if not include_meta else ",meta"
-    cmd  = "SELECT [index],{} {} FROM {}".format(column_name,
+    cmd  = "SELECT {},[index] {} FROM {}".format(column_name,
                                                  meta_field,
                                                  table_name)
-    
+
     if limit: cmd  += " LIMIT {}  ".format(limit)
     if offset: cmd += " OFFSET {} ".format(offset)
     
@@ -55,7 +56,11 @@ def database_iterator(
                 
         progress_bar = tqdm.tqdm(total=total)
 
-    cursor = conn.execute(cmd)
+    try:
+        cursor = conn.execute(cmd)
+    except Exception as Ex:
+        print Ex
+        raise(Ex)
     
     # If shuffle is true, load the entire set selection into memory, then
     # give permuted results
@@ -63,6 +68,10 @@ def database_iterator(
         cursor = random.shuffle(cursor.fetchall())
     
     for k,item in enumerate(cursor):
+
+        if include_table_name:
+            item = list(item) + [table_name,]
+        
         yield item
             
         if progress_bar:

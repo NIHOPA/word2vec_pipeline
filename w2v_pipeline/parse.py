@@ -2,6 +2,7 @@ import sqlite3, glob, os, itertools
 from utils.db_utils import database_iterator, list_tables, count_rows
 from utils.os_utils import mkdir
 import preprocessing as pre
+import multiprocessing, gc
 
 global_limit = 0
 
@@ -99,7 +100,6 @@ if __name__ == "__main__":
             ITR = itertools.imap(dispatcher, INPUT_ITR)
 
         if _PARALLEL:
-            import multiprocessing
             P = multiprocessing.Pool()
             ITR = P.imap(dispatcher, INPUT_ITR, chunksize=5)
 
@@ -127,5 +127,5 @@ if __name__ == "__main__":
         if _PARALLEL:
             del P
             
-        del ITR, conn, conn_out
-        
+        del INPUT_ITR, ITR, conn, conn_out
+        gc.collect()

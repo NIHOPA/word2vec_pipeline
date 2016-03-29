@@ -21,7 +21,7 @@ class term_frequency(simple_mapreduce):
 
         text, idx, f_sql = item
     
-        tokens = text.split()
+        tokens = unicode(text).split()
         C = collections.Counter(tokens)
 
         # Add an empty string token to keep track of total documents
