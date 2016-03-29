@@ -175,9 +175,6 @@ class document_scores(corpus_iterator):
             df = pd.DataFrame(data=data,
                               columns=["V","idx","f_sql"])
 
-            print df
-            exit()
-
             self.save(config, df)
 
     def save(self, config, df):

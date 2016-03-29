@@ -33,7 +33,7 @@ def item_iterator(name,cmd_config=None):
 
     for f_sql, target_col in DB_ITR:
 
-        print ("Computing {}:{}".format(f_sql, target_col))
+        #print ("Computing {}:{}".format(f_sql, target_col))
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
 
