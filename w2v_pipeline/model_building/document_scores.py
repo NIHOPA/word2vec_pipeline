@@ -41,10 +41,13 @@ class document_scores(corpus_iterator):
         tokens = set(valid_tokens)
         method = self.current_method
 
+        dim = self.M.syn0.shape[1]
+
+        no_token_FLAG = False
         if not tokens:
             msg = "Document has no valid tokens! This is problem."
-            raise ValueError(msg)
-
+            #raise ValueError(msg)
+            no_token_FLAG = True
 
         # If scoring function requires meta, convert it
         if method in ["pos_split"]:
@@ -97,6 +100,7 @@ class document_scores(corpus_iterator):
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
+
         # Sum all the vectors with their weights
         if method in ["simple","unique"]:
             # Build the weight matrix
@@ -109,11 +113,18 @@ class document_scores(corpus_iterator):
             doc_vec /= np.linalg.norm(doc_vec)
 
             # Sanity check, L1 norm
-            assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            if not no_token_FLAG:
+                assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            else:
+                doc_vec = np.zeros(dim,dtype=float)
+                
         elif method in ["pos_split"]:
             
             # Concatenate
             doc_vec = np.hstack([pos_vecs[pos] for pos in known_tags])
+
+            if no_token_FLAG:
+                doc_vec = np.zeros(dim*len(known_tags),dtype=float)
 
         elif method in ["svd_stack"]:
             # Build the weight matrix
@@ -123,10 +134,13 @@ class document_scores(corpus_iterator):
             n = 2
             _U,_s,_V = np.linalg.svd(DV)
             doc_vec = np.hstack([np.hstack(_V[:n]), _s[:n]])
+
+            if no_token_FLAG:
+                doc_vec = np.zeros(dim*n,dtype=float)
+            
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
-        
 
         return doc_vec,idx,f_sql
 
