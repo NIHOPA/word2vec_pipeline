@@ -79,6 +79,7 @@ def check_matching(word, k, tokens):
 
 def evaluate_document(item):
     idx,doc = item
+    doc = unicode(doc)
     doc = doc.replace('-',' ')
     doc = doc.replace("'",'')
     doc = doc.replace('"','')
