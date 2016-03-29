@@ -55,7 +55,11 @@ def database_iterator(
                 
         progress_bar = tqdm.tqdm(total=total)
 
-    cursor = conn.execute(cmd)
+    try:
+        cursor = conn.execute(cmd)
+    except Exception as Ex:
+        print Ex
+        raise(Ex)
     
     # If shuffle is true, load the entire set selection into memory, then
     # give permuted results
