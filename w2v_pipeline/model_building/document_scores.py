@@ -123,6 +123,11 @@ class document_scores(corpus_iterator):
             # Concatenate
             doc_vec = np.hstack([pos_vecs[pos] for pos in known_tags])
 
+            # Set any missing pos to zero
+            if np.isnan(doc_vec).any():
+                bad_idx = np.isnan(doc_vec)
+                doc_vec[bad_idx] = 0.0
+            
             if no_token_FLAG:
                 doc_vec = np.zeros(dim*len(known_tags),dtype=float)
 
@@ -141,6 +146,10 @@ class document_scores(corpus_iterator):
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
+
+        
+        # Sanity check
+        assert(not np.isnan(doc_vec).any()) 
 
         return doc_vec,idx,f_sql
 
@@ -165,6 +174,9 @@ class document_scores(corpus_iterator):
 
             df = pd.DataFrame(data=data,
                               columns=["V","idx","f_sql"])
+
+            print df
+            exit()
 
             self.save(config, df)
 

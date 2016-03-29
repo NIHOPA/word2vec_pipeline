@@ -33,7 +33,7 @@ def item_iterator(name,cmd_config=None):
 
     for f_sql, target_col in DB_ITR:
 
-        #print ("Computing {}:{}".format(f_sql, target_col))
+        print ("Computing {}:{}".format(f_sql, target_col))
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
 
@@ -49,17 +49,10 @@ def item_iterator(name,cmd_config=None):
 
         if name in requires_meta:
             args["include_meta"] = True
-            INPUT_ITR = database_iterator(**args)
-            for idx,text,meta in INPUT_ITR:
-                yield (text,meta,idx,f_sql)
 
-        else:
-            INPUT_ITR = database_iterator(**args)
-
-            for idx,text in INPUT_ITR:
-                yield (text,idx,f_sql)
-                
-
+        INPUT_ITR = database_iterator(**args)
+        for item in INPUT_ITR:
+            yield list(item) + [f_sql,]
 
 if __name__ == "__main__":
 

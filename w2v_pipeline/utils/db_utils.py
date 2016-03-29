@@ -35,10 +35,10 @@ def database_iterator(
 ):
 
     meta_field = "" if not include_meta else ",meta"
-    cmd  = "SELECT [index],{} {} FROM {}".format(column_name,
+    cmd  = "SELECT {},[index] {} FROM {}".format(column_name,
                                                  meta_field,
                                                  table_name)
-    
+
     if limit: cmd  += " LIMIT {}  ".format(limit)
     if offset: cmd += " OFFSET {} ".format(offset)
     
