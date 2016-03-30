@@ -32,7 +32,7 @@ def compute_local_affinity(V):
 
 def compute_affinity(item):
 
-    text,f_idx,f_sql = item
+    text,f_idx,table_name,f_sql = item
     tokens = text.split()
 
     # Find out which tokens are defined
