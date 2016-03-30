@@ -169,7 +169,6 @@ class document_scores(corpus_iterator):
 
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
-                    
             ITR = itertools.imap(self.score_document, self)
             
             data = []
@@ -181,13 +180,16 @@ class document_scores(corpus_iterator):
 
             # Fold over the table_names
             data = []
-            for idx,rows in df.groupby(["idx",]):
+            for tag,rows in df.groupby(["idx","f_sql"]):
+                idx, f_sql = tag
+                
                 item = {
                     "idx"  :idx,
-                    "f_sql":rows.f_sql.values[0],
+                    "f_sql":f_sql,
                     "V":np.hstack(rows.V.values),
                 }
                 data.append(item)
+                
             df = pd.DataFrame.from_dict(data)
 
             self.save(config, df)
@@ -213,7 +215,14 @@ class document_scores(corpus_iterator):
             g  = h5.require_group(method)
 
             V = np.array(data_group["V"].tolist())
+            
             print "Saving", name, method, V.shape
+
+            all_sizes = set([x.shape for x in V])
+            if len(all_sizes) != 1:
+                msg = "Method {} failed, sizes differ {}"
+                raise ValueError(msg.format(name, all_sizes))
+
             
             if name in g:
                 del g[name]
