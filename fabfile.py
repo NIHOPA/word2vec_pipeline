@@ -17,7 +17,7 @@ def view():
     local("sqlitebrowser data_parsed/PLoS_bio.sqlite")
 
 def import_data():
-    local("python w2v_pipeline/import.py")
+    local("python w2v_pipeline/import_data.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")  
 
 def train():
