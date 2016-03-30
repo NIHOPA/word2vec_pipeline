@@ -30,7 +30,7 @@ class corpus_iterator(simple_mapreduce):
 
     def sentence_iterator(self):
         for item in self:
-            text,idx,f_sql = item
+            text = item[0]
             yield unicode(text).split()
 
     def labelized_sentence_iterator(self):

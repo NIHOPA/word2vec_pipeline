@@ -19,15 +19,14 @@ class term_frequency(simple_mapreduce):
 
     def __call__(self, item):
 
-        text, idx, f_sql = item
-    
+        text = item[0]   
         tokens = unicode(text).split()
         C = collections.Counter(tokens)
 
         # Add an empty string token to keep track of total documents
         C[""] += 1
 
-        return C, idx, f_sql
+        return [C,] + item[1:]
 
     def reduce(self, C):
         self.TF.update(C)

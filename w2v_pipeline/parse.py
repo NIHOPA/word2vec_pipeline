@@ -7,7 +7,7 @@ import multiprocessing, gc
 global_limit = 0
 
 def dispatcher(item):
-    idx,text  = item
+    text,idx  = item
     meta = {}
     
     for f in parser_functions:

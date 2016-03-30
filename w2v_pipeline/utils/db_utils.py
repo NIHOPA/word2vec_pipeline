@@ -53,7 +53,6 @@ class database_iterator(object):
         cmd  = "SELECT {},[index] {} FROM {}".format(column_name,
                                                      meta_field,
                                                      table_name)
-
         # Adjust the limits and offset
         
         if limit: cmd  += " LIMIT  {} ".format(limit)
@@ -83,7 +82,7 @@ class database_iterator(object):
             self.progress_bar.update()
 
     def __iter__(self):
-
+        
         cursor = self.conn.execute(self.cmd)
 
         # If shuffle is true, load the entire set selection into memory, 
@@ -95,7 +94,7 @@ class database_iterator(object):
 
             # If the table name is required, pass this through
             if self.include_table_name:
-                item = list(item) + [table_name,]
+                item = list(item) + [self.table_name,]
 
             yield item
             self._update_progress_bar()

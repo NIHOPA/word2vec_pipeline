@@ -14,9 +14,11 @@ def item_iterator(name,cmd_config=None):
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
 
     # If there is a whitelist only keep the matching filename
-    if "command_whitelist" in cmd_config:
-        whitelist = cmd_config["command_whitelist"]
-        
+    try:
+        whitelist = cmd_config["command_whitelist"].strip()
+    except:
+        whitelist = None
+    if whitelist:
         assert(type(whitelist)==list)
 
         F_SQL2 = set()
@@ -91,7 +93,7 @@ if __name__ == "__main__":
             ITR = itertools.imap(func, INPUT_ITR)
 
         for item in ITR:
-            result,idx,f_sql = item
+            result = item[0]
             func.reduce(result)
 
         func.save(config)
