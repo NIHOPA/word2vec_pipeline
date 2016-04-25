@@ -1,8 +1,10 @@
 # Generated files
 collated/*
-csv_data/*
-sql_data/*
-models/*
+data_embeddings/*
+data_parsed/*
+data_sql/*
+datasets
+
 
 # Temp UNIX files
 *~

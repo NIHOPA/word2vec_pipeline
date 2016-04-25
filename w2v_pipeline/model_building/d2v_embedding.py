@@ -1,5 +1,5 @@
 from gensim.models.doc2vec import Doc2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 import psutil
 CPU_CORES = psutil.cpu_count()

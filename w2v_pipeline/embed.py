@@ -4,12 +4,12 @@ import model_building as mb
 from utils.db_utils import database_iterator
 import simple_config
 
-global_limit = 0
+_global_limit = 0
 
 def item_iterator(name,cmd_config=None):
 
-    train_config = simple_config.load("train")
-    input_data_dir = train_config["input_data_directory"]
+    score_config = simple_config.load("parse")
+    input_data_dir = score_config["output_data_directory"]
 
     F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
 
@@ -43,15 +43,10 @@ def item_iterator(name,cmd_config=None):
             "column_name":"text",
             "table_name" :target_col,
             "conn":conn,
-            "limit":global_limit,
+            "limit":_global_limit,
             "shuffle":False,
             "include_table_name":True,
         }
-
-        requires_meta = ["document_scores",]
-
-        if name in requires_meta:
-            args["include_meta"] = True
 
         INPUT_ITR = database_iterator(**args)
         for item in INPUT_ITR:
@@ -60,48 +55,19 @@ def item_iterator(name,cmd_config=None):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("train")
+    config = simple_config.load("embedding")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
+
+    mkdir(config["output_data_directory"])
 
     if _PARALLEL:
         import multiprocessing
 
     ###########################################################
-    # Fill the pipeline with function objects
-
-    mapreduce_functions = []
-    for name in config["mapreduce_commands"]:
-        obj  = getattr(mb,name)
-
-        # Load any kwargs in the config file
-        kwargs = {}
-        if name in config:
-            kwargs = config[name]
-
-        val = name, obj(**kwargs)
-        mapreduce_functions.append(val)
-
-    for name, func in mapreduce_functions:
-
-        INPUT_ITR = item_iterator(name, config[name])
-        
-        if _PARALLEL:
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, INPUT_ITR, chunksize=200)
-        else:
-            ITR = itertools.imap(func, INPUT_ITR)
-
-        for item in ITR:
-            result = item[0]
-            func.reduce(result)
-
-        func.save(config)
-
-    ###########################################################
     # Run the functions that act globally on the data
 
-    for name in config["globaldata_commands"]:
+    for name in config["embedding_commands"]:
         obj  = getattr(mb,name)
 
         # Load any kwargs in the config file

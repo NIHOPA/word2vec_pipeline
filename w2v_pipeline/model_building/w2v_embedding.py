@@ -1,5 +1,6 @@
+import os
 from gensim.models.word2vec import Word2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 import psutil
 CPU_CORES = psutil.cpu_count()
@@ -23,6 +24,7 @@ class w2v_embedding(corpus_iterator):
         
 
     def compute(self, config):
+
         print "Learning the vocabulary"
         ITR = self.sentence_iterator()
         self.clf.build_vocab(ITR)
@@ -37,7 +39,9 @@ class w2v_embedding(corpus_iterator):
         self.clf.init_sims(replace=True)
 
         print "Saving the features"
-        f_features = config["w2v_embedding"]["f_db"]
+
+        out_dir = config["output_data_directory"]
+        f_features = os.path.join(out_dir, config["w2v_embedding"]["f_db"])
         self.clf.save(f_features)
 
 

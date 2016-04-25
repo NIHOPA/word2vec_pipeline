@@ -20,8 +20,11 @@ def import_data():
     local("python w2v_pipeline/import_data.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")  
 
-def train():
-    local("python w2v_pipeline/train.py")
+def score():
+    local("python w2v_pipeline/score.py")
+
+def embed():
+    local("python w2v_pipeline/embed.py")
 
 def parse():
     local("python w2v_pipeline/parse.py")
@@ -34,7 +37,8 @@ def test():
     
     import_data()
     parse()
-    train()
+    embed()
+    score()
     predict()
 
 def clean():
