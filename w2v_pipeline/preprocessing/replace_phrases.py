@@ -9,6 +9,7 @@ class replace_phrases(object):
     def __init__(self, f_abbreviations, input_data_directory):
 
         f_abbr = os.path.join(input_data_directory, f_abbreviations)
+        print f_abbr
         self.load_phrase_database(f_abbr)
 
     def load_phrase_database(self, f_abbreviations):
