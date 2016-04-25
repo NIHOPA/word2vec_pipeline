@@ -64,6 +64,8 @@ if __name__ == "__main__":
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
+    mkdir(config["output_data_directory"])
+
     if _PARALLEL:
         import multiprocessing
 
@@ -108,7 +110,10 @@ if __name__ == "__main__":
         kwargs = config
         if name in config:
             kwargs.update(config[name])
-            
+
+        # Add in the embedding configuration options
+        kwargs["embedding"] = simple_config.load("embedding")
+        
         func = obj(**kwargs)
         func.set_iterator_function(item_iterator,name,config[name])
         func.compute(config)        

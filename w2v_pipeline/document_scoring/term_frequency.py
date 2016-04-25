@@ -3,11 +3,12 @@ Builds the TF database for quick reference.
 '''
 import itertools
 import collections
+import os
 
 import pandas as pd
 import sqlalchemy
 
-from mapreduce import simple_mapreduce
+from utils.mapreduce import simple_mapreduce
 
 class term_frequency(simple_mapreduce):
 
@@ -35,11 +36,14 @@ class term_frequency(simple_mapreduce):
         return self.TF
 
     def save(self, config):
-        
+
         df = pd.DataFrame(self.TF.most_common(),
                           columns=["word","count"])
 
-        f_sql = config["term_frequency"]["f_db"]
+
+        out_dir = config["output_data_directory"]
+        f_sql = os.path.join(out_dir, config["term_frequency"]["f_db"])
+        
         engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
 
         df.to_sql("term_frequency", engine,

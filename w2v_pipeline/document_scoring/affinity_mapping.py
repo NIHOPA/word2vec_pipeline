@@ -4,7 +4,7 @@ import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 from sklearn.cluster import AffinityPropagation as cluster_clf
 from scipy.spatial.distance import cdist

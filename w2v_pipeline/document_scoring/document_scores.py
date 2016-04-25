@@ -4,7 +4,7 @@ import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 import tqdm
 
@@ -13,8 +13,13 @@ class document_scores(corpus_iterator):
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
 
+        f_w2v = os.path.join(
+            kwargs["embedding"]["output_data_directory"],
+            kwargs["embedding"]["w2v_embedding"]["f_db"],
+        )
+
          # Load the model from disk
-        self.M = Word2Vec.load(kwargs["f_w2v"])       
+        self.M = Word2Vec.load(f_w2v)
         self.shape = self.M.syn0.shape
         
         # Build total counts
@@ -199,7 +204,8 @@ class document_scores(corpus_iterator):
         method = self.current_method
 
         print "Saving the scored documents"
-        f_db = config["document_scores"]["f_db"]
+        out_dir = config["output_data_directory"]
+        f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
 
         # Create the h5 file if it doesn't exist
         if not os.path.exists(f_db):
