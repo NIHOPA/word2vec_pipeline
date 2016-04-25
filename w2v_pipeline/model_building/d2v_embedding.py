@@ -1,3 +1,4 @@
+import os
 from gensim.models.doc2vec import Doc2Vec
 from utils.mapreduce import corpus_iterator
 
@@ -26,7 +27,7 @@ class d2v_embedding(corpus_iterator):
     def compute(self, config):
         print "Learning the vocabulary"
         
-        ITR = self.labelized_sentence_iterator()
+        ITR = self.labelized_sentence_iterator()        
         self.clf.build_vocab(ITR)
 
         print "Training the features"
@@ -38,9 +39,11 @@ class d2v_embedding(corpus_iterator):
         print "Reducing the features"
         self.clf.init_sims(replace=True)
 
-        print "Saving the features"
-        f_features = config["d2v_embedding"]["f_db"]
+        print "Saving the features"        
+        out_dir = config["output_data_directory"]
+        f_features = os.path.join(out_dir, config["d2v_embedding"]["f_db"])
         self.clf.save(f_features)
+
 
 
 

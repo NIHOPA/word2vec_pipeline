@@ -39,7 +39,6 @@ class w2v_embedding(corpus_iterator):
         self.clf.init_sims(replace=True)
 
         print "Saving the features"
-
         out_dir = config["output_data_directory"]
         f_features = os.path.join(out_dir, config["w2v_embedding"]["f_db"])
         self.clf.save(f_features)
