@@ -14,15 +14,21 @@ if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load("predict")
+    score_config = simple_config.load("score")
+    import_config = simple_config.load("import_data")
 
     # For now, we can only deal with one column using meta!
     assert(len(config["categorical_columns"])==1)
 
-    f_h5 = config["f_db_scores"]
+    f_h5 = os.path.join(
+        score_config["output_data_directory"],
+        score_config["document_scores"]["f_db"],
+    )
+    
     h5 = h5py.File(f_h5,'r')
 
     methods = h5.keys()
-    pred_dir = config["predict_target_directory"]
+    pred_dir = import_config["output_data_directory"]
 
     input_glob  = os.path.join(pred_dir,'*')
     input_files = glob.glob(input_glob)

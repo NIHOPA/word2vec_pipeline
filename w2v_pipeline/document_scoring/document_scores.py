@@ -4,7 +4,7 @@ import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 import tqdm
 
@@ -13,8 +13,13 @@ class document_scores(corpus_iterator):
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
 
+        f_w2v = os.path.join(
+            kwargs["embedding"]["output_data_directory"],
+            kwargs["embedding"]["w2v_embedding"]["f_db"],
+        )
+
          # Load the model from disk
-        self.M = Word2Vec.load(kwargs["f_w2v"])       
+        self.M = Word2Vec.load(f_w2v)
         self.shape = self.M.syn0.shape
         
         # Build total counts
@@ -32,7 +37,11 @@ class document_scores(corpus_iterator):
 
     def score_document(self, item):
 
-        text,meta,idx,f_sql = item
+        text = item[0]
+        idx  = item[1]
+        meta = item[2]
+        other_args = item[3:]
+        
         tokens = text.split()
 
         # Find out which tokens are defined
@@ -41,10 +50,13 @@ class document_scores(corpus_iterator):
         tokens = set(valid_tokens)
         method = self.current_method
 
+        dim = self.M.syn0.shape[1]
+
+        no_token_FLAG = False
         if not tokens:
             msg = "Document has no valid tokens! This is problem."
-            raise ValueError(msg)
-
+            #raise ValueError(msg)
+            no_token_FLAG = True
 
         # If scoring function requires meta, convert it
         if method in ["pos_split"]:
@@ -97,6 +109,7 @@ class document_scores(corpus_iterator):
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
+
         # Sum all the vectors with their weights
         if method in ["simple","unique"]:
             # Build the weight matrix
@@ -109,11 +122,23 @@ class document_scores(corpus_iterator):
             doc_vec /= np.linalg.norm(doc_vec)
 
             # Sanity check, L1 norm
-            assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            if not no_token_FLAG:
+                assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            else:
+                doc_vec = np.zeros(dim,dtype=float)
+                
         elif method in ["pos_split"]:
             
             # Concatenate
             doc_vec = np.hstack([pos_vecs[pos] for pos in known_tags])
+
+            # Set any missing pos to zero
+            if np.isnan(doc_vec).any():
+                bad_idx = np.isnan(doc_vec)
+                doc_vec[bad_idx] = 0.0
+            
+            if no_token_FLAG:
+                doc_vec = np.zeros(dim*len(known_tags),dtype=float)
 
         elif method in ["svd_stack"]:
             # Build the weight matrix
@@ -123,12 +148,19 @@ class document_scores(corpus_iterator):
             n = 2
             _U,_s,_V = np.linalg.svd(DV)
             doc_vec = np.hstack([np.hstack(_V[:n]), _s[:n]])
+
+            if no_token_FLAG:
+                doc_vec = np.zeros(dim*n,dtype=float)
+            
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
-        
 
-        return doc_vec,idx,f_sql
+        
+        # Sanity check
+        assert(not np.isnan(doc_vec).any()) 
+
+        return [doc_vec,idx,] + other_args
 
     def compute(self, config):
         '''
@@ -142,7 +174,6 @@ class document_scores(corpus_iterator):
 
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
-                    
             ITR = itertools.imap(self.score_document, self)
             
             data = []
@@ -150,7 +181,21 @@ class document_scores(corpus_iterator):
                 data.append(result)
 
             df = pd.DataFrame(data=data,
-                              columns=["V","idx","f_sql"])
+                              columns=["V","idx","table_name","f_sql"])
+
+            # Fold over the table_names
+            data = []
+            for tag,rows in df.groupby(["idx","f_sql"]):
+                idx, f_sql = tag
+                
+                item = {
+                    "idx"  :idx,
+                    "f_sql":f_sql,
+                    "V":np.hstack(rows.V.values),
+                }
+                data.append(item)
+                
+            df = pd.DataFrame.from_dict(data)
 
             self.save(config, df)
 
@@ -159,7 +204,8 @@ class document_scores(corpus_iterator):
         method = self.current_method
 
         print "Saving the scored documents"
-        f_db = config["document_scores"]["f_db"]
+        out_dir = config["output_data_directory"]
+        f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
 
         # Create the h5 file if it doesn't exist
         if not os.path.exists(f_db):
@@ -175,7 +221,14 @@ class document_scores(corpus_iterator):
             g  = h5.require_group(method)
 
             V = np.array(data_group["V"].tolist())
+            
             print "Saving", name, method, V.shape
+
+            all_sizes = set([x.shape for x in V])
+            if len(all_sizes) != 1:
+                msg = "Method {} failed, sizes differ {}"
+                raise ValueError(msg.format(name, all_sizes))
+
             
             if name in g:
                 del g[name]

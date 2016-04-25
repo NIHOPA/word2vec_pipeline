@@ -4,7 +4,7 @@ import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
-from mapreduce import corpus_iterator
+from utils.mapreduce import corpus_iterator
 
 from sklearn.cluster import AffinityPropagation as cluster_clf
 from scipy.spatial.distance import cdist
@@ -32,7 +32,7 @@ def compute_local_affinity(V):
 
 def compute_affinity(item):
 
-    text,f_idx,f_sql = item
+    text,f_idx,table_name,f_sql = item
     tokens = text.split()
 
     # Find out which tokens are defined

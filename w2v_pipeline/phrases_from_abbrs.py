@@ -78,7 +78,9 @@ def check_matching(word, k, tokens):
     return tuple(subtokens)
 
 def evaluate_document(item):
-    idx,doc = item
+    doc,idx = item
+    
+    doc = unicode(doc)
     doc = doc.replace('-',' ')
     doc = doc.replace("'",'')
     doc = doc.replace('"','')
@@ -172,8 +174,9 @@ if __name__ == "__main__":
                           input_table,
                           conn,
                           limit=global_limit,
-                          offset=global_offset)
-
+                          offset=global_offset,
+                          progress_bar=True,
+        )
         ITR = itertools.imap(evaluate_document, INPUT_ITR)
 
         if _PARALLEL:

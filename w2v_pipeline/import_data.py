@@ -82,8 +82,7 @@ def import_directory_csv(d_in, d_out, output_table):
                   engine,
                   if_exists='replace')
 
-        print "Finished", f_csv
-        print df.describe()
+        print "Finished {}, {}, {}".format(f_csv, len(df), list(df.columns))
 
 
 if __name__ == "__main__":

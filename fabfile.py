@@ -16,12 +16,15 @@ def view():
     #local("sqlitebrowser data_sql/PLoS_bio.sqlite")
     local("sqlitebrowser data_parsed/PLoS_bio.sqlite")
 
-def _import():
-    local("python w2v_pipeline/import.py")
+def import_data():
+    local("python w2v_pipeline/import_data.py")
     local("python w2v_pipeline/phrases_from_abbrs.py")  
 
-def train():
-    local("python w2v_pipeline/train.py")
+def score():
+    local("python w2v_pipeline/score.py")
+
+def embed():
+    local("python w2v_pipeline/embed.py")
 
 def parse():
     local("python w2v_pipeline/parse.py")
@@ -35,15 +38,17 @@ def cluster():
 def test():
     clean()
     
-    _import()
+    import_data()
     parse()
-    train()
+    embed()
+    score()
     predict()
     cluster()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
-    local("rm -rf data_sql data_parsed collated")
+    local('find . -name "*.pyc" | xargs -I {} rm {}')
+    local("rm -rf data_sql data_parsed data_document_scores")
 
     
 
