@@ -37,7 +37,7 @@ class document_scores(corpus_iterator):
 
     def score_document(self, item):
 
-        text = item[0]
+        text = unicode(item[0])
         idx  = item[1]
         meta = item[2]
         other_args = item[3:]
