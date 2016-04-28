@@ -1,10 +1,10 @@
 # Generated files
-collated/*
 data_embeddings/*
 data_parsed/*
 data_sql/*
+data_clustering/*
+data_document_scores/*
 datasets
-
 
 # Temp UNIX files
 *~

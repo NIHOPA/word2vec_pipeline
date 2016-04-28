@@ -29,10 +29,7 @@ def load_embeddings():
         config["w2v_embedding"]["f_db"],
     )
 
-    W = Word2Vec.load(f_w2v)
-    WX = W.syn0
-
-    return W, WX
+    return Word2Vec.load(f_w2v)
 
 def compute_document_similarity(X):
     '''

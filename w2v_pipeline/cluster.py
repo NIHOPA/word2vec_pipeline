@@ -4,8 +4,87 @@ import os, itertools, collections
 
 import clustering.similarity as CSIM
 from utils.os_utils import mkdir
-
+from unidecode import unidecode
 from sklearn.manifold import TSNE
+
+
+class cluster_object(object):
+    '''
+    Helper class to represent all the constitute parts of a clustering
+    '''
+    def __init__(self,h5,document_score_method, cluster_method):
+
+        self.name_doc = document_score_method
+        self.name_cluster = cluster_method
+        
+        g = h5[document_score_method]
+
+        self.labels = g["clustering"][cluster_method][:]
+        self.words = g["nearby_words"][cluster_method][:]
+        self.T = g["tSNE"][:]
+        self.S = g["similarity"][:]
+        self.X = load_document_vectors()
+
+        assert(self.X.shape[0] == self.T.shape[0] == self.S.shape[0])
+        self.cluster_n = self.labels.max()+1
+
+        h5.close()
+
+    def reorder(self,idx):
+        self.X = self.X[idx]
+        self.S = self.S[idx][:,idx]
+        self.labels = self.labels[idx]
+        self.T = self.T[idx]
+        
+    def __len__(self):
+        return self.X.shape[0]
+
+    def sort_labels(self):
+        # Reorder the data so the data is the assigned cluster
+        idx = np.argsort(self.labels)
+        self.reorder(idx)
+
+    def sort_intra(self):
+        master_idx = np.arange(len(C))
+        
+        for i in range(C.cluster_n):
+            cidx = self.labels==i
+            Z = X[cidx]
+            zmu = Z.sum(axis=0)
+            zmu /= np.linalg.norm(zmu)
+            
+            dist = Z.dot(zmu)
+            master_idx[cidx] = master_idx[cidx][np.argsort(dist)]
+
+        self.reorder(master_idx)
+
+
+def close_words(W,X,labels,top_n=6):
+    '''
+    Find words that are close to each label.
+    W is a gensim.word2vec
+    X is the document vectors.
+    labels are predetermined cluster labels.
+    '''
+
+    L = []
+    for label in np.unique(labels):
+        label_idx = labels==label
+        mu = X[label_idx].mean(axis=0)
+        
+        dist = W.syn0.dot(mu)
+        idx = np.argsort(dist)[::-1][:top_n]
+        words = [W.index2word[i] for i in idx]
+        L.append(' '.join(words))
+
+    # Map unicode to simple ASCII
+    L = map(unidecode,L)
+
+    # Remove _PHRASE
+    L = map(lambda x:x.replace('PHRASE_',''),L)
+    print L
+   
+    return L
 
 def load_document_vectors():
 
@@ -29,9 +108,6 @@ def load_document_vectors():
     return X
 
 
-def reorder_data(idx, X, S, labels):
-    return X[idx], S[idx][:,idx], labels[idx]
-
 
 if __name__ == "__main__":
 
@@ -51,11 +127,12 @@ if __name__ == "__main__":
     h5_sim = h5py.File(f_sim,'r+')
     group = h5_sim.require_group(method)
     S = None
+    W = None
+
+    # Load the document scores
+    X = load_document_vectors()
 
     if "similarity" not in group:
-
-        # Load the document scores
-        X = load_document_vectors()
 
         # Compute and save the similarity matrix
         print "Computing the similarity matrix"
@@ -79,48 +156,38 @@ if __name__ == "__main__":
     
 
     group.require_group("clustering")
+    group.require_group("nearby_words")
 
     for name in config["clustering_commands"]:
 
         if name not in group["clustering"] or config.as_bool("_FORCE"):
             # Only load the similarity matrix if needed
-            if S is None: S = group["similarity"][:]
+            if S is None : S = group["similarity"][:]
+            if W is None: W = CSIM.load_embeddings()
 
             print "Clustering {} {}".format(method, name)
             
             func = getattr(CSIM,name)
-            del group["clustering"][name]
-            group["clustering"][name] = func(S,config[name])
+            labels = func(S,config[name])
+            
+            if name in group["clustering"]: del group["clustering"][name]
+            group["clustering"][name] = labels
+            
+            L = close_words(W,X,labels)
+            if name in group["nearby_words"]: del group["nearby_words"][name]
+            group["nearby_words"].create_dataset(name, data=L, dtype='S200')
 
 
-    labels = group["clustering"]["spectral_clustering"][:]
-    S = group["similarity"][:]
-    X = load_document_vectors()
-    T = group["tSNE"][:]
+    # Load the cluster object
+    document_score_method = method
+    cluster_method = "spectral_clustering"
+    C = cluster_object(h5_sim, document_score_method, cluster_method)
 
-
-    # Reorder the data so the data is the assigned cluster
-    idx = np.argsort(labels)
-    X, S, labels = reorder_data(idx, X, S, labels)
-    T = T[idx,:]  
+    # Sort by labels first
+    C.sort_labels()
 
     # Reorder the intra-clusters by closest to centroid
-    n_items = S.shape[0]
-    master_idx = np.arange(n_items)
-    cluster_n = max(labels)+1
-
-    for cluster_i in range(cluster_n):
-        cluster_idx = labels==cluster_i
-        Z = X[cluster_idx]
-        zmu = Z.sum(axis=0)
-        zmu /= np.linalg.norm(zmu)
-        
-        dist = Z.dot(zmu)
-        dist_idx = np.argsort(dist)
-        master_idx[cluster_idx] = master_idx[cluster_idx][dist_idx]
-
-    X, S, labels = reorder_data(master_idx, X, S, labels)
-    T = T[master_idx,:]
+    C.sort_intra()
     
     # Plot the heatmap
     import pandas as pd
@@ -129,24 +196,24 @@ if __name__ == "__main__":
 
     fig = plt.figure(figsize=(9,9))
     print "Plotting tSNE"
-    colors = sns.color_palette("hls", cluster_n)
+    colors = sns.color_palette("hls", C.cluster_n)
                                
-    for i in range(cluster_n):
-        x,y = zip(*T[labels == i])
-        #label = 'cluster {}, {}'.format(i,WORDS_NEARBY[i])
-        label = 'cluster {}'.format(i)
+    for i in range(C.cluster_n):
+        x,y = zip(*C.T[C.labels == i])
+        label = 'cluster {}, {}'.format(i,C.words[i])
+
         plt.scatter(x,y,color=colors[i],label=label)
-    plt.title("tSNE plot",fontsize=16)
-    plt.legend(loc='best',fontsize=16)
+    plt.title("tSNE doc:{} plot".format(C.name_doc),fontsize=16)
+    plt.legend(loc=1,fontsize=12)
     plt.tight_layout()
-    plt.show()
     
     fig = plt.figure(figsize=(12,12))
     print "Plotting heatmap"
-    df = pd.DataFrame(S, index=labels,columns=labels)
+    df = pd.DataFrame(C.S, index=C.labels,columns=C.labels)
     labeltick = int(len(df)/50)
 
     sns.heatmap(df,cbar=False,xticklabels=labeltick,yticklabels=labeltick)
+    plt.title("heatmap doc:{} clustering:{}".format(C.name_doc,C.name_cluster),fontsize=16)
     plt.tight_layout()
     #plt.savefig("clustering_{}.png".format(n_clusters))
     plt.show()
