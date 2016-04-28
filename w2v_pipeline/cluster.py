@@ -1,104 +1,98 @@
-import clustering
 import numpy as np
-import pandas as pd
 import h5py
 import os, glob, itertools, collections
-import sklearn.cluster as skc
 
-class random_unit_hypersphere(object):
-    def __init__(self,dim=3):
-        self.dim = dim
+from clustering.similarity import load_embeddings, compute_document_similarity
+from utils.os_utils import mkdir
 
-    def generate_random_unit_hypersphere_point(self,*args):
-        return np.random.normal(size=self.dim)
-        
-    def __call__(self, n=5):
-        func = self.generate_random_unit_hypersphere_point
-        INPUT_ITR = itertools.repeat(self.dim,n)
-        ITR = itertools.imap(func,INPUT_ITR)
-        result = np.array(list(ITR))
-        return result
-
-class random_spectral_sampling(object):
-    def __init__(self,X):
-        dim = X.shape[1]
-        U,s,V = np.linalg.svd(X,full_matrices=False)
-        s = np.diag(s)
-
-        self.dim = dim//5
-        self.U = U[:,:self.dim]
-        self.s = s[:self.dim,:self.dim]
-        self.V = V[:self.dim,:]
-
-    def __call__(self, n=5):
-        print "HI!"
-        UX = np.random.uniform(-1,1,size=(n,self.dim))
-        UX /= np.linalg.norm(UX,axis=0)
-        Z = UX.dot(self.s.dot(self.V))
-        Z = (Z.T/np.linalg.norm(Z,axis=1)).T
-        return Z
+from sklearn.cluster import SpectralClustering
+from sklearn.manifold import TSNE
 
 
-def compute_cluster_means(X,clusters):
-    MU = []
-    for i in np.arange(clusters.max()+1):
-        idx = clusters==i
-        mu = X[idx].sum(axis=0)
-        mu /= np.linalg.norm(mu)
-        MU.append(mu)
-    return np.array(MU)
-
-def compute_cluster_measure(X,clusters):
-    MU = compute_cluster_means(X,clusters)
-    cx = np.arange(clusters.max()+1)
-    M = np.zeros((len(cx),len(cx)))
-    for i in cx:
-        for j in cx:
-            idx = clusters==i
-            Z = X[idx].dot(MU[j])
-            M[i,j] = Z.mean()
-
-    return M 
-    
-
-
-def compute_cluster_compactness(X,clusters):
-    '''
-    W_k
-    '''
-    compactness = []
-    for i in np.arange(clusters.max()+1):
-        idx = clusters==i
-        mu = X[idx].sum(axis=0)
-        mu /= np.linalg.norm(mu)
-        delta = mu-X[idx]
-        z = np.linalg.norm(delta,axis=1)
-        compactness.append(z.mean())
-    return np.array(compactness)
+def reorder_data(idx, X, S, labels):
+    return X[idx], S[idx][:,idx], labels[idx]
 
 
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("clustering")
-
-    f_h5 = config["f_db_scores"]
-    h5 = h5py.File(f_h5,'r')
-
-    methods  = config["methods"]
-    pred_dir = config["predict_target_directory"]
-
-    input_glob  = os.path.join(pred_dir,'*')
-    input_files = glob.glob(input_glob)
-    input_names = ['.'.join(os.path.basename(x).split('.')[:-1])
-                   for x in input_files]
-
-    ITR = iter(methods)
-
-    #for method in ITR:
-    method = ITR.next()
-    print method
     
+
+    config = simple_config.load("cluster")
+    config_score = simple_config.load("score")
+
+    output_dir = config["output_data_directory"]
+    mkdir(output_dir)
+    
+    #W,WX = load_embeddings()
+
+    n_clusters = int(config["n_clusters"])
+    method = 'unique'
+
+
+    f_sim = os.path.join(output_dir, config["f_similarity"])
+    if not os.path.exists(f_sim):
+
+        f_h5 = os.path.join(
+            config_score["output_data_directory"],
+            config_score["document_scores"]["f_db"],
+        )
+        
+        h5_score = h5py.File(f_h5,'r')
+        
+        # Load the document scores
+        print "Loading the document scores"
+        X = np.vstack(h5_score[method][key] for key in h5_score[method])
+
+        # Compute and save the similarity matrix
+        print "Computing the similarity matrix"
+        
+        # Save the similarity matrix
+        h5_sim = h5py.File(f_sim,'w')
+        h5_sim[method] = compute_document_similarity(X)
+        h5_sim.close()
+
+
+    h5_sim = h5py.File(f_sim,'r')
+    S = h5_sim[method]
+    print S
+    
+    exit()
+    
+    # Cluster similarity matrix
+    print "Clustering"
+    clf = SpectralClustering(affinity="precomputed", n_clusters=n_clusters)
+    clusters = clf.fit_predict(S)
+
+    # Reorder the data so the data is the assigned cluster
+    idx = np.argsort(clusters)
+    X2, S2, labels = reorder_data(idx, X, S, clusters)
+    print S2.shape
+
+    # Plot the heatmap
+    import seaborn as sns
+    plt = sns.plt
+    sns.heatmap(S2)
+    sns.plt.show()
+    exit()
+
+    # Compute the tSNE
+    local_embed = TSNE(n_components=2,verbose=1,
+                       method='exact',
+                       metric='precomputed')
+    T = local_embed.fit_transform(1-S2)
+    print T
+    exit()
+
+    
+
+    print clusters
+
+
+    exit()
+
+
+    '''
     # Load document score data
     X0 = np.vstack([h5[method][name][:]
                     for name in input_names])
@@ -149,7 +143,7 @@ if __name__ == "__main__":
     
     sns.plt.legend()
     sns.plt.show()
-    
+    '''
     
     
     '''
