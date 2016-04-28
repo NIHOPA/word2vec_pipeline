@@ -1,12 +1,12 @@
 import numpy as np
 import h5py
-import os, glob, itertools, collections
+import os, itertools, collections
 
-from clustering.similarity import load_embeddings, compute_document_similarity
+import clustering.similarity as CSIM
 from utils.os_utils import mkdir
 
-from sklearn.cluster import SpectralClustering
 from sklearn.manifold import TSNE
+
 
 
 def reorder_data(idx, X, S, labels):
@@ -15,31 +15,34 @@ def reorder_data(idx, X, S, labels):
 
 if __name__ == "__main__":
 
-    import simple_config
-    
+    import simple_config   
 
     config = simple_config.load("cluster")
     config_score = simple_config.load("score")
 
     output_dir = config["output_data_directory"]
     mkdir(output_dir)
-    
-    #W,WX = load_embeddings()
 
-    n_clusters = int(config["n_clusters"])
     method = 'unique'
 
-
-    f_sim = os.path.join(output_dir, config["f_similarity"])
+    f_sim = os.path.join(output_dir, config["f_cluster"])
     if not os.path.exists(f_sim):
+        h5_sim = h5py.File(f_sim,'w')
+        h5_sim.close()
 
-        f_h5 = os.path.join(
-            config_score["output_data_directory"],
-            config_score["document_scores"]["f_db"],
-        )
-        
-        h5_score = h5py.File(f_h5,'r')
-        
+    h5_sim = h5py.File(f_sim,'r+')
+    group = h5_sim.require_group(method)
+    S = None
+
+
+    f_h5 = os.path.join(
+        config_score["output_data_directory"],
+        config_score["document_scores"]["f_db"],
+    )
+    h5_score = h5py.File(f_h5,'r') 
+      
+    if "similarity" not in group:
+
         # Load the document scores
         print "Loading the document scores"
         X = np.vstack(h5_score[method][key] for key in h5_score[method])
@@ -48,46 +51,75 @@ if __name__ == "__main__":
         print "Computing the similarity matrix"
         
         # Save the similarity matrix
-        h5_sim = h5py.File(f_sim,'w')
-        h5_sim[method] = compute_document_similarity(X)
-        h5_sim.close()
+        S = CSIM.compute_document_similarity(X)
+        group["similarity"] = S
 
+    '''
+    if "tSNE" not in group:
+        # Compute the tSNE
+        print "Computing tSNE for {}".format(method)
+        
+        if S is None: S = group["similarity"][:]
+        local_embed = TSNE(n_components=2,
+                           verbose=1,
+                           #method='exact',
+                           metric='precomputed')
 
-    h5_sim = h5py.File(f_sim,'r')
-    S = h5_sim[method]
-    print S
-    
-    exit()
-    
-    # Cluster similarity matrix
-    print "Clustering"
-    clf = SpectralClustering(affinity="precomputed", n_clusters=n_clusters)
-    clusters = clf.fit_predict(S)
+        # tSNE expect distances not similarities
+        group["tSNE"] = local_embed.fit_transform(1-S)
+    '''
+
+    for name in config["clustering_commands"]:
+
+        if name not in group["clustering"]:
+            # Only load the similarity matrix if needed
+            if S is None: S = group["similarity"][:]
+
+            print "Clustering {} {}".format(method, name)
+            
+            func = getattr(CSIM,name)
+            group["clustering"][name] = func(S,config[name])
+
+            
+
+    labels = group["clustering"]["spectral_clustering"][:]
+    S = group["similarity"][:]
+    X = np.vstack(h5_score[method][key] for key in h5_score[method])
 
     # Reorder the data so the data is the assigned cluster
-    idx = np.argsort(clusters)
-    X2, S2, labels = reorder_data(idx, X, S, clusters)
-    print S2.shape
+    idx = np.argsort(labels)
+    X, S, labels = reorder_data(idx, X, S, labels)
 
+    # Reorder the intra-clusters by closest to centroid
+    n_items = S.shape[0]
+    master_idx = np.arange(n_items)
+    cluster_ITR = range(max(labels)+1)
+
+    for cluster_i in cluster_ITR:
+        cluster_idx = labels==cluster_i
+        Z = X[cluster_idx]
+        zmu = Z.sum(axis=0)
+        zmu /= np.linalg.norm(zmu)
+        
+        dist = Z.dot(zmu)
+        dist_idx = np.argsort(dist)
+        master_idx[cluster_idx] = master_idx[cluster_idx][dist_idx]
+
+    X, S, labels = reorder_data(master_idx, X, S, labels)
+    
     # Plot the heatmap
+    import pandas as pd
     import seaborn as sns
     plt = sns.plt
-    sns.heatmap(S2)
-    sns.plt.show()
-    exit()
 
-    # Compute the tSNE
-    local_embed = TSNE(n_components=2,verbose=1,
-                       method='exact',
-                       metric='precomputed')
-    T = local_embed.fit_transform(1-S2)
-    print T
-    exit()
+    fig = plt.figure(figsize=(12,12))
+    df = pd.DataFrame(S, index=labels,columns=labels)
+    labeltick = int(len(df)/50)
 
-    
-
-    print clusters
-
+    sns.heatmap(df,cbar=False,xticklabels=labeltick,yticklabels=labeltick)
+    plt.tight_layout()
+    #plt.savefig("clustering_{}.png".format(n_clusters))
+    plt.show()
 
     exit()
 

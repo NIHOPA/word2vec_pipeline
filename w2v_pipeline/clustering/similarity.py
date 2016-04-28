@@ -1,7 +1,20 @@
 from scipy.spatial.distance import cdist, pdist
 import numpy as np
-
 import simple_config, os
+
+def spectral_clustering(S,config):
+    '''
+    Computes spectral clustering from an input similarity matrix.
+    Returns the labels associated with the clustering.
+    '''
+    from sklearn.cluster import SpectralClustering
+
+    nk = int(config["n_clusters"])
+
+    clf = SpectralClustering(affinity="precomputed",
+                             n_clusters=nk)
+    return clf.fit_predict(S)
+
 
 def load_embeddings():
     '''
