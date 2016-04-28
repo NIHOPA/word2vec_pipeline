@@ -2,7 +2,7 @@ from scipy.spatial.distance import cdist, pdist
 import numpy as np
 import simple_config, os
 
-def spectral_clustering(S,config):
+def spectral_clustering(S,X,config):
     '''
     Computes spectral clustering from an input similarity matrix.
     Returns the labels associated with the clustering.
@@ -10,10 +10,19 @@ def spectral_clustering(S,config):
     from sklearn.cluster import SpectralClustering
 
     nk = int(config["n_clusters"])
+    clf = SpectralClustering(affinity='cosine',n_clusters=nk)
+    return clf.fit_predict(X)
 
-    clf = SpectralClustering(affinity="precomputed",
-                             n_clusters=nk)
-    return clf.fit_predict(S)
+def hdbscan_clustering(S,X,config):
+    '''
+    Computes H-DBSCAN clustering from an input similarity matrix.
+    Returns the labels associated with the clustering.
+    '''
+    from hdbscan import HDBSCAN
+
+    min_size = config.as_int("min_cluster_size")
+    clf = HDBSCAN(min_cluster_size=min_size)
+    return clf.fit_predict(X)
 
 
 def load_embeddings():

@@ -7,7 +7,6 @@ from utils.os_utils import mkdir
 from unidecode import unidecode
 from sklearn.manifold import TSNE
 
-
 class cluster_object(object):
     '''
     Helper class to represent all the constitute parts of a clustering
@@ -24,11 +23,13 @@ class cluster_object(object):
         self.T = g["tSNE"][:]
         self.S = g["similarity"][:]
         self.X = load_document_vectors()
+        h5.close()
 
         assert(self.X.shape[0] == self.T.shape[0] == self.S.shape[0])
-        self.cluster_n = self.labels.max()+1
 
-        h5.close()
+        self._label_iter = np.sort(np.unique(self.labels))
+        self.cluster_n = self._label_iter.size
+
 
     def reorder(self,idx):
         self.X = self.X[idx]
@@ -45,16 +46,17 @@ class cluster_object(object):
         self.reorder(idx)
 
     def sort_intra(self):
-        master_idx = np.arange(len(C))
+        master_idx = np.arange(len(self))
         
-        for i in range(C.cluster_n):
+        for i in self._label_iter:
             cidx = self.labels==i
-            Z = X[cidx]
-            zmu = Z.sum(axis=0)
+            Z    = self.X[cidx]
+            zmu  = Z.sum(axis=0)
             zmu /= np.linalg.norm(zmu)
             
             dist = Z.dot(zmu)
-            master_idx[cidx] = master_idx[cidx][np.argsort(dist)]
+            dist_idx = np.argsort(dist)
+            master_idx[cidx] = master_idx[cidx][dist_idx]
 
         self.reorder(master_idx)
 
@@ -82,7 +84,6 @@ def close_words(W,X,labels,top_n=6):
 
     # Remove _PHRASE
     L = map(lambda x:x.replace('PHRASE_',''),L)
-    print L
    
     return L
 
@@ -102,6 +103,7 @@ def load_document_vectors():
 
     if config["command_whitelist"]:
         keys = [k for k in keys if k in config["command_whitelist"]]
+        print "Only computing over", keys
 
     X = np.vstack(h5_score[method][key] for key in keys)
     h5_score.close()
@@ -118,8 +120,13 @@ if __name__ == "__main__":
     mkdir(output_dir)
 
     method = 'unique'
-
+    
     f_sim = os.path.join(output_dir, config["f_cluster"])
+
+    if config.as_bool("_FORCE"):
+        os.remove(f_sim)
+    
+    
     if not os.path.exists(f_sim):
         h5_sim = h5py.File(f_sim,'w')
         h5_sim.close()
@@ -160,15 +167,17 @@ if __name__ == "__main__":
 
     for name in config["clustering_commands"]:
 
-        if name not in group["clustering"] or config.as_bool("_FORCE"):
+        if name not in group["clustering"]:
             # Only load the similarity matrix if needed
             if S is None : S = group["similarity"][:]
-            if W is None: W = CSIM.load_embeddings()
+            if W is None : W = CSIM.load_embeddings()
 
             print "Clustering {} {}".format(method, name)
             
             func = getattr(CSIM,name)
-            labels = func(S,config[name])
+            labels = func(S,X,config[name])
+
+            assert(labels.size == X.shape[0])
             
             if name in group["clustering"]: del group["clustering"][name]
             group["clustering"][name] = labels
@@ -181,6 +190,8 @@ if __name__ == "__main__":
     # Load the cluster object
     document_score_method = method
     cluster_method = "spectral_clustering"
+    #cluster_method = "hdbscan_clustering"
+    
     C = cluster_object(h5_sim, document_score_method, cluster_method)
 
     # Sort by labels first
@@ -194,11 +205,12 @@ if __name__ == "__main__":
     import seaborn as sns
     plt = sns.plt
 
+    
     fig = plt.figure(figsize=(9,9))
     print "Plotting tSNE"
     colors = sns.color_palette("hls", C.cluster_n)
                                
-    for i in range(C.cluster_n):
+    for i in C._label_iter:
         x,y = zip(*C.T[C.labels == i])
         label = 'cluster {}, {}'.format(i,C.words[i])
 
@@ -206,6 +218,7 @@ if __name__ == "__main__":
     plt.title("tSNE doc:{} plot".format(C.name_doc),fontsize=16)
     plt.legend(loc=1,fontsize=12)
     plt.tight_layout()
+    
     
     fig = plt.figure(figsize=(12,12))
     print "Plotting heatmap"
