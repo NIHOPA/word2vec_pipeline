@@ -9,7 +9,7 @@ from unidecode import unidecode
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
-    return s.decode('utf-8')
+    return s.decode('utf-8',errors='replace')
 
 def clean_dataframe(df):
     # Changes all columns of type object into strings
