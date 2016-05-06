@@ -5,6 +5,7 @@ _POS_shorthand = {
     "adjective"   : "ADJ",
     "noun"        : "N",
     "verb"        : "V",
+    "modal_verb"  : "V",
     "adverb"      : "RB",
     "unknown"     : "UNK",
 }
