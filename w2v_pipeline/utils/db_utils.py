@@ -21,7 +21,8 @@ def count_rows(conn, table):
     Not the true row count, but the maxID. Useful for sanity checks.
     '''
     if table not in list_tables(conn):
-        return None
+        msg = "Table {} not database.".format(table)
+        raise ValueError(msg)
         
     #cmd = "SELECT MAX(_ROWID_) FROM {} LIMIT 1;"
     cmd = "SELECT COUNT(*) FROM {}"
