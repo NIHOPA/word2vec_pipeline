@@ -35,21 +35,29 @@ if __name__ == "__main__":
     input_names = ['.'.join(os.path.basename(x).split('.')[:-1])
                    for x in input_files]
 
-    ITR = itertools.product(methods, config["categorical_columns"])
 
-    for (method, column) in ITR:
+    ITR = itertools.product(methods,
+                            config["categorical_columns"],
+                            config["target_columns"])
 
+    for (method, cat_col, data_col) in ITR:
+
+        assert(method in h5)    
+        assert(data_col in h5[method])
+        g = h5[method][data_col]
+    
         # Make sure every file has been scored or skip it.
         saved_input_names = []
         for f in input_names:
-            if f not in h5[method]:
+            if f not in g:
                 msg = "'{}' not in {}:{} skipping"
-                print msg.format(f,method,column)
+                print msg.format(f,method,cat_col)
                 continue
             saved_input_names.append(f)
 
+
         # Load document score data
-        X = np.vstack([h5[method][name][:]
+        X = np.vstack([g[name][:]
                        for name in saved_input_names])
 
         # Load the categorical columns
@@ -58,8 +66,8 @@ if __name__ == "__main__":
             f_sql = os.path.join(pred_dir,name) + '.sqlite'
             engine = create_engine('sqlite:///'+f_sql)
             df = pd.read_sql_table("original",engine,
-                                   columns=[column,])
-            y = df[column].values
+                                   columns=[cat_col,])
+            y = df[cat_col].values
             Y.append(y)
 
         Y = np.hstack(Y)
@@ -71,8 +79,8 @@ if __name__ == "__main__":
         # Predict
         scores,errors,pred = categorical_predict(X,Y,method,config)
 
-        text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
-        print text.format(method, column,
+        text = "Predicting [{}] [{}:{}] {:0.4f} ({:0.4f})"
+        print text.format(method, cat_col, data_col,
                           scores.mean(), baseline_score)
 
         PREDICTIONS[method] = pred
@@ -85,8 +93,8 @@ if __name__ == "__main__":
     method = "meta"
     scores,errors,pred = categorical_predict(META_X,Y,method,config)
 
-    text = "Predicting [{}] [{}] {:0.4f} ({:0.4f})"
-    print text.format(method, column,
+    text = "Predicting [{}] [{}:{}] {:0.4f} ({:0.4f})"
+    print text.format(method, cat_col, data_col,
                       scores.mean(), baseline_score)
 
     PREDICTIONS[method] = pred
