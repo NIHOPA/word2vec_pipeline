@@ -181,20 +181,6 @@ class document_scores(corpus_iterator):
             df = pd.DataFrame(data=data,
                               columns=["V","idx","table_name","f_sql"])
 
-            # Fold over the table_names
-            data = []
-            for tag,rows in df.groupby(["idx","f_sql"]):
-                idx, f_sql = tag
-                
-                item = {
-                    "idx"  :idx,
-                    "f_sql":f_sql,
-                    "V":np.hstack(rows.V.values),
-                }
-                data.append(item)
-                
-            df = pd.DataFrame.from_dict(data)
-
             self.save(config, df)
 
     def save(self, config, df):
@@ -211,28 +197,29 @@ class document_scores(corpus_iterator):
         else:
             h5 = h5py.File(f_db,'r+')
 
-        for key,data_group in df.groupby("f_sql"):
-
-            # Save into the group of the base file name
-            name = '.'.join(os.path.basename(key).split('.')[:-1])
+        g1  = h5.require_group(method)
+        
+        for key_table,df2 in df.groupby("table_name"):
+            g2 = g1.require_group(key_table)
             
-            g  = h5.require_group(method)
+            for key_sql,df3 in df2.groupby("f_sql"):
 
-            V = np.array(data_group["V"].tolist())
-            
-            print "Saving", name, method, V.shape
+                # Save into the group of the base file name
+                name = '.'.join(os.path.basename(key_sql).split('.')[:-1])
 
-            all_sizes = set([x.shape for x in V])
-            if len(all_sizes) != 1:
-                msg = "Method {} failed, sizes differ {}"
-                raise ValueError(msg.format(name, all_sizes))
+                print "Saving", method, key_table, name, df3["V"].shape
+                
+                V = np.array(df3["V"].tolist())
 
-            
-            if name in g:
-                del g[name]
+                # Sanity check on sizes
+                all_sizes = set([x.shape for x in V])
+                if len(all_sizes) != 1:
+                    msg = "Method {} failed, sizes differ {}"
+                    raise ValueError(msg.format(name, all_sizes))
 
-            g.create_dataset(name,
-                             data=V,
-                             compression='gzip')
+                if name in g2: del g2[name]
+
+                g2.create_dataset(name,data=V,compression='gzip')
+
 
         h5.close()

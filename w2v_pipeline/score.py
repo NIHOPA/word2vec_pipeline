@@ -35,7 +35,6 @@ def item_iterator(name,cmd_config=None):
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
     # Get database sizes for progress bar
-    print "Counting database size"
     total_items = 0
     for f_sql, target_col in DB_ITR:
         conn = sqlite3.connect(f_sql, check_same_thread=False)

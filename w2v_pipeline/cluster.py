@@ -11,7 +11,10 @@ class cluster_object(object):
     '''
     Helper class to represent all the constitute parts of a clustering
     '''
-    def __init__(self,h5,document_score_method, cluster_method):
+    def __init__(self,h5,
+                 document_score_method,
+                 cluster_method,
+                 target_column):
 
         self.name_doc = document_score_method
         self.name_cluster = cluster_method
@@ -22,7 +25,7 @@ class cluster_object(object):
         self.words = g["nearby_words"][cluster_method][:]
         self.T = g["tSNE"][:]
         self.S = g["similarity"][:]
-        self.X = load_document_vectors()
+        self.X = load_document_vectors(target_column)
         h5.close()
 
         assert(self.X.shape[0] == self.T.shape[0] == self.S.shape[0])
@@ -87,7 +90,7 @@ def close_words(W,X,labels,top_n=6):
    
     return L
 
-def load_document_vectors():
+def load_document_vectors(target_column):
 
     config_score = simple_config.load("score")
 
@@ -95,18 +98,22 @@ def load_document_vectors():
         config_score["output_data_directory"],
         config_score["document_scores"]["f_db"],
     )
-    h5_score = h5py.File(f_h5,'r') 
-      
-    print "Loading the document scores", h5_score
+    h5_score = h5py.File(f_h5,'r')
 
-    keys = h5_score[method].keys()
+    assert(method in h5_score)    
+    assert(target_column in h5_score[method])
+    g = h5_score[method][target_column]
+
+    print "Loading the document scores", g
+    keys = g.keys()
 
     if config["command_whitelist"]:
         keys = [k for k in keys if k in config["command_whitelist"]]
         print "Only computing over", keys
 
-    X = np.vstack(h5_score[method][key] for key in keys)
+    X = np.vstack(g[key] for key in keys)
     h5_score.close()
+
     return X
 
 
@@ -119,14 +126,14 @@ if __name__ == "__main__":
     output_dir = config["output_data_directory"]
     mkdir(output_dir)
 
-    method = 'unique'
+    method = config['score_method']
+    target_column = config['score_column']
     
     f_sim = os.path.join(output_dir, config["f_cluster"])
 
     if config.as_bool("_FORCE"):
         os.remove(f_sim)
-    
-    
+        
     if not os.path.exists(f_sim):
         h5_sim = h5py.File(f_sim,'w')
         h5_sim.close()
@@ -137,7 +144,7 @@ if __name__ == "__main__":
     W = None
 
     # Load the document scores
-    X = load_document_vectors()
+    X = load_document_vectors(target_column)
 
     if "similarity" not in group:
 
@@ -190,9 +197,13 @@ if __name__ == "__main__":
     # Load the cluster object
     document_score_method = method
     cluster_method = "spectral_clustering"
+    
     #cluster_method = "hdbscan_clustering"
     
-    C = cluster_object(h5_sim, document_score_method, cluster_method)
+    C = cluster_object(h5_sim,
+                       document_score_method,
+                       cluster_method,
+                       target_column)
 
     # Sort by labels first
     C.sort_labels()
