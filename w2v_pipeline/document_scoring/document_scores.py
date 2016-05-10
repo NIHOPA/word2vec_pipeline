@@ -6,8 +6,6 @@ import h5py
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 
-import tqdm
-
 class document_scores(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
@@ -177,7 +175,7 @@ class document_scores(corpus_iterator):
             ITR = itertools.imap(self.score_document, self)
             
             data = []
-            for result in tqdm.tqdm(ITR):
+            for result in ITR:
                 data.append(result)
 
             df = pd.DataFrame(data=data,

@@ -1,8 +1,9 @@
 import sqlite3, glob, os, itertools, random
 from utils.os_utils import mkdir
 import document_scoring as ds
-from utils.db_utils import database_iterator
+from utils.db_utils import database_iterator, count_rows
 import simple_config
+import tqdm
 
 _global_limit = 0
 
@@ -33,9 +34,19 @@ def item_iterator(name,cmd_config=None):
     F_SQL = random.sample(sorted(F_SQL), len(F_SQL))  
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
+    # Get database sizes for progress bar
+    print "Counting database size"
+    total_items = 0
     for f_sql, target_col in DB_ITR:
+        conn = sqlite3.connect(f_sql, check_same_thread=False)
+        total_items += count_rows(conn, target_col)
+        conn.close()
+    progress_bar = tqdm.tqdm(total=total_items)
 
-        #print ("Computing {}:{}".format(f_sql, target_col))
+    # Rebuild the iterator
+    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+
+    for f_sql, target_col in DB_ITR:
         
         conn = sqlite3.connect(f_sql, check_same_thread=False)
 
@@ -54,8 +65,10 @@ def item_iterator(name,cmd_config=None):
             args["include_meta"] = True
 
         INPUT_ITR = database_iterator(**args)
+
         for item in INPUT_ITR:
             yield list(item) + [f_sql,]
+            progress_bar.update()
 
 if __name__ == "__main__":
 
@@ -66,14 +79,15 @@ if __name__ == "__main__":
 
     mkdir(config["output_data_directory"])
 
-    if _PARALLEL:
-        import multiprocessing
-
     ###########################################################
     # Fill the pipeline with function objects
 
     mapreduce_functions = []
     for name in config["mapreduce_commands"]:
+
+        if _PARALLEL:
+            import multiprocessing
+            
         obj  = getattr(ds,name)
 
         # Load any kwargs in the config file
