@@ -2,7 +2,9 @@ import sqlite3, glob, os, itertools
 from utils.db_utils import database_iterator, list_tables, count_rows
 from utils.os_utils import mkdir
 import preprocessing as pre
-import gc, multiprocessing
+import gc
+
+from utils.parallel_utils import jobmap
 
 global_limit = 0
 
@@ -28,9 +30,6 @@ if __name__ == "__main__":
     config = simple_config.load("parse")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
-
-    if _PARALLEL:
-        import multiprocessing
 
     import_config = simple_config.load("import_data")
     input_data_dir = import_config["output_data_directory"]
@@ -96,12 +95,7 @@ if __name__ == "__main__":
             
         INPUT_ITR = database_iterator(**args)
 
-        if not _PARALLEL:
-            ITR = itertools.imap(dispatcher, INPUT_ITR)
-
-        if _PARALLEL:
-            P = multiprocessing.Pool(15)
-            ITR = P.imap(dispatcher, INPUT_ITR, chunksize=5)
+        ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL)
 
         cmd_create = '''
         DROP TABLE IF EXISTS {table_name};
@@ -123,9 +117,6 @@ if __name__ == "__main__":
         conn_out.commit()
         conn_out.close()
         conn.close()
-
-        if _PARALLEL:
-            del P
             
         del INPUT_ITR, ITR, conn, conn_out, tables
         gc.collect()

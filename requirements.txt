@@ -11,5 +11,7 @@ h5py
 scipy
 
 #pyksvd
-
 psutil
+
+# Replaces pythons multiprocessing
+joblib==0.9.4

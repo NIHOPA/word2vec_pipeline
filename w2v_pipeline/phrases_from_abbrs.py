@@ -5,6 +5,9 @@ import utils.db_utils
 import pandas as pd
 from sqlalchemy import create_engine
 import pyparsing as pypar
+import tqdm
+
+from utils.parallel_utils import jobmap
 
 global_limit  = 0
 global_offset = 0
@@ -100,42 +103,53 @@ def evaluate_document(item):
 
     return results
 
+
+def dedupe_item(item):
+    global ABR
+
+    (phrase, abbr), count = item
+    p1 = ' '.join(phrase)
+    match_keys = []
+
+    for key2 in ABR.keys():
+        phrase2, abbr2 = key2
+        p2 = ' '.join(phrase2)
+
+        # Only merge when abbreviations match
+        if abbr != abbr2:
+            continue
+
+        # If lower cased phrases match merge them
+        if p1.lower() == p2.lower():
+            match_keys.append(key2)
+
+        # If phrase without trailing 's' matches, merge
+        elif p1.rstrip('s') == p2.rstrip('s'):
+            match_keys.append(key2)
+            
+    return match_keys
+
+
 def dedupe_abbr(ABR):
     data = {}
+    
+    ITR = jobmap(dedupe_item, tqdm.tqdm(ABR.items()), True)
+    for result in ITR:
 
-    for key1,c1 in ABR.most_common():
-        phrase,abbr1 = key1
-        p1 = ' '.join(phrase)
-        FLAG_continue = False
-        
-        for key2,c2 in data.items():
-            p2,abbr2  = key2
-            save_key2 = (p2,abbr2)
-
-            # Only merge when abbreviations match
-            if abbr1 != abbr2:
-                continue
-        
-            # If lower cased phrases match merge them
-            if p1.lower() == p2.lower():
-                data[save_key2] = c1+c2
-                FLAG_continue = True
-                #print "Merging case '{}', '{}'".format(p1, p2)
-                break
-
-            # If phrase without trailing 's' matches, merge
-            if p1.rstrip('s') == p2.rstrip('s'):
-                data[save_key2] = c1+c2
-                FLAG_continue = True
-                #print "Merging plural '{}', '{}'".format(p1, p2)
-                break
-
-        if FLAG_continue: continue
-
-        save_key1 = (p1,abbr1)
-        data[save_key1] = c1
+        # Only add the most common result
+        max_val,max_item = 0, None
+        total_counts = 0
+        for item in result:
+            current_val = ABR[item]
+            total_counts += current_val
+            if current_val > max_val:
+                max_val = current_val
+                max_item = item
+                
+        data[(' '.join(max_item[0]), max_item[1])] = total_counts
 
     ABR = collections.Counter(data)
+
     return ABR
     
 
@@ -160,10 +174,6 @@ if __name__ == "__main__":
 
     dfunc = utils.db_utils.database_iterator
 
-    if _PARALLEL:
-        import multiprocessing
-        MP = multiprocessing.Pool()
-
     FILE_COL_ITR = itertools.product(F_SQL, target_columns)
 
     for f_sql,column_name in FILE_COL_ITR:
@@ -177,10 +187,8 @@ if __name__ == "__main__":
                           offset=global_offset,
                           progress_bar=True,
         )
-        ITR = itertools.imap(evaluate_document, INPUT_ITR)
 
-        if _PARALLEL:
-            ITR = MP.imap(evaluate_document, INPUT_ITR)
+        ITR = jobmap(evaluate_document, INPUT_ITR, _PARALLEL)
 
         for result in ITR:
             ABR.update(result)
@@ -189,8 +197,10 @@ if __name__ == "__main__":
         print msg.format(f_sql,column_name,len(ABR))
 
     # Merge abbreviations that are similar
-    print "Deduping list"
+    print "Deduping list"    
     ABR = dedupe_abbr(ABR)
+    print "{} abbrs remain after deduping".format(len(ABR))
+
 
     # Convert abbrs to a list
     data_insert = [(phrase,abbr,count) 

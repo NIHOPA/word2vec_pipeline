@@ -34,8 +34,6 @@ class document_scores(corpus_iterator):
             import sqlalchemy
             engine = sqlalchemy.create_engine('sqlite:///'+f_db)
             
-            #self.TF  = pd.read_sql_table("term_frequency",
-            #                             engine,index_col='word')
             IDF = pd.read_sql_table("term_document_frequency",engine)
             IDF = dict(zip(IDF["word"].values, IDF["count"].values))
             
@@ -178,14 +176,6 @@ class document_scores(corpus_iterator):
         return [doc_vec,idx,] + other_args
 
     def compute(self, config):
-        '''
-        if self._PARALLEL:
-            import multiprocessing
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(self.score_document, self.iter_func())
-        else:
-            ITR = itertools.imap(self.score_document, self.iter_func())
-        '''
 
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
