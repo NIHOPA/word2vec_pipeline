@@ -6,6 +6,16 @@ import h5py
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 
+'''
+class generic_document_score(corpus_iterator):
+
+    # Make sure to define a method!
+    method = None
+
+    def __init__(self,*args,**kwargs):
+        super(document_scores, self).__init__(*args,**kwargs)  
+'''
+
 class document_scores(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
@@ -36,7 +46,6 @@ class document_scores(corpus_iterator):
                 IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
             self.IDF = IDF
 
-
         f_w2v = os.path.join(
             kwargs["embedding"]["output_data_directory"],
             kwargs["embedding"]["w2v_embedding"]["f_db"],
@@ -46,11 +55,6 @@ class document_scores(corpus_iterator):
         self.M = Word2Vec.load(f_w2v)
         self.shape = self.M.syn0.shape
         
-        # Build total counts
-        self.counts = {}
-        for key,val in self.M.vocab.items():
-            self.counts[key] = val.count
-
         # Build the dictionary
         self.methods = kwargs["methods"]
         vocab_n = self.shape[0]
@@ -91,16 +95,17 @@ class document_scores(corpus_iterator):
             weights = dict.fromkeys(tokens, 1.0)
         elif method in ["simple",]:
             weights = dict([(w,local_counts[w]) for w in tokens])
-
         elif method in ["simple_TF"]:
             weights = dict([(w,local_counts[w]*self.IDF[w])
                             for w in tokens])
+        elif method in ["unique_TF"]:
+            weights = dict([(w,self.IDF[w]*1.0) for w in tokens])
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","simple_TF"]:
+        if method in ["unique","simple","simple_TF","unique_TF"]:
             DV = np.array([self.M[w] for w in tokens])
             
         elif method in ["pos_split"]:
@@ -133,7 +138,7 @@ class document_scores(corpus_iterator):
 
 
         # Sum all the vectors with their weights
-        if method in ["simple","unique", "simple_TF"]:
+        if method in ["simple","unique","simple_TF","unique_TF"]:
             # Build the weight matrix
             W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
             
