@@ -84,9 +84,6 @@ if __name__ == "__main__":
     mapreduce_functions = []
     for name in config["mapreduce_commands"]:
 
-        if _PARALLEL:
-            import multiprocessing
-            
         obj  = getattr(ds,name)
 
         # Load any kwargs in the config file
@@ -100,12 +97,7 @@ if __name__ == "__main__":
     for name, func in mapreduce_functions:
 
         INPUT_ITR = item_iterator(name, config[name])
-        
-        if _PARALLEL:
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, INPUT_ITR, chunksize=200)
-        else:
-            ITR = itertools.imap(func, INPUT_ITR)
+        ITR = itertools.imap(func, INPUT_ITR)
 
         for item in ITR:
             result = item[0]

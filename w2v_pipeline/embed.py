@@ -56,14 +56,10 @@ if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load("embedding")
-    _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
     mkdir(config["output_data_directory"])
-
-    if _PARALLEL:
-        import multiprocessing
-
+    
     ###########################################################
     # Run the functions that act globally on the data
 
