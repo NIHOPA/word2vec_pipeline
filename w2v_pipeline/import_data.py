@@ -64,10 +64,10 @@ def import_directory_csv(d_in, d_out, output_table):
         F_SQL[f_csv] = f_sql
 
 
-    ITR = jobmap(load_csv, F_CSV, _PARALLEL)
-    
     # Create the output directory if needed
     mkdir(d_out)
+
+    ITR = jobmap(load_csv, F_CSV, _PARALLEL)
 
     for (f_csv,df) in ITR:
 
