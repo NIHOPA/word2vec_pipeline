@@ -6,6 +6,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from unidecode import unidecode
 
+from utils.parallel_utils import jobmap
+
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
@@ -62,14 +64,8 @@ def import_directory_csv(d_in, d_out, output_table):
         F_SQL[f_csv] = f_sql
 
 
-    if not _PARALLEL:
-        ITR = itertools.imap(load_csv, F_CSV)
-
-    if _PARALLEL:
-        import multiprocessing
-        P = multiprocessing.Pool()
-        ITR = P.imap(load_csv, F_CSV, chunksize=10)
-
+    ITR = jobmap(load_csv, F_CSV, _PARALLEL)
+    
     # Create the output directory if needed
     mkdir(d_out)
 

@@ -34,8 +34,6 @@ class document_scores(corpus_iterator):
             import sqlalchemy
             engine = sqlalchemy.create_engine('sqlite:///'+f_db)
             
-            #self.TF  = pd.read_sql_table("term_frequency",
-            #                             engine,index_col='word')
             IDF = pd.read_sql_table("term_document_frequency",engine)
             IDF = dict(zip(IDF["word"].values, IDF["count"].values))
             
