@@ -11,6 +11,32 @@ class document_scores(corpus_iterator):
     def __init__(self,*args,**kwargs):
         super(document_scores, self).__init__(*args,**kwargs)
 
+        # Check if we need to load term_frequency data
+        if "simple_TF" in kwargs['methods']:
+            f_db = os.path.join(
+                kwargs['output_data_directory'],
+                kwargs['term_frequency']['f_db']
+            )
+            if not os.path.exists(f_db):
+                msg = "{} not computed yet, needed for TF methods!"
+                raise ValueError(msg.format(f_db))
+
+            import sqlalchemy
+            engine = sqlalchemy.create_engine('sqlite:///'+f_db)
+            
+            #self.TF  = pd.read_sql_table("term_frequency",
+            #                             engine,index_col='word')
+            IDF = pd.read_sql_table("term_document_frequency",engine)
+            IDF = dict(zip(IDF["word"].values, IDF["count"].values))
+            
+            self.corpus_N = IDF.pop("")
+            
+            # Compute the IDF
+            for key in IDF:
+                IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
+            self.IDF = IDF
+
+
         f_w2v = os.path.join(
             kwargs["embedding"]["output_data_directory"],
             kwargs["embedding"]["w2v_embedding"]["f_db"],
@@ -63,23 +89,21 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["unique","pos_split"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple","svd_stack"]:
+        elif method in ["simple",]:
             weights = dict([(w,local_counts[w]) for w in tokens])
-        elif method in ["TF_IDF","kSVD"]:
-            weights = dict([(w,IDF[w]*c) 
-                            for w,c in local_counts.items()])
+
+        elif method in ["simple_TF"]:
+            weights = dict([(w,local_counts[w]*self.IDF[w])
+                            for w in tokens])
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
 
         # Lookup the embedding vector
-        if method in ["unique","simple","TF_IDF","svd_stack"]:
+        if method in ["unique","simple","simple_TF"]:
             DV = np.array([self.M[w] for w in tokens])
-        elif method in ["kSVD"]:
-            word_idx = [self.word2index[w] for w in tokens]
-            DV = [self.kSVD_gamma[n] for n in word_idx]
+            
         elif method in ["pos_split"]:
-
             known_tags = ["N","ADJ","V"]
             dim = self.M.syn0.shape[1]
             pos_vecs = {}
@@ -109,11 +133,11 @@ class document_scores(corpus_iterator):
 
 
         # Sum all the vectors with their weights
-        if method in ["simple","unique"]:
+        if method in ["simple","unique", "simple_TF"]:
             # Build the weight matrix
             W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+            
             DV = np.array(DV)
-
             doc_vec = (W*DV).sum(axis=0)
 
             # Renormalize onto the hypersphere
@@ -138,24 +162,12 @@ class document_scores(corpus_iterator):
             if no_token_FLAG:
                 doc_vec = np.zeros(dim*len(known_tags),dtype=float)
 
-        elif method in ["svd_stack"]:
-            # Build the weight matrix
-            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-            DV = np.array(DV)
-
-            n = 2
-            _U,_s,_V = np.linalg.svd(DV)
-            doc_vec = np.hstack([np.hstack(_V[:n]), _s[:n]])
-
-            if no_token_FLAG:
-                doc_vec = np.zeros(dim*n,dtype=float)
-            
         else:
             msg = "UNKNOWN w2v method '{}'".format(method)
             raise KeyError(msg)
 
         
-        # Sanity check
+        # Sanity check, should not have any NaNs
         assert(not np.isnan(doc_vec).any()) 
 
         return [doc_vec,idx,] + other_args

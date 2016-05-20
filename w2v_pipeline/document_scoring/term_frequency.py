@@ -39,6 +39,7 @@ class frequency_counter(simple_mapreduce):
 
         df.to_sql(self.table_name,
                   engine,
+                  index=False,
                   if_exists='replace')
     
 
