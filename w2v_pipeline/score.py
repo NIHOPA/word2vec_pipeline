@@ -101,11 +101,11 @@ if __name__ == "__main__":
 
         INPUT_ITR = item_iterator(name, config[name])
         
-        if _PARALLEL:
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, INPUT_ITR, chunksize=200)
-        else:
-            ITR = itertools.imap(func, INPUT_ITR)
+        #if _PARALLEL:
+        #    MP = multiprocessing.Pool()
+        #    ITR = MP.imap(func, INPUT_ITR, chunksize=200)
+        #else:
+        ITR = itertools.imap(func, INPUT_ITR)
 
         for item in ITR:
             result = item[0]
@@ -129,4 +129,5 @@ if __name__ == "__main__":
         
         func = obj(**kwargs)
         func.set_iterator_function(item_iterator,name,config[name])
-        func.compute(config)        
+        func.compute(config)
+        
