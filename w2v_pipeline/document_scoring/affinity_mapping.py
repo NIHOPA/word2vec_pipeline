@@ -13,6 +13,8 @@ import tqdm
 from scipy import sparse
 from sklearn.decomposition import SparseCoder
 
+from utils.parallel_utils import jobmap
+
 damping = None
 M = None
 sparse_coder = None
@@ -104,13 +106,7 @@ class affinity_mapping(corpus_iterator):
     def compute(self, config):
 
         func = compute_affinity
-        if self._PARALLEL:
-            import multiprocessing
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, self)
-        else:
-            ITR = itertools.imap(func, self)
-
+        ITR = jobmap(func, self, self.PARALLEL)
         print "Computing affinity propagation"
 
         for result in tqdm.tqdm(ITR):
@@ -194,13 +190,7 @@ class affinity_grouping(corpus_iterator):
     def cluster_affinity_states(self, INPUT_ITR, size=0):
 
         func = compute_local_affinity
-
-        if self._PARALLEL:
-            import multiprocessing
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, INPUT_ITR)
-        else:
-            ITR = itertools.imap(func, INPUT_ITR)
+        ITR = jobmap(func, INPUT_ITR, self.PARALLEL)
         
         Z = []
 
@@ -320,12 +310,7 @@ class affinity_scoring(affinity_mapping):
     def compute(self, config):
 
         func = compute_document_affinity
-        if self._PARALLEL:
-            import multiprocessing
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(func, self)
-        else:
-            ITR = itertools.imap(func, self)
+        ITR = jobmap(func, self, self.PARALLEL)
 
         doc_data = []
 

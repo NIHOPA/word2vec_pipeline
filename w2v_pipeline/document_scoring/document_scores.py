@@ -176,14 +176,6 @@ class document_scores(corpus_iterator):
         return [doc_vec,idx,] + other_args
 
     def compute(self, config):
-        '''
-        if self._PARALLEL:
-            import multiprocessing
-            MP = multiprocessing.Pool()
-            ITR = MP.imap(self.score_document, self.iter_func())
-        else:
-            ITR = itertools.imap(self.score_document, self.iter_func())
-        '''
 
         for self.current_method in self.methods:
             print "Scoring {}".format(self.current_method)
