@@ -1,8 +1,10 @@
 import numpy as np
-import itertools, multiprocessing
+import itertools
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
 import sklearn.ensemble
+
+from utils.parallel_utils import jobmap
 
 def clf_extratree_predictor(item):
     (clf_args,idx,X,y) = item
@@ -47,9 +49,7 @@ def categorical_predict(X,y_org,method_name,config):
 
     INPUT_ITR = ((clf_args, idx, X, y) for idx in skf)
 
-    ITR = itertools.imap(clf_extratree_predictor, INPUT_ITR)
-    MP = multiprocessing.Pool()
-    ITR = MP.imap(clf_extratree_predictor, INPUT_ITR)
+    ITR = jobmap(clf_extratree_predictor, INPUT_ITR, True)
 
     error_counts   = np.zeros(y.size,dtype=float)
     predict_scores = np.zeros([y.size,label_n],dtype=float)
@@ -72,6 +72,4 @@ def categorical_predict(X,y_org,method_name,config):
     # so normalization is simple
     error_counts /= 1.0
 
-    MP.close()
-        
     return np.array(scores), error_counts, predict_scores
