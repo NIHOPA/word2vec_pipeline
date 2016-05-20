@@ -51,7 +51,7 @@ class database_iterator(object):
             raise SyntaxError(msg.format(column_name,table_name))
 
         meta_field = "" if not include_meta else ",meta"
-        cmd  = "SELECT {},[index] {} FROM {}".format(column_name,
+        cmd  = "SELECT {},_ref {} FROM {}".format(column_name,
                                                      meta_field,
                                                      table_name)
         # Adjust the limits and offset

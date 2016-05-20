@@ -100,7 +100,7 @@ if __name__ == "__main__":
         cmd_create = '''
         DROP TABLE IF EXISTS {table_name};
         CREATE TABLE IF NOT EXISTS {table_name} (
-        [index] INTEGER PRIMARY KEY,
+        _ref INTEGER PRIMARY KEY,
         text STRING,
         meta STRING
         );
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         conn_out.executescript(cmd_create)
 
         cmd_insert = '''
-        INSERT INTO {table_name} ([index],text,meta)
+        INSERT INTO {table_name} (_ref,text,meta)
         VALUES (?,?,?)
         '''.format(table_name=target_col)
 
