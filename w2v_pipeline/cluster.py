@@ -111,7 +111,7 @@ def load_document_vectors(target_column):
         keys = [k for k in keys if k in config["command_whitelist"]]
         print "Only computing over", keys
 
-    X = np.vstack(g[key] for key in keys)
+    X = np.vstack(g[key]["V"] for key in keys)
     h5_score.close()
 
     return X

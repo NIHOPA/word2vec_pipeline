@@ -186,7 +186,8 @@ class document_scores(corpus_iterator):
                 data.append(result)
 
             df = pd.DataFrame(data=data,
-                              columns=["V","idx","table_name","f_sql"])
+                              columns=["V","_ref","table_name","f_sql"])
+            df.set_index("_ref",inplace=True)
 
             self.save(config, df)
 
@@ -214,9 +215,12 @@ class document_scores(corpus_iterator):
                 # Save into the group of the base file name
                 name = '.'.join(os.path.basename(key_sql).split('.')[:-1])
 
+                # Save the data array
                 print "Saving", method, key_table, name, df3["V"].shape
-                
                 V = np.array(df3["V"].tolist())
+
+                # Save the _ref numbers
+                _ref = np.array(df3.index.tolist())
 
                 # Sanity check on sizes
                 all_sizes = set([x.shape for x in V])
@@ -226,7 +230,9 @@ class document_scores(corpus_iterator):
 
                 if name in g2: del g2[name]
 
-                g2.create_dataset(name,data=V,compression='gzip')
+                g3 = g2.require_group(name)
+                g3.create_dataset("V",data=V,compression='gzip')
+                g3.create_dataset("_ref",data=_ref)
 
 
         h5.close()
