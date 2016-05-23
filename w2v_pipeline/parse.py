@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         parser_functions.append( obj(**kwargs) )
 
-    F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
+    F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
     for f_sql, target_col in DB_ITR:
