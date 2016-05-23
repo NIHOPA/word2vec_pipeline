@@ -12,7 +12,7 @@ def item_iterator(name,cmd_config=None):
     score_config = simple_config.load("parse")
     input_data_dir = score_config["output_data_directory"]
 
-    F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
+    F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
 
     # If there is a whitelist only keep the matching filename
     try:
@@ -59,10 +59,11 @@ def item_iterator(name,cmd_config=None):
         }
 
         requires_meta = ["document_scores",]
+        requires_ref  = ["document_scores",]
 
         if name in requires_meta:
             args["include_meta"] = True
-
+            
         INPUT_ITR = database_iterator(**args)
 
         for item in INPUT_ITR:

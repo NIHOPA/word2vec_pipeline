@@ -55,9 +55,9 @@ if __name__ == "__main__":
                 continue
             saved_input_names.append(f)
 
-
+            
         # Load document score data
-        X = np.vstack([g[name][:]
+        X = np.vstack([g[name]["V"][:]
                        for name in saved_input_names])
 
         # Load the categorical columns
