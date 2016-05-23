@@ -66,13 +66,20 @@ def import_directory_csv(d_in, d_out, output_table):
 
     # Create the output directory if needed
     mkdir(d_out)
-
     ITR = jobmap(load_csv, F_CSV, _PARALLEL)
+
+    # Create a reference ID for each item
+    _ref_counter = itertools.count()
 
     for (f_csv,df) in ITR:
 
         f_sql = F_SQL[f_csv]
         engine = create_engine('sqlite:///'+f_sql)
+
+        n_data_items = len(df)
+        df["_ref"] = [_ref_counter.next()
+                      for _ in range(n_data_items)]
+        df.set_index("_ref",inplace=True)
 
         df.to_sql(output_table,
                   engine,
