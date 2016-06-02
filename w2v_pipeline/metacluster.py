@@ -191,16 +191,29 @@ class cluster_object(object):
         print "Label distribution: ", collections.Counter(labels)
         return labels
 
+    def docv_centroid_spread(self, **kwargs):
+        meta_clusters = self.load_centroid_dataset("meta_centroids")
+        meta_labels   = self.load_centroid_dataset("meta_labels")
+        n_clusters = meta_clusters.shape[0]
+
+        mu, std, min = [], [], []
+        for i in range(n_clusters):
+            idx  = meta_labels==i
+            X    = self.docv[idx]
+            dot_prod = X.dot(meta_clusters[i])
+            mu.append ( dot_prod.mean() )
+            std.append( dot_prod.std() )
+            min.append( dot_prod.min() )
+
+        stats = np.array([mu,std,min])
+        return stats
+
 if __name__ == "__main__":
 
     config = simple_config.load("metacluster")
 
     CO = cluster_object()
-
-    f_h5 = os.path.join(
-        config["output_data_directory"],
-        config["f_centroids"],
-    )
+    f_h5 = CO.f_h5_centroids
 
     if not os.path.exists(f_h5):
         h5 = h5py.File(f_h5,'w')   
@@ -208,7 +221,7 @@ if __name__ == "__main__":
         
     h5 = h5py.File(f_h5,'r+')
 
-    keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m"]
+    keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m", "subcluster_repeats"]
     args = dict([(k,config[k]) for k in keys])
 
     def compute_func(name, func, **kwargs):
@@ -223,12 +236,8 @@ if __name__ == "__main__":
     compute_func("subcluster_centroids", CO.compute_centroid_set)
     compute_func("meta_centroids", CO.compute_meta_centroid_set)
     compute_func("meta_labels",    CO.compute_meta_labels)
+    compute_func("docv_centroid_spread", CO.docv_centroid_spread)
 
-    #compute_func("docv_centroid_spread",
-    #             CO.compute_meta_labels,
-    #             f_h5_centroids=f_h5)
-
-    print "Measure spread of centroids"
     print "FIND NEARBY WORDS to each meta_centroid"
     
 
