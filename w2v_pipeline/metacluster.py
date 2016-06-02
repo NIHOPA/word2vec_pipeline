@@ -115,9 +115,10 @@ class cluster_object(object):
 
         INPUT_ITR = subset_iterator(self.docv,
                                     self.subcluster_m)
-               
+
+        kn = self.subcluster_kn
         clf = SpectralClustering(
-            n_clusters=self.subcluster_kn,
+            n_clusters=kn,
             affinity="precomputed",
         )
 
@@ -186,15 +187,15 @@ class cluster_object(object):
 
         dist = cdist(self.docv, meta_clusters, metric='cosine')
         labels = np.argmin(dist,axis=1)
-
-        C = collections.Counter(labels)
-        print "Label distribution: ", C
-
+        
+        print "Label distribution: ", collections.Counter(labels)
         return labels
 
 if __name__ == "__main__":
 
     config = simple_config.load("metacluster")
+
+    CO = cluster_object()
 
     f_h5 = os.path.join(
         config["output_data_directory"],
@@ -206,13 +207,9 @@ if __name__ == "__main__":
         h5.close()
         
     h5 = h5py.File(f_h5,'r+')
-    kn   = int(config["subcluster_kn"])
-    pcut = float(config["subcluster_pcut"])
 
     keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m"]
     args = dict([(k,config[k]) for k in keys])
-
-    CO = cluster_object()
 
     def compute_func(name, func, **kwargs):
 
