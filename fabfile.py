@@ -35,6 +35,9 @@ def predict():
 def cluster():
     local("python w2v_pipeline/cluster.py")
 
+def metacluster():
+    local("python w2v_pipeline/metacluster.py")
+
 def test():
     clean()
     
