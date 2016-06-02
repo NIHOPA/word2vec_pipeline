@@ -2,14 +2,16 @@ import numpy as np
 import h5py
 import os, itertools, collections
 from tqdm import tqdm
+
 #import clustering.similarity as CSIM
-#from utils.os_utils import mkdir
-#from unidecode import unidecode
 #from sklearn.manifold import TSNE
 
 import joblib
 import simple_config
-from sklearn.cluster import SpectralClustering, AgglomerativeClustering
+from sklearn.cluster import SpectralClustering
+from scipy.spatial import cKDTree as KDTree
+
+from scipy.spatial.distance import cdist, pdist
 
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -107,7 +109,7 @@ class cluster_object(object):
 
         config_score = simple_config.load("score")
 
-        f_h5 = os.path.join(
+        self.f_h5_docvecs = os.path.join(
             config_score["output_data_directory"],
             config_score['document_scores']["f_db"],
         )
@@ -115,9 +117,11 @@ class cluster_object(object):
         score_method = config['score_method']
         text_column  = config['score_column']
 
-        self._load_data(f_h5, score_method, text_column)
+        self._load_data(self.f_h5_docvecs, score_method, text_column)
 
     def _load_data(self, f_h5, method, text_column):
+
+        print "Loading document data from", f_h5
 
         h5 = h5py.File(f_h5,'r')
         g = h5[method][text_column]
@@ -136,16 +140,12 @@ class cluster_object(object):
 
         h5.close()
 
-    def compute_centroid_set(self, repeats=1):
+    def compute_centroid_set(self, **kwargs):
 
         INPUT_ITR = subset_iterator(self.docv,
                                     self.subcluster_m)
                
         #ITR = itertools.imap(cluster_centroids, INPUT_ITR)
-        #import multiprocessing
-        #MP = multiprocessing.Pool()    
-        #ITR = MP.imap(cluster_centroids, INPUT_ITR)
-
         import joblib
         MP = joblib.Parallel(n_jobs=1)
 
@@ -158,10 +158,11 @@ class cluster_object(object):
         return C
     
 
-    def compute_meta_centroid_set(self, f_h5_centroids):
+    def compute_meta_centroid_set(self, f_h5_centroids=None, **kwargs):
         
         h5 = h5py.File(f_h5_centroids,'r')
         C = h5["subcluster_centroids"][:]
+        h5.close()
 
         print "Intermediate clusters", C.shape
 
@@ -186,6 +187,24 @@ class cluster_object(object):
         return meta_clusters
 
 
+    def compute_meta_labels(self, f_h5_centroids=None, **kwargs):
+        
+        h5 = h5py.File(f_h5_centroids,'r')
+        meta_clusters = h5["meta_centroids"][:]
+        n_clusters = meta_clusters.shape[0]
+        h5.close()
+
+        msg = "Assigning {} labels over {} documents."
+        print msg.format(n_clusters, self.N)
+
+        dist = cdist(self.docv, meta_clusters, metric='cosine')
+        labels = np.argmin(dist,axis=1)
+
+        C = collections.Counter(labels)
+        print "Label distribution: ", C
+
+        return labels
+
 if __name__ == "__main__":
 
     config = simple_config.load("metacluster")
@@ -206,23 +225,30 @@ if __name__ == "__main__":
     keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m"]
     args = dict([(k,config[k]) for k in keys])
 
-    name = "subcluster_centroids"
-    if check_h5_item(h5, name, **args):
-        print "Computing", name
-       
-        CO = cluster_object()
-        h5[name] = CO.compute_centroid_set()
-        for k in args:
-            h5[name].attrs.create(k,args[k])
+    CO = cluster_object()
 
-    name = "meta_centroids"
-    if check_h5_item(h5, name, **args):
-        print "Computing", name
-       
-        CO = cluster_object()
-        h5[name] = CO.compute_meta_centroid_set(f_h5)
-        for k in args:
-            h5[name].attrs.create(k,args[k])
+    def compute_func(name, func, **kwargs):
+
+
+        if check_h5_item(h5, name, **args):
+            print "Computing", name
+            
+            h5[name] = func(**kwargs)
+            for k in args:
+                h5[name].attrs.create(k,args[k])
+
+    compute_func("subcluster_centroids",
+                 CO.compute_centroid_set)
+
+    compute_func("meta_centroids",
+                 CO.compute_meta_centroid_set,
+                 f_h5_centroids=f_h5)
+
+    compute_func("meta_labels",
+                 CO.compute_meta_labels,
+                 f_h5_centroids=f_h5)
+    
+    
     
 
 exit()
