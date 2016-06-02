@@ -3,16 +3,11 @@ import h5py
 import os, itertools, collections
 from tqdm import tqdm
 
-#import clustering.similarity as CSIM
-#from sklearn.manifold import TSNE
-
 import joblib
 import simple_config
 from sklearn.cluster import SpectralClustering
-from scipy.spatial import cKDTree as KDTree
 
 from scipy.spatial.distance import cdist, pdist
-
 from sklearn.metrics.pairwise import cosine_similarity
 
 def subset_iterator(X, m, repeats = 1):
