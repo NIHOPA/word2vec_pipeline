@@ -114,6 +114,11 @@ class cluster_object(object):
             config_score['document_scores']["f_db"],
         )
 
+        self.f_h5_centroids = os.path.join(
+            config["output_data_directory"],
+            config["f_centroids"],
+        )
+        
         score_method = config['score_method']
         text_column  = config['score_column']
 
@@ -140,6 +145,7 @@ class cluster_object(object):
 
         h5.close()
 
+
     def compute_centroid_set(self, **kwargs):
 
         INPUT_ITR = subset_iterator(self.docv,
@@ -156,14 +162,17 @@ class cluster_object(object):
                          for x in INPUT_ITR))
 
         return C
+
     
-
-    def compute_meta_centroid_set(self, f_h5_centroids=None, **kwargs):
-        
-        h5 = h5py.File(f_h5_centroids,'r')
-        C = h5["subcluster_centroids"][:]
+    def load_centroid_dataset(self, name):
+        h5 = h5py.File(self.f_h5_centroids,'r')
+        data = h5[name][:]
         h5.close()
+        return data       
 
+    def compute_meta_centroid_set(self, **kwargs):
+
+        C = self.load_centroid_dataset("subcluster_centroids")
         print "Intermediate clusters", C.shape
 
         # By eye, it looks like the top 60%-80% of the
@@ -187,12 +196,10 @@ class cluster_object(object):
         return meta_clusters
 
 
-    def compute_meta_labels(self, f_h5_centroids=None, **kwargs):
-        
-        h5 = h5py.File(f_h5_centroids,'r')
-        meta_clusters = h5["meta_centroids"][:]
+    def compute_meta_labels(self, **kwargs):
+
+        meta_clusters = self.load_centroid_dataset("meta_centroids")
         n_clusters = meta_clusters.shape[0]
-        h5.close()
 
         msg = "Assigning {} labels over {} documents."
         print msg.format(n_clusters, self.N)
@@ -229,7 +236,6 @@ if __name__ == "__main__":
 
     def compute_func(name, func, **kwargs):
 
-
         if check_h5_item(h5, name, **args):
             print "Computing", name
             
@@ -237,18 +243,16 @@ if __name__ == "__main__":
             for k in args:
                 h5[name].attrs.create(k,args[k])
 
-    compute_func("subcluster_centroids",
-                 CO.compute_centroid_set)
+    compute_func("subcluster_centroids", CO.compute_centroid_set)
+    compute_func("meta_centroids", CO.compute_meta_centroid_set)
+    compute_func("meta_labels",    CO.compute_meta_labels)
 
-    compute_func("meta_centroids",
-                 CO.compute_meta_centroid_set,
-                 f_h5_centroids=f_h5)
+    #compute_func("docv_centroid_spread",
+    #             CO.compute_meta_labels,
+    #             f_h5_centroids=f_h5)
 
-    compute_func("meta_labels",
-                 CO.compute_meta_labels,
-                 f_h5_centroids=f_h5)
-    
-    
+    print "Measure spread of centroids"
+    print "FIND NEARBY WORDS to each meta_centroid"
     
 
 exit()
@@ -342,70 +346,7 @@ def close_words(W,X,labels,top_n=6):
    
     return L
 
-def load_document_vectors(target_column):
-
-    config_score = simple_config.load("score")
-
-    f_h5 = os.path.join(
-        config_score["output_data_directory"],
-        config_score["document_scores"]["f_db"],
-    )
-    h5_score = h5py.File(f_h5,'r')
-
-    assert(method in h5_score)    
-    assert(target_column in h5_score[method])
-    g = h5_score[method][target_column]
-
-    print "Loading the document scores", g
-    keys = g.keys()
-
-    if config["command_whitelist"]:
-        keys = [k for k in keys if k in config["command_whitelist"]]
-        print "Only computing over", keys
-
-    X = np.vstack(g[key]["V"] for key in keys)
-    h5_score.close()
-
-    return X
-
-
-
-if __name__ == "__main__":
-
-    import simple_config   
-
-    config = simple_config.load("cluster")
-    output_dir = config["output_data_directory"]
-    mkdir(output_dir)
-
-    method = config['score_method']
-    target_column = config['score_column']
-    
-    f_sim = os.path.join(output_dir, config["f_cluster"])
-
-    if config.as_bool("_FORCE"):
-        os.remove(f_sim)
-        
-    if not os.path.exists(f_sim):
-        h5_sim = h5py.File(f_sim,'w')
-        h5_sim.close()
-
-    h5_sim = h5py.File(f_sim,'r+')
-    group = h5_sim.require_group(method)
-    S = None
-    W = None
-
-    # Load the document scores
-    X = load_document_vectors(target_column)
-
-    if "similarity" not in group:
-
-        # Compute and save the similarity matrix
-        print "Computing the similarity matrix"
-        
-        # Save the similarity matrix
-        S = CSIM.compute_document_similarity(X)
-        group["similarity"] = S
+'''
 
     if "tSNE" not in group:
         # Compute the tSNE
@@ -420,7 +361,9 @@ if __name__ == "__main__":
         # tSNE expect distances not similarities
         group["tSNE"] = local_embed.fit_transform(1-S)
     
-
+'''
+if __name__ == "__main__":
+    
     group.require_group("clustering")
     group.require_group("nearby_words")
 
