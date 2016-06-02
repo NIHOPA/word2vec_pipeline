@@ -98,17 +98,36 @@ class cluster_object(object):
         corpus_keys = g.keys()
 
         # Load the _refs
-        _refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
+        self._refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
 
         # Require the _refs to be in order as a sanity check
-        if not (np.sort(_refs) == _refs).all():
+        if not (np.sort(self._refs) == self._refs).all():
             msg = "WARNING, data out of sort order from _refs"
             raise ValueError(msg)
         
         self.docv = np.vstack([g[k]["V"][:] for k in corpus_keys])
         self.N,self.dim = self.docv.shape
 
+
+        # Document key lookup
+        print "Building doc lookup key"
+        self.doc_lookup = {}
+        counter = 0
+        for key in corpus_keys:
+            for offset in range(g[key]["V"].shape[0]):
+                self.doc_lookup[counter] = key
+                counter += 1
+                
         h5.close()
+
+    def _load_embedding(self):
+        f_model = "data_embeddings/w2v.gensim"
+
+        print "Loading embedding", f_model
+        import gensim.models.word2vec as W2V
+        self.W = W2V.Word2Vec.load(f_model)
+        
+        return self.W
 
 
     def compute_centroid_set(self, **kwargs):
@@ -208,6 +227,21 @@ class cluster_object(object):
         stats = np.array([mu,std,min])
         return stats
 
+    def describe_clusters(self, **kwargs):
+
+        W = self._load_embedding()
+
+        meta_clusters = self.load_centroid_dataset("meta_centroids")
+        n_clusters = meta_clusters.shape[0]
+        
+        # Find the closest items to each centroid
+        for i in range(n_clusters):
+            v = meta_clusters[i]
+
+        # W.dot(v)
+        print W
+        exit()
+
 if __name__ == "__main__":
 
     config = simple_config.load("metacluster")
@@ -238,7 +272,9 @@ if __name__ == "__main__":
     compute_func("meta_labels",    CO.compute_meta_labels)
     compute_func("docv_centroid_spread", CO.docv_centroid_spread)
 
-    print "FIND NEARBY WORDS to each meta_centroid"
+    compute_func("describe_clusters", CO.describe_clusters)
+
+    CO._load_embedding()
     
 
 exit()
