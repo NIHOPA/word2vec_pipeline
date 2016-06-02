@@ -63,37 +63,7 @@ def check_h5_item(h5, name, **check_args):
             return True
 
     return False       
-    
-def cluster_centroids(X, kn, return_labels=False):
         
-    clf = SpectralClustering(
-        n_clusters=kn,
-        affinity="precomputed",
-    )
-    
-    # Remove any rows that have zero vectors
-    bad_row_idx = ((X**2).sum(axis=1)==0)
-    X = X[~bad_row_idx]
-    A = cosine_affinity(X)
-
-    labels = clf.fit_predict(A)
-    
-    # Compute the centroids
-    (N,dim) = X.shape
-    centroids = np.zeros((kn,dim))
-
-    for i in range(kn):
-        idx = labels==i
-        mu = X[idx].mean(axis=0)
-        mu /= np.linalg.norm(mu)
-        
-        centroids[i] = mu
-
-    if return_labels:
-        return centroids, labels
-
-    return centroids
-    
 class cluster_object(object):
     '''
     Helper class to represent all the constitute parts of a clustering
@@ -151,18 +121,34 @@ class cluster_object(object):
         INPUT_ITR = subset_iterator(self.docv,
                                     self.subcluster_m)
                
-        #ITR = itertools.imap(cluster_centroids, INPUT_ITR)
-        import joblib
-        MP = joblib.Parallel(n_jobs=1)
+        clf = SpectralClustering(
+            n_clusters=self.subcluster_kn,
+            affinity="precomputed",
+        )
 
-        # Compute the centroids
-        func =  joblib.delayed(cluster_centroids)
-        
-        C = np.vstack(MP(func(x, self.subcluster_kn)
-                         for x in INPUT_ITR))
+        C = []
 
-        return C
+        for X in INPUT_ITR:
+            # Remove any rows that have zero vectors
+            bad_row_idx = ((X**2).sum(axis=1)==0)
+            X = X[~bad_row_idx]
+            A = cosine_affinity(X)
 
+            labels = clf.fit_predict(A)
+    
+            # Compute the centroids
+            (N,dim) = X.shape
+            centroids = np.zeros((kn,dim))
+
+            for i in range(kn):
+                idx = labels==i
+                mu = X[idx].mean(axis=0)
+                mu /= np.linalg.norm(mu)
+                centroids[i] = mu
+                
+            C.append(centroids)
+
+        return np.vstack(C)
     
     def load_centroid_dataset(self, name):
         h5 = h5py.File(self.f_h5_centroids,'r')
@@ -194,7 +180,6 @@ class cluster_object(object):
             meta_cluster_size.append(idx.sum())
 
         return meta_clusters
-
 
     def compute_meta_labels(self, **kwargs):
 
