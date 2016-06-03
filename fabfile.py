@@ -46,7 +46,8 @@ def test():
     embed()
     score()
     predict()
-    cluster()
+    #cluster()
+    metacluster()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
