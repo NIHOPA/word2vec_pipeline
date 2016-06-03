@@ -235,12 +235,19 @@ class cluster_object(object):
         n_clusters = meta_clusters.shape[0]
         
         # Find the closest items to each centroid
+        all_words = []
+        
         for i in range(n_clusters):
             v = meta_clusters[i]
 
-        # W.dot(v)
-        print W
-        exit()
+            dist = W.syn0.dot(v)
+            idx = np.argsort(dist)[::-1][:10]
+
+            words = [W.index2word[i].replace('PHRASE_','') for i in idx]
+
+            all_words.append(u' '.join(words))
+
+        return np.array(all_words)
 
 if __name__ == "__main__":
 
@@ -258,12 +265,20 @@ if __name__ == "__main__":
     keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m", "subcluster_repeats"]
     args = dict([(k,config[k]) for k in keys])
 
-    def compute_func(name, func, **kwargs):
+    def compute_func(name, func, dtype=None, **kwargs):
 
         if check_h5_item(h5, name, **args):
             print "Computing", name
+            result = func(**kwargs)
+
+            if dtype in [str,unicode]:
+                dt = h5py.special_dtype(vlen=unicode)
+                h5.require_dataset(name,shape=result.shape,dtype=dt)
+                for i,x in enumerate(result):
+                    h5[name][i] = x
+            else:
+                h5[name] = result    
             
-            h5[name] = func(**kwargs)
             for k in args:
                 h5[name].attrs.create(k,args[k])
 
@@ -271,10 +286,10 @@ if __name__ == "__main__":
     compute_func("meta_centroids", CO.compute_meta_centroid_set)
     compute_func("meta_labels",    CO.compute_meta_labels)
     compute_func("docv_centroid_spread", CO.docv_centroid_spread)
+    compute_func("describe_clusters", CO.describe_clusters,dtype=str)
 
-    compute_func("describe_clusters", CO.describe_clusters)
+    print h5['describe_clusters'][:]
 
-    CO._load_embedding()
     
 
 exit()
