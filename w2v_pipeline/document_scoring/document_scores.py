@@ -22,7 +22,8 @@ class document_scores(corpus_iterator):
         super(document_scores, self).__init__(*args,**kwargs)
 
         # Check if we need to load term_frequency data
-        if "simple_TF" in kwargs['methods']:
+        methods = kwargs['methods']
+        if "simple_TF" in methods or "unique_TF" in methods:
             f_db = os.path.join(
                 kwargs['output_data_directory'],
                 kwargs['term_frequency']['f_db']
