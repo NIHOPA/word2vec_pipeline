@@ -114,8 +114,8 @@ class document_scores(corpus_iterator):
             sample_space = self.RBP_hash.sample_space
             DV = np.zeros(shape=(len(tokens), sample_space))
             for i,w in enumerate(tokens):
-                j = self.WORD_HASH[w]
-                DV[i][j] = 1   
+                for key,val in self.WORD_HASH[w].items():
+                    DV[i][key] += val
             
         elif method in ["pos_split"]:
             known_tags = ["N","ADJ","V"]
@@ -167,7 +167,7 @@ class document_scores(corpus_iterator):
             doc_vec = np.array(DV).sum(axis=0)
 
             # Only keep track if the hypercube corner is occupied
-            doc_vec[doc_vec>0] = 1
+            # doc_vec[doc_vec>0] = 1
 
             # Renormalize onto the hypersphere
             doc_vec /= np.linalg.norm(doc_vec)

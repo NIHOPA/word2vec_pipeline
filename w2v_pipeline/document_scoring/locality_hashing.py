@@ -13,9 +13,17 @@ class RBP_hasher(object):
         self.rbp = RandomBinaryProjections('rbp', self.n_bit)
         self.engine = Engine(dimension, lshashes=[self.rbp])
 
+    def _string2int(self,s):
+        return int(s,2)
+
     def __call__(self,v):
         '''
-        Convert the returned string into a integer
+        Convert the returned string into a integer.
+        Return a dict based off the weights.
         '''
-        s = self.rbp.hash_vector(v)
-        return int(s[0],2)
+        s = self.rbp.hash_vector(v)[0]
+        weights = {
+            self._string2int(s):1.0,
+        }
+
+        return weights
