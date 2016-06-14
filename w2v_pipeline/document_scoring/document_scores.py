@@ -6,15 +6,7 @@ import h5py
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 
-'''
-class generic_document_score(corpus_iterator):
-
-    # Make sure to define a method!
-    method = None
-
-    def __init__(self,*args,**kwargs):
-        super(document_scores, self).__init__(*args,**kwargs)  
-'''
+from locality_hashing import RBP_hasher
 
 class document_scores(corpus_iterator):
 
@@ -23,6 +15,31 @@ class document_scores(corpus_iterator):
 
         # Check if we need to load term_frequency data
         methods = kwargs['methods']
+
+        f_w2v = os.path.join(
+            kwargs["embedding"]["output_data_directory"],
+            kwargs["embedding"]["w2v_embedding"]["f_db"],
+        )
+
+        # Load the model from disk
+        self.M = Word2Vec.load(f_w2v)
+        self.shape = self.M.syn0.shape
+        
+        # Build the dictionary
+        self.methods = kwargs["methods"]
+        vocab_n = self.shape[0]
+        self.word2index = dict(zip(self.M.index2word,range(vocab_n)))
+
+        if "locality_hash" in methods:
+            # Build the hash function lookup
+            dim = self.M.syn0.shape[1]
+            n_bits = int(kwargs['locality_n_bits'])
+            
+            self.RBP_hash = RBP_hasher(dim,n_bits)
+            self.WORD_HASH = {}
+            for w,v in zip(self.M.index2word, self.M.syn0):
+                self.WORD_HASH[w] = self.RBP_hash(v)
+        
         if "simple_TF" in methods or "unique_TF" in methods:
             f_db = os.path.join(
                 kwargs['output_data_directory'],
@@ -44,20 +61,6 @@ class document_scores(corpus_iterator):
             for key in IDF:
                 IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
             self.IDF = IDF
-
-        f_w2v = os.path.join(
-            kwargs["embedding"]["output_data_directory"],
-            kwargs["embedding"]["w2v_embedding"]["f_db"],
-        )
-
-         # Load the model from disk
-        self.M = Word2Vec.load(f_w2v)
-        self.shape = self.M.syn0.shape
-        
-        # Build the dictionary
-        self.methods = kwargs["methods"]
-        vocab_n = self.shape[0]
-        self.word2index = dict(zip(self.M.index2word,range(vocab_n)))
 
         # Set parallel option
         self._PARALLEL = kwargs["_PARALLEL"]
@@ -90,7 +93,7 @@ class document_scores(corpus_iterator):
             meta = ast.literal_eval(meta)
 
         # Lookup the weights (model dependent)
-        if method in ["unique","pos_split"]:
+        if method in ["unique","pos_split","locality_hash"]:
             weights = dict.fromkeys(tokens, 1.0)
         elif method in ["simple",]:
             weights = dict([(w,local_counts[w]) for w in tokens])
@@ -106,6 +109,13 @@ class document_scores(corpus_iterator):
         # Lookup the embedding vector
         if method in ["unique","simple","simple_TF","unique_TF"]:
             DV = np.array([self.M[w] for w in tokens])
+
+        elif method in ["locality_hash"]:
+            sample_space = self.RBP_hash.sample_space
+            DV = np.zeros(shape=(len(tokens), sample_space))
+            for i,w in enumerate(tokens):
+                j = self.WORD_HASH[w]
+                DV[i][j] = 1   
             
         elif method in ["pos_split"]:
             known_tags = ["N","ADJ","V"]
@@ -152,6 +162,19 @@ class document_scores(corpus_iterator):
                 assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
             else:
                 doc_vec = np.zeros(dim,dtype=float)
+
+        elif method in ["locality_hash"]:
+            doc_vec = np.array(DV).sum(axis=0)
+
+            # Only keep track if the hypercube corner is occupied
+            doc_vec[doc_vec>0] = 1
+
+            # Renormalize onto the hypersphere
+            doc_vec /= np.linalg.norm(doc_vec)
+
+            # Quick hack
+            doc_vec[ np.isnan(doc_vec) ] = 0
+
                 
         elif method in ["pos_split"]:
             
