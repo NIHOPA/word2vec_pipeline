@@ -34,8 +34,9 @@ class document_scores(corpus_iterator):
             # Build the hash function lookup
             dim = self.M.syn0.shape[1]
             n_bits = int(kwargs['locality_n_bits'])
+            alpha = float(kwargs['locality_alpha'])
             
-            self.RBP_hash = RBP_hasher(dim,n_bits)
+            self.RBP_hash = RBP_hasher(dim,n_bits,alpha)
             self.WORD_HASH = {}
             for w,v in zip(self.M.index2word, self.M.syn0):
                 self.WORD_HASH[w] = self.RBP_hash(v)
