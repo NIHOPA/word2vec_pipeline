@@ -15,6 +15,7 @@ class w2v_embedding(corpus_iterator):
         self.epoch_n = int(kwargs["epoch_n"])
 
         self.clf = Word2Vec(workers=CPU_CORES,
+                            sg=0,
                             window =int(kwargs["window"]),
                             negative=int(kwargs["negative"]),
                             sample=float(kwargs["sample"]),
