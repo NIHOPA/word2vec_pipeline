@@ -1,22 +1,14 @@
 import sqlite3, os
 import pandas as pd
 import numpy as np
+from pattern.en import tokenize
 
-def findall_substr(sub, string):
-    """
-    >>> text = "Allowed Hello Hollow"
-    >>> tuple(findall('ll', text))
-    (1, 10, 16)
-    http://stackoverflow.com/a/3874760/249341
-    """
-    index = 0 - len(sub)
-    try:
-        while True:
-            index = string.index(sub, index + len(sub))
-            yield index
-    except ValueError:
-        pass
-        
+def contains_sublist(lst, sublst):
+    # Finds all cases of a sublist and lists where it happens
+    n = len(sublst)
+    idx = [(sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1)]
+    return idx
+
 class replace_from_dictionary(object):
     '''
     DOCSTRING: TO WRITE.
@@ -35,18 +27,52 @@ class replace_from_dictionary(object):
     def __call__(self,org_doc):
 
         doc = org_doc
-        ldoc = doc.lower()
+
+        tokens = doc.lower().split()
+        ldoc = ' '.join([x for x in tokens if "_" not in x])
 
         # Identify which phrases were used
         keywords = [key for key in self.X if key in ldoc]
-
+        punctuation=".,;:!?()[]{}`''\"@#$^&*+-|=~"           
+        
         # Loop over the keywords and replace them one-by-one.
         # This is inefficient, but less error prone.
-        for word in keywords:
-            while word in ldoc:
-                idx = ldoc.index(word)
-                doc = doc[:idx] + self.X[word] + doc[idx+len(word):]
-                ldoc = doc.lower()
-        print doc
-        exit()
+
+        parsed_sent = []
+
+        for sent in tokenize(doc, punctuation=punctuation):
+            
+            for word in keywords:
+                word_n_tokens = len(word.split())
+                worn_n = len(word)
+                
+                new_word = self.X[word]
+                word_tokens = word.split()
+
+                # Check if the substring tokens match
+                tokens = sent.lower().split()
+                mask = contains_sublist(tokens, word_tokens)
+                while any(mask):
+                    idx = mask.index(True)
+                    sent = sent.split()
+                    args = sent[:idx] + [new_word,] + sent[idx+word_n_tokens:]
+                    sent = ' '.join(args)
+                    tokens = sent.lower().split()
+                    mask = contains_sublist(tokens, word_tokens)
+
+            parsed_sent.append(sent)
+        
+        doc = ' '.join(parsed_sent)
+
+        """
+        # Change the punctuation to a more readable format for debugging
+        punc_compress = ''').,?!':'''
+        for punc in punc_compress:
+            doc = doc.replace(' '+punc,punc)
+
+        punc_compress = '''('''
+        for punc in punc_compress:
+            doc = doc.replace(punc+' ',punc)
+        """
+
         return doc
