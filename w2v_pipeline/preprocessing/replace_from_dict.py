@@ -14,7 +14,9 @@ class replace_from_dictionary(object):
     DOCSTRING: TO WRITE.
     '''
     
-    def __init__(self, f_dict):
+    def __init__(self, f_dict, input_data_directory):
+
+        f_dict = os.path.join(input_data_directory, f_dict)
 
         if not os.path.exists(f_dict):
             msg = "Can't find dictionary {}".format(f_dict)
@@ -23,7 +25,7 @@ class replace_from_dictionary(object):
         df = pd.read_csv(f_dict)
         items = df["SYNONYM"].str.lower(), df["replace_token"]
         self.X = dict(zip(*items))
-                                       
+        
     def __call__(self,org_doc):
 
         doc = org_doc
