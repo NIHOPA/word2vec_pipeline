@@ -266,7 +266,8 @@ if __name__ == "__main__":
         
     h5 = h5py.File(f_h5,'r+')
 
-    keys = ["subcluster_kn", "subcluster_pcut", "subcluster_m", "subcluster_repeats"]
+    keys = ["subcluster_kn", "subcluster_pcut",
+            "subcluster_m", "subcluster_repeats"]
     args = dict([(k,config[k]) for k in keys])
 
     def compute_func(name, func, dtype=None, **kwargs):

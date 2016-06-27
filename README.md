@@ -28,8 +28,8 @@ You can predict over other columns in the data using a random forest. A meta-met
 
 ### `fab cluster`
 
-Standard document clustering using either spectral or hdbscan. This is often too slow in practice, metaclustering is suggested.
+Standard document clustering using either spectral or hdbscan. This is often too slow in practice, metaclustering is suggested. The final result is a tSNE projection against another item.
     
 ### `fab metacluster`
 
-Similar to batch K-means, clustering is run on subsets and the centroids are clustered at the end. This is often much faster than standard clustering. The final result is a tSNE projection.
+Similar to batch K-means, clustering is run on subsets and the centroids are clustered at the end. This is often much faster than standard clustering.
