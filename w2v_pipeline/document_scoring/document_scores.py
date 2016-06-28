@@ -67,34 +67,34 @@ class document_scores(corpus_iterator):
         # Set parallel option
         self._PARALLEL = kwargs["_PARALLEL"]
 
-    def _compute_item_weights(self, tokens, local_counts):
+    def _compute_item_weights(self, **da):
         method = self.current_method
         
         # Lookup the weights (model dependent)
-        if method in ["unique","locality_hash"]:
-            weights = dict.fromkeys(tokens, 1.0)
+        if method in ["locality_hash"]:
+            weights = dict.fromkeys(da["tokens"], 1.0)
         elif method in ["simple_TF"]:
-            weights = dict([(w,local_counts[w]*self.IDF[w])
-                            for w in tokens])
+            weights = dict([(w,da["local_counts"][w]*self.IDF[w])
+                            for w in da['tokens']])
         elif method in ["unique_TF"]:
-            weights = dict([(w,self.IDF[w]*1.0) for w in tokens])
+            weights = dict([(w,self.IDF[w]*1.0) for w in da["tokens"]])
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
 
         return weights
 
-    def _compute_embedding_vector(self, tokens):
+    def _compute_embedding_vector(self, **da):
         method = self.current_method
         
         # Lookup the embedding vector
-        if method in ["unique","simple_TF","unique_TF"]:
-            DV = np.array([self.M[w] for w in tokens])
+        if method in ["simple_TF","unique_TF"]:
+            DV = np.array([self.M[w] for w in da['tokens']])
 
         elif method in ["locality_hash"]:
             sample_space = self.RBP_hash.sample_space
-            DV = np.zeros(shape=(len(tokens), sample_space))
-            for i,w in enumerate(tokens):
+            DV = np.zeros(shape=(len(da['tokens']), sample_space))
+            for i,w in enumerate(da['tokens']):
                 for key,val in self.WORD_HASH[w].items():
                     DV[i][key] += val
         else:
@@ -116,19 +116,19 @@ class document_scores(corpus_iterator):
             
         return doc_vec
 
-    def _compute_doc_vector(self, weights, DV, tokens):
+    def _compute_doc_vector(self, **da):
         method = self.current_method
         
         # Sum all the vectors with their weights
-        if method in ["unique","simple_TF","unique_TF"]:
+        if method in ["simple_TF","unique_TF"]:
             # Build the weight matrix
-            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-            doc_vec = (W*DV).sum(axis=0)
+            W  = np.array([da['weights'][w] for w in da['tokens']]).reshape(-1,1)
+            doc_vec = (W*da['DV']).sum(axis=0)
             doc_vec = self.L1_norm(doc_vec)
 
 
         elif method in ["locality_hash"]:
-            doc_vec = np.array(DV).sum(axis=0)
+            doc_vec = np.array(da['DV']).sum(axis=0)
 
             # Only keep track if the hypercube corner is occupied
             # doc_vec[doc_vec>0] = 1
@@ -153,24 +153,28 @@ class document_scores(corpus_iterator):
         
         tokens = text.split()
 
+        # Document args
+        da = {}
+
         # Find out which tokens are defined
         valid_tokens = [w for w in tokens if w in self.M]
-        local_counts = collections.Counter(valid_tokens)
-        tokens = set(valid_tokens)
         
-        if not tokens:
+        da["local_counts"] = collections.Counter(valid_tokens)
+        da["tokens"] = set(valid_tokens)
+        
+        if not da["tokens"]:
             msg = "Document has no valid tokens! This is probably a problem."
             print msg
             #raise ValueError(msg)
 
-        weights = self._compute_item_weights(tokens, local_counts)
-        DV = self._compute_embedding_vector(tokens)
-        doc_vec = self._compute_doc_vector(weights, DV, tokens)
+        da["weights"] = self._compute_item_weights(**da)
+        da['DV'] = self._compute_embedding_vector(**da)
+        da['doc_vec'] = self._compute_doc_vector(**da)
         
         # Sanity check, should not have any NaNs
-        assert(not np.isnan(doc_vec).any()) 
+        assert(not np.isnan(da['doc_vec']).any()) 
 
-        return [doc_vec,idx,] + other_args
+        return [da['doc_vec'],idx,] + other_args
 
     def compute(self, config):
 
@@ -311,23 +315,26 @@ class generic_document_score(document_scores):
 
 
 
-class simple_score(generic_document_score):
+class score_simple(generic_document_score):
 
     method = "simple"
 
-    def __init__(self,*args,**kwargs):
-        super(simple_score, self).__init__(*args,**kwargs)
+    def _compute_item_weights(self, local_counts, tokens, **da):
+        return dict([(w,local_counts[w]) for w in tokens])
 
-    def _compute_item_weights(self, tokens, local_counts):
-        weights = dict([(w,local_counts[w]) for w in tokens])
-        return weights
-
-    def _compute_embedding_vector(self, tokens):
+    def _compute_embedding_vector(self, tokens, **da):
         return np.array([self.M[w] for w in tokens])    
 
-    def _compute_doc_vector(self, weights, DV, tokens):
+    def _compute_doc_vector(self, weights, DV, tokens, **da):
         # Build the weight matrix
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+        
         doc_vec = (W*DV).sum(axis=0)
         return self.L1_norm(doc_vec)
-        
+
+class score_unique(score_simple):
+
+    method = "unique"
+
+    def _compute_item_weights(self, local_counts, tokens, **da):
+        return dict.fromkeys(tokens, 1.0)
