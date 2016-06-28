@@ -3,6 +3,7 @@ from .document_scores import document_scores
 from .affinity_mapping import affinity_mapping, affinity_grouping, affinity_scoring
 
 from .document_scores import score_simple, score_unique
+from .document_scores import score_simple_TF, score_unique_TF
 
 __all__ = [
     'term_frequency',

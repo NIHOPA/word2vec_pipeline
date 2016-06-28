@@ -7,7 +7,6 @@ from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
 
-#class generic_document_score(
 
 class document_scores(corpus_iterator):
 
@@ -42,7 +41,8 @@ class document_scores(corpus_iterator):
             for w,v in zip(self.M.index2word, self.M.syn0):
                 self.WORD_HASH[w] = self.RBP_hash(v)
         
-        if "simple_TF" in methods or "unique_TF" in methods:
+        #if "simple_TF" in methods or "unique_TF" in methods:
+        if "unique_TF" in methods:
             f_db = os.path.join(
                 kwargs['output_data_directory'],
                 kwargs['term_frequency']['f_db']
@@ -73,9 +73,6 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["locality_hash"]:
             weights = dict.fromkeys(da["tokens"], 1.0)
-        elif method in ["simple_TF"]:
-            weights = dict([(w,da["local_counts"][w]*self.IDF[w])
-                            for w in da['tokens']])
         elif method in ["unique_TF"]:
             weights = dict([(w,self.IDF[w]*1.0) for w in da["tokens"]])
         else:
@@ -88,7 +85,7 @@ class document_scores(corpus_iterator):
         method = self.current_method
         
         # Lookup the embedding vector
-        if method in ["simple_TF","unique_TF"]:
+        if method in ["unique_TF"]:
             DV = np.array([self.M[w] for w in da['tokens']])
 
         elif method in ["locality_hash"]:
@@ -120,7 +117,7 @@ class document_scores(corpus_iterator):
         method = self.current_method
         
         # Sum all the vectors with their weights
-        if method in ["simple_TF","unique_TF"]:
+        if method in ["unique_TF"]:
             # Build the weight matrix
             W  = np.array([da['weights'][w] for w in da['tokens']]).reshape(-1,1)
             doc_vec = (W*da['DV']).sum(axis=0)
@@ -314,7 +311,8 @@ class generic_document_score(document_scores):
         h5.close()
 
 
-
+##################################################################################
+        
 class score_simple(generic_document_score):
     method = "simple"
 
@@ -336,3 +334,38 @@ class score_unique(score_simple):
 
     def _compute_item_weights(self, local_counts, tokens, **da):
         return dict.fromkeys(tokens, 1.0)
+
+##################################################################################    
+
+class score_simple_TF(score_simple):
+    method = "simple_TF"
+
+    def __init__(self,*args,**kwargs):
+        super(score_simple, self).__init__(*args,**kwargs)
+        
+        f_db = os.path.join(
+            kwargs['output_data_directory'],
+            kwargs['term_frequency']['f_db']
+        )
+        if not os.path.exists(f_db):
+            msg = "{} not computed yet, needed for TF methods!"
+            raise ValueError(msg.format(f_db))
+
+        import sqlalchemy
+        engine = sqlalchemy.create_engine('sqlite:///'+f_db)
+            
+        IDF = pd.read_sql_table("term_document_frequency",engine)
+        IDF = dict(zip(IDF["word"].values, IDF["count"].values))
+            
+        self.corpus_N = IDF.pop("")
+            
+        # Compute the IDF
+        for key in IDF:
+            IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
+        self.IDF = IDF
+        
+
+    def _compute_item_weights(self, local_counts, tokens, **da):
+        return dict([(w,local_counts[w]*self.IDF[w]) for w in tokens])
+    
+##################################################################################
