@@ -11,6 +11,4 @@ __all__ = [
     'affinity_mapping',
     'affinity_grouping',
     'affinity_scoring',
-    'score_simple',
-    'score_unique',
 ]

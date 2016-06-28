@@ -316,7 +316,6 @@ class generic_document_score(document_scores):
 
 
 class score_simple(generic_document_score):
-
     method = "simple"
 
     def _compute_item_weights(self, local_counts, tokens, **da):
@@ -333,7 +332,6 @@ class score_simple(generic_document_score):
         return self.L1_norm(doc_vec)
 
 class score_unique(score_simple):
-
     method = "unique"
 
     def _compute_item_weights(self, local_counts, tokens, **da):
