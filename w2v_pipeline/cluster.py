@@ -132,7 +132,10 @@ if __name__ == "__main__":
     f_sim = os.path.join(output_dir, config["f_cluster"])
 
     if config.as_bool("_FORCE"):
-        os.remove(f_sim)
+        try:
+            os.remove(f_sim)
+        except:
+            pass
         
     if not os.path.exists(f_sim):
         h5_sim = h5py.File(f_sim,'w')

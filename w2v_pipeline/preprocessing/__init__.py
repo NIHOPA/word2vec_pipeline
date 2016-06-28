@@ -1,3 +1,4 @@
+from .replace_from_dict import replace_from_dictionary
 from .replace_phrases import replace_phrases
 from .remove_parenthesis import remove_parenthesis
 from .token_replacement import token_replacement

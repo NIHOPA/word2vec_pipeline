@@ -16,6 +16,9 @@ def word_tokenizer(raw):
     '''
     Uses pattern.en to split input text into a list of word tokens.
     '''
+    if not raw:
+        return []
+
     sentences = sentence_tokenizer(raw)
 
     # Return a list of word tokens

@@ -15,3 +15,6 @@ psutil
 
 # Replaces pythons multiprocessing
 joblib==0.9.4
+
+# For locality hashing
+nearpy

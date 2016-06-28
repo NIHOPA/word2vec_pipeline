@@ -35,6 +35,9 @@ def predict():
 def cluster():
     local("python w2v_pipeline/cluster.py")
 
+def metacluster():
+    local("python w2v_pipeline/metacluster.py")
+
 def test():
     clean()
     
@@ -43,7 +46,8 @@ def test():
     embed()
     score()
     predict()
-    cluster()
+    #cluster()
+    metacluster()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
