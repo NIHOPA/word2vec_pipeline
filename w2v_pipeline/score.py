@@ -30,8 +30,9 @@ def item_iterator(name,cmd_config=None):
         F_SQL = F_SQL2
 
     
-    # Randomize the order of the input files
-    F_SQL = random.sample(sorted(F_SQL), len(F_SQL))  
+    # Randomize the order of the input files (why? not needed for scoring)
+    # F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
+    
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
     # Get database sizes for progress bar

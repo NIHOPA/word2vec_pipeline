@@ -5,8 +5,10 @@ import h5py
 
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
-
 from locality_hashing import RBP_hasher
+
+#class generic_document_score(
+
 
 class document_scores(corpus_iterator):
 
@@ -66,6 +68,81 @@ class document_scores(corpus_iterator):
         # Set parallel option
         self._PARALLEL = kwargs["_PARALLEL"]
 
+    def _compute_item_weights(self, tokens, local_counts):
+        method = self.current_method
+        
+        # Lookup the weights (model dependent)
+        if method in ["unique","locality_hash"]:
+            weights = dict.fromkeys(tokens, 1.0)
+        elif method in ["simple",]:
+            weights = dict([(w,local_counts[w]) for w in tokens])
+        elif method in ["simple_TF"]:
+            weights = dict([(w,local_counts[w]*self.IDF[w])
+                            for w in tokens])
+        elif method in ["unique_TF"]:
+            weights = dict([(w,self.IDF[w]*1.0) for w in tokens])
+        else:
+            msg = "UNKNOWN w2v method {}".format(method)
+            raise KeyError(msg)
+
+        return weights
+
+    def _compute_embedding_vector(self, tokens, meta, text, valid_tokens):
+        method = self.current_method
+        
+        # Lookup the embedding vector
+        if method in ["unique","simple","simple_TF","unique_TF"]:
+            DV = np.array([self.M[w] for w in tokens])
+
+        elif method in ["locality_hash"]:
+            sample_space = self.RBP_hash.sample_space
+            DV = np.zeros(shape=(len(tokens), sample_space))
+            for i,w in enumerate(tokens):
+                for key,val in self.WORD_HASH[w].items():
+                    DV[i][key] += val
+        else:
+            msg = "UNKNOWN w2v method '{}'".format(method)
+            raise KeyError(msg)
+
+        return np.array(DV)
+
+    def _compute_doc_vector(self, weights, DV, tokens):
+        method = self.current_method
+        
+        # Sum all the vectors with their weights
+        if method in ["simple","unique","simple_TF","unique_TF"]:
+            # Build the weight matrix
+            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+            doc_vec = (W*DV).sum(axis=0)
+
+            # Renormalize onto the hypersphere
+            doc_vec /= np.linalg.norm(doc_vec)
+
+            # Sanity check, L1 norm if tokens exist
+            if len(tokens):
+                assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+            else:
+                dim = self.M.syn0.shape[1]
+                doc_vec = np.zeros(dim,dtype=float)
+
+        elif method in ["locality_hash"]:
+            doc_vec = np.array(DV).sum(axis=0)
+
+            # Only keep track if the hypercube corner is occupied
+            # doc_vec[doc_vec>0] = 1
+
+            # Renormalize onto the hypersphere
+            doc_vec /= np.linalg.norm(doc_vec)
+
+            # Quick hack
+            doc_vec[ np.isnan(doc_vec) ] = 0
+
+        else:
+            msg = "UNKNOWN w2v method '{}'".format(method)
+            raise KeyError(msg)
+
+        return doc_vec
+
     def score_document(self, item):
 
         text = unicode(item[0])
@@ -81,119 +158,14 @@ class document_scores(corpus_iterator):
         tokens = set(valid_tokens)
         method = self.current_method
 
-        dim = self.M.syn0.shape[1]
-
-        no_token_FLAG = False
         if not tokens:
-            msg = "Document has no valid tokens! This is problem."
+            msg = "Document has no valid tokens! This is probably a problem."
+            print msg
             #raise ValueError(msg)
-            no_token_FLAG = True
 
-        # If scoring function requires meta, convert it
-        if method in ["pos_split"]:
-            meta = ast.literal_eval(meta)
-
-        # Lookup the weights (model dependent)
-        if method in ["unique","pos_split","locality_hash"]:
-            weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple",]:
-            weights = dict([(w,local_counts[w]) for w in tokens])
-        elif method in ["simple_TF"]:
-            weights = dict([(w,local_counts[w]*self.IDF[w])
-                            for w in tokens])
-        elif method in ["unique_TF"]:
-            weights = dict([(w,self.IDF[w]*1.0) for w in tokens])
-        else:
-            msg = "UNKNOWN w2v method {}".format(method)
-            raise KeyError(msg)
-
-        # Lookup the embedding vector
-        if method in ["unique","simple","simple_TF","unique_TF"]:
-            DV = np.array([self.M[w] for w in tokens])
-
-        elif method in ["locality_hash"]:
-            sample_space = self.RBP_hash.sample_space
-            DV = np.zeros(shape=(len(tokens), sample_space))
-            for i,w in enumerate(tokens):
-                for key,val in self.WORD_HASH[w].items():
-                    DV[i][key] += val
-            
-        elif method in ["pos_split"]:
-            known_tags = ["N","ADJ","V"]
-            dim = self.M.syn0.shape[1]
-            pos_vecs = {}
-            pos_totals = {}
-            for pos in known_tags:
-                pos_vecs[pos] = np.zeros((dim,),dtype=float)
-                pos_totals[pos] = 0
-
-            POS = meta["POS"]
-            ordered_tokens = [t for t in text.split()]
-            for token,pos in zip(text.split(),meta["POS"]):
-                if token in valid_tokens and pos in known_tags:
-
-                    # This is the "unique" weights
-                    if token in pos_vecs:
-                        continue
-                    pos_vecs[pos]   += self.M[token]
-                    pos_totals[pos] += 1
-
-            # Normalize
-            for pos in known_tags:
-                pos_vecs[pos] /= pos_totals[pos]
-            
-        else:
-            msg = "UNKNOWN w2v method '{}'".format(method)
-            raise KeyError(msg)
-
-
-        # Sum all the vectors with their weights
-        if method in ["simple","unique","simple_TF","unique_TF"]:
-            # Build the weight matrix
-            W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-            
-            DV = np.array(DV)
-            doc_vec = (W*DV).sum(axis=0)
-
-            # Renormalize onto the hypersphere
-            doc_vec /= np.linalg.norm(doc_vec)
-
-            # Sanity check, L1 norm
-            if not no_token_FLAG:
-                assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
-            else:
-                doc_vec = np.zeros(dim,dtype=float)
-
-        elif method in ["locality_hash"]:
-            doc_vec = np.array(DV).sum(axis=0)
-
-            # Only keep track if the hypercube corner is occupied
-            # doc_vec[doc_vec>0] = 1
-
-            # Renormalize onto the hypersphere
-            doc_vec /= np.linalg.norm(doc_vec)
-
-            # Quick hack
-            doc_vec[ np.isnan(doc_vec) ] = 0
-
-                
-        elif method in ["pos_split"]:
-            
-            # Concatenate
-            doc_vec = np.hstack([pos_vecs[pos] for pos in known_tags])
-
-            # Set any missing pos to zero
-            if np.isnan(doc_vec).any():
-                bad_idx = np.isnan(doc_vec)
-                doc_vec[bad_idx] = 0.0
-            
-            if no_token_FLAG:
-                doc_vec = np.zeros(dim*len(known_tags),dtype=float)
-
-        else:
-            msg = "UNKNOWN w2v method '{}'".format(method)
-            raise KeyError(msg)
-
+        weights = self._compute_item_weights(tokens, local_counts)
+        DV = self._compute_embedding_vector(tokens, meta, text, valid_tokens)
+        doc_vec = self._compute_doc_vector(weights, DV, tokens)
         
         # Sanity check, should not have any NaNs
         assert(not np.isnan(doc_vec).any()) 
