@@ -1,4 +1,4 @@
-import collections, itertools, os, ast
+import collections, itertools, os
 import numpy as np
 import pandas as pd
 import h5py
@@ -8,7 +8,6 @@ from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
 
 #class generic_document_score(
-
 
 class document_scores(corpus_iterator):
 
@@ -74,8 +73,6 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["unique","locality_hash"]:
             weights = dict.fromkeys(tokens, 1.0)
-        elif method in ["simple",]:
-            weights = dict([(w,local_counts[w]) for w in tokens])
         elif method in ["simple_TF"]:
             weights = dict([(w,local_counts[w]*self.IDF[w])
                             for w in tokens])
@@ -87,11 +84,11 @@ class document_scores(corpus_iterator):
 
         return weights
 
-    def _compute_embedding_vector(self, tokens, meta, text, valid_tokens):
+    def _compute_embedding_vector(self, tokens):
         method = self.current_method
         
         # Lookup the embedding vector
-        if method in ["unique","simple","simple_TF","unique_TF"]:
+        if method in ["unique","simple_TF","unique_TF"]:
             DV = np.array([self.M[w] for w in tokens])
 
         elif method in ["locality_hash"]:
@@ -106,24 +103,29 @@ class document_scores(corpus_iterator):
 
         return np.array(DV)
 
+    def L1_norm(self, doc_vec):
+        # Renormalize onto the hypersphere
+        doc_vec /= np.linalg.norm(doc_vec)
+        
+        # Sanity check, L1 norm if tokens exist
+        if doc_vec.any():
+            assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+        else:
+            dim = self.M.syn0.shape[1]
+            doc_vec = np.zeros(dim,dtype=float)
+            
+        return doc_vec
+
     def _compute_doc_vector(self, weights, DV, tokens):
         method = self.current_method
         
         # Sum all the vectors with their weights
-        if method in ["simple","unique","simple_TF","unique_TF"]:
+        if method in ["unique","simple_TF","unique_TF"]:
             # Build the weight matrix
             W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
             doc_vec = (W*DV).sum(axis=0)
+            doc_vec = self.L1_norm(doc_vec)
 
-            # Renormalize onto the hypersphere
-            doc_vec /= np.linalg.norm(doc_vec)
-
-            # Sanity check, L1 norm if tokens exist
-            if len(tokens):
-                assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
-            else:
-                dim = self.M.syn0.shape[1]
-                doc_vec = np.zeros(dim,dtype=float)
 
         elif method in ["locality_hash"]:
             doc_vec = np.array(DV).sum(axis=0)
@@ -147,8 +149,7 @@ class document_scores(corpus_iterator):
 
         text = unicode(item[0])
         idx  = item[1]
-        meta = item[2]
-        other_args = item[3:]
+        other_args = item[2:]
         
         tokens = text.split()
 
@@ -156,15 +157,14 @@ class document_scores(corpus_iterator):
         valid_tokens = [w for w in tokens if w in self.M]
         local_counts = collections.Counter(valid_tokens)
         tokens = set(valid_tokens)
-        method = self.current_method
-
+        
         if not tokens:
             msg = "Document has no valid tokens! This is probably a problem."
             print msg
             #raise ValueError(msg)
 
         weights = self._compute_item_weights(tokens, local_counts)
-        DV = self._compute_embedding_vector(tokens, meta, text, valid_tokens)
+        DV = self._compute_embedding_vector(tokens)
         doc_vec = self._compute_doc_vector(weights, DV, tokens)
         
         # Sanity check, should not have any NaNs
@@ -182,6 +182,8 @@ class document_scores(corpus_iterator):
             for result in ITR:
                 data.append(result)
 
+            data = np.array(data)
+            
             df = pd.DataFrame(data=data,
                               columns=["V","_ref","table_name","f_sql"])
             df.set_index("_ref",inplace=True)
@@ -233,3 +235,99 @@ class document_scores(corpus_iterator):
 
 
         h5.close()
+
+
+class generic_document_score(document_scores):
+
+    def __init__(self,*args,**kwargs):
+
+        # This line will be phased out eventually
+        kwargs['methods'] = []
+        
+        super(generic_document_score, self).__init__(*args,**kwargs)
+
+    def compute(self, config):
+
+        assert(self.method is not None)
+        
+        print "Scoring {}".format(self.method)
+        ITR = itertools.imap(self.score_document, self)
+            
+        data = []
+        for result in ITR:
+            data.append(result)
+
+        data = np.array(data)
+            
+        df = pd.DataFrame(data=data,
+                          columns=["V","_ref","table_name","f_sql"])
+        df.set_index("_ref",inplace=True)
+        self.save(config, df)
+
+
+    def save(self, config, df):
+
+        print "Saving the scored documents"
+        out_dir = config["output_data_directory"]
+        f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
+
+        # Create the h5 file if it doesn't exist
+        if not os.path.exists(f_db):
+            h5 = h5py.File(f_db,'w')
+        else:
+            h5 = h5py.File(f_db,'r+')
+
+        g1  = h5.require_group(self.method)
+        
+        for key_table,df2 in df.groupby("table_name"):
+            g2 = g1.require_group(key_table)
+            
+            for key_sql,df3 in df2.groupby("f_sql"):
+
+                # Save into the group of the base file name
+                name = '.'.join(os.path.basename(key_sql).split('.')[:-1])
+
+                # Save the data array
+                print "Saving", self.method, key_table, name, df3["V"].shape
+                V = np.array(df3["V"].tolist())
+
+                # Save the _ref numbers
+                _ref = np.array(df3.index.tolist())
+
+                # Sanity check on sizes
+                all_sizes = set([x.shape for x in V])
+                if len(all_sizes) != 1:
+                    msg = "Method {} failed, sizes differ {}"
+                    raise ValueError(msg.format(name, all_sizes))
+
+                if name in g2: del g2[name]
+
+                g3 = g2.require_group(name)
+                g3.create_dataset("V",data=V,compression='gzip')
+                g3.create_dataset("_ref",data=_ref)
+
+
+        h5.close()
+
+
+
+class simple_score(generic_document_score):
+
+    method = "simple"
+
+    def __init__(self,*args,**kwargs):
+        super(simple_score, self).__init__(*args,**kwargs)
+
+    def _compute_item_weights(self, tokens, local_counts):
+        weights = dict([(w,local_counts[w]) for w in tokens])
+        return weights
+
+    def _compute_embedding_vector(self, tokens):
+        return np.array([self.M[w] for w in tokens])    
+
+    def _compute_doc_vector(self, weights, DV, tokens):
+        # Build the weight matrix
+        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+        doc_vec = (W*DV).sum(axis=0)
+        return self.L1_norm(doc_vec)
+        

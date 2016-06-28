@@ -59,7 +59,7 @@ def item_iterator(name,cmd_config=None):
             "include_table_name":True,
         }
 
-        requires_meta = ["document_scores",]
+        requires_meta = []
         requires_ref  = ["document_scores",]
 
         if name in requires_meta:
@@ -122,5 +122,6 @@ if __name__ == "__main__":
         kwargs["embedding"] = simple_config.load("embedding")
         
         func = obj(**kwargs)
+        
         func.set_iterator_function(item_iterator,name,config[name])
         func.compute(config)        
