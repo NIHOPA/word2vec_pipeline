@@ -41,29 +41,6 @@ class document_scores(corpus_iterator):
             for w,v in zip(self.M.index2word, self.M.syn0):
                 self.WORD_HASH[w] = self.RBP_hash(v)
         
-        #if "simple_TF" in methods or "unique_TF" in methods:
-        if "unique_TF" in methods:
-            f_db = os.path.join(
-                kwargs['output_data_directory'],
-                kwargs['term_frequency']['f_db']
-            )
-            if not os.path.exists(f_db):
-                msg = "{} not computed yet, needed for TF methods!"
-                raise ValueError(msg.format(f_db))
-
-            import sqlalchemy
-            engine = sqlalchemy.create_engine('sqlite:///'+f_db)
-            
-            IDF = pd.read_sql_table("term_document_frequency",engine)
-            IDF = dict(zip(IDF["word"].values, IDF["count"].values))
-            
-            self.corpus_N = IDF.pop("")
-            
-            # Compute the IDF
-            for key in IDF:
-                IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
-            self.IDF = IDF
-
         # Set parallel option
         self._PARALLEL = kwargs["_PARALLEL"]
 
@@ -73,8 +50,6 @@ class document_scores(corpus_iterator):
         # Lookup the weights (model dependent)
         if method in ["locality_hash"]:
             weights = dict.fromkeys(da["tokens"], 1.0)
-        elif method in ["unique_TF"]:
-            weights = dict([(w,self.IDF[w]*1.0) for w in da["tokens"]])
         else:
             msg = "UNKNOWN w2v method {}".format(method)
             raise KeyError(msg)
@@ -83,12 +58,8 @@ class document_scores(corpus_iterator):
 
     def _compute_embedding_vector(self, **da):
         method = self.current_method
-        
-        # Lookup the embedding vector
-        if method in ["unique_TF"]:
-            DV = np.array([self.M[w] for w in da['tokens']])
 
-        elif method in ["locality_hash"]:
+        if method in ["locality_hash"]:
             sample_space = self.RBP_hash.sample_space
             DV = np.zeros(shape=(len(da['tokens']), sample_space))
             for i,w in enumerate(da['tokens']):
@@ -116,15 +87,7 @@ class document_scores(corpus_iterator):
     def _compute_doc_vector(self, **da):
         method = self.current_method
         
-        # Sum all the vectors with their weights
-        if method in ["unique_TF"]:
-            # Build the weight matrix
-            W  = np.array([da['weights'][w] for w in da['tokens']]).reshape(-1,1)
-            doc_vec = (W*da['DV']).sum(axis=0)
-            doc_vec = self.L1_norm(doc_vec)
-
-
-        elif method in ["locality_hash"]:
+        if method in ["locality_hash"]:
             doc_vec = np.array(da['DV']).sum(axis=0)
 
             # Only keep track if the hypercube corner is occupied
@@ -368,4 +331,12 @@ class score_simple_TF(score_simple):
     def _compute_item_weights(self, local_counts, tokens, **da):
         return dict([(w,local_counts[w]*self.IDF[w]) for w in tokens])
     
+##################################################################################
+
+class score_unique_TF(score_simple_TF):
+    method = "unique_TF"
+
+    def _compute_item_weights(self, tokens, **da):
+        return dict([(w,self.IDF[w]*1.0) for w in tokens])
+
 ##################################################################################
