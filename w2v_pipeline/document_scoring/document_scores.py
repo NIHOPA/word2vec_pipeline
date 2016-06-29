@@ -31,45 +31,20 @@ class document_scores(corpus_iterator):
         self.word2index = dict(zip(self.M.index2word,range(vocab_n)))
 
         if "locality_hash" in methods:
-            # Build the hash function lookup
-            dim = self.M.syn0.shape[1]
-            n_bits = int(kwargs['locality_n_bits'])
-            alpha = float(kwargs['locality_alpha'])
-            
-            self.RBP_hash = RBP_hasher(dim,n_bits,alpha)
-            self.WORD_HASH = {}
-            for w,v in zip(self.M.index2word, self.M.syn0):
-                self.WORD_HASH[w] = self.RBP_hash(v)
+            pass
         
         # Set parallel option
         self._PARALLEL = kwargs["_PARALLEL"]
 
     def _compute_item_weights(self, **da):
-        method = self.current_method
-        
-        # Lookup the weights (model dependent)
-        if method in ["locality_hash"]:
-            weights = dict.fromkeys(da["tokens"], 1.0)
-        else:
-            msg = "UNKNOWN w2v method {}".format(method)
-            raise KeyError(msg)
-
-        return weights
+        # Method has not been defined, raise error here
+        msg = "UNKNOWN w2v weights {}".format(self.method)
+        raise KeyError(msg)
 
     def _compute_embedding_vector(self, **da):
-        method = self.current_method
-
-        if method in ["locality_hash"]:
-            sample_space = self.RBP_hash.sample_space
-            DV = np.zeros(shape=(len(da['tokens']), sample_space))
-            for i,w in enumerate(da['tokens']):
-                for key,val in self.WORD_HASH[w].items():
-                    DV[i][key] += val
-        else:
-            msg = "UNKNOWN w2v method '{}'".format(method)
-            raise KeyError(msg)
-
-        return np.array(DV)
+        # Method has not been defined, raise error here
+        msg = "UNKNOWN w2v embedding {}".format(self.method)
+        raise KeyError(msg)
 
     def L1_norm(self, doc_vec):
         # Renormalize onto the hypersphere
@@ -338,5 +313,44 @@ class score_unique_TF(score_simple_TF):
 
     def _compute_item_weights(self, tokens, **da):
         return dict([(w,self.IDF[w]*1.0) for w in tokens])
+
+##################################################################################
+
+class score_locality_hash(score_unique):
+    method = "locality_hash"
+
+    def __init__(self,*args,**kwargs):
+        super(score_locality_hash, self).__init__(*args,**kwargs)
+        
+        # Build the hash function lookup
+        dim = self.M.syn0.shape[1]
+        n_bits = int(kwargs['locality_n_bits'])
+        alpha = float(kwargs['locality_alpha'])
+            
+        self.RBP_hash = RBP_hasher(dim,n_bits,alpha)
+        self.WORD_HASH = {}
+        for w,v in zip(self.M.index2word, self.M.syn0):
+            self.WORD_HASH[w] = self.RBP_hash(v)
+
+    def _compute_embedding_vector(self, tokens, **da):
+        sample_space = self.RBP_hash.sample_space
+        DV = np.zeros(shape=(len(tokens), sample_space))
+        for i,w in enumerate(tokens):
+            for key,val in self.WORD_HASH[w].items():
+                DV[i][key] += val
+        return DV
+
+    def _compute_doc_vector(self, DV, weights, tokens, **da):
+
+        W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
+        doc_vec = (W*DV).sum(axis=0)
+
+        doc_vec = self.L1_norm(doc_vec)
+        
+        # Quick hack
+        doc_vec[ np.isnan(doc_vec) ] = 0
+
+        return doc_vec
+
 
 ##################################################################################
