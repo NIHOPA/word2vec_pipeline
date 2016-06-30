@@ -14,6 +14,13 @@ class RBP_hasher(object):
         self.rbp = RandomBinaryProjections('rbp', self.n_bit)
         self.engine = Engine(dimension, lshashes=[self.rbp])
 
+    @property
+    def params(self):
+        return self.rbp.get_config()
+
+    def load(self, config):
+        self.rbp.apply_config(config)
+
     def _string2int(self,s):
         return int(s,2)
 
