@@ -250,7 +250,8 @@ class score_locality_hash(score_unique):
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
         doc_vec = (W*DV).sum(axis=0)
 
-        doc_vec = L2_norm(doc_vec)
+        # Locality hash is a probability distribution, so take L1 norm
+        doc_vec /= doc_vec.sum()
         
         # Quick hack
         doc_vec[ np.isnan(doc_vec) ] = 0
