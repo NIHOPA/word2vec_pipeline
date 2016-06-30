@@ -9,7 +9,10 @@ _global_limit = 0
 
 class item_iterator(object):
 
-    def __init__(self, name, cmd_config=None):
+    def __init__(self, name, cmd_config=None, yield_single=False):
+
+        # yield_single returns one item at a time, not in chunks like (table_name, f_sql)
+        self.yield_single = yield_single
 
         score_config = simple_config.load("parse")
         input_data_dir = score_config["output_data_directory"]
@@ -79,9 +82,20 @@ class item_iterator(object):
 
             INPUT_ITR = database_iterator(**args)
 
-            for item in INPUT_ITR:
-                yield list(item) + [f_sql,]
-                progress_bar.update()
+            if not self.yield_single:
+                data = []
+                for item in INPUT_ITR:
+                    val = list(item) + [f_sql,]
+                    data.append(val)
+
+            if self.yield_single:
+                for item in INPUT_ITR:
+                    val = list(item) + [f_sql,]
+                    yield val
+                    progress_bar.update()
+
+            if not self.yield_single:
+                yield data
 
 if __name__ == "__main__":
 
@@ -110,7 +124,7 @@ if __name__ == "__main__":
 
     for name, func in mapreduce_functions:
 
-        INPUT_ITR = item_iterator(name, config[name])
+        INPUT_ITR = item_iterator(name, config[name], yield_single=True)
         ITR = itertools.imap(func, INPUT_ITR)
 
         for item in ITR:
