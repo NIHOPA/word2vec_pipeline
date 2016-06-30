@@ -1,4 +1,4 @@
-import collections, itertools, os
+import collections, itertools, os, joblib
 import numpy as np
 import h5py
 import tqdm
@@ -220,16 +220,46 @@ class score_locality_hash(score_unique):
 
     def __init__(self,*args,**kwargs):
         super(score_locality_hash, self).__init__(*args,**kwargs)
-        
+
+        self.f_params = os.path.join(
+            kwargs["output_data_directory"],
+            "locality_hash_params.pkl")
+
+        params = self.load_params(**kwargs)
+
         # Build the hash function lookup
         dim = self.M.syn0.shape[1]
         n_bits = int(kwargs['locality_n_bits'])
         alpha = float(kwargs['locality_alpha'])
-            
-        self.RBP_hash = RBP_hasher(dim,n_bits,alpha)
+
+        R = RBP_hasher(dim,n_bits,alpha)
+
+        # We assume that all locality hashes will be the same, save these params to disk
+        
+        for key in ['dim', 'projection_count']:
+            if key not in params: continue
+            print "Checking if locality_hash({}) {}=={}".format(key, R.params[key], params[key])
+            if R.params[key] != params[key]:
+                msg = "\nLocality-hash config value of {} does not match from {} to {}.\nDelete {} to continue."
+                raise ValueError(msg.format(key, R.params[key], params[key], self.f_params))
+
+        if 'normals' in params:
+            print "Loading locality hash from {}".format(self.f_params)
+            R.load(params)
+        else:
+            joblib.dump(R.params, self.f_params)
+
+        self.RBP_hash = R        
         self.WORD_HASH = {}
         for w,v in zip(self.M.index2word, self.M.syn0):
             self.WORD_HASH[w] = self.RBP_hash(v)
+
+
+    def load_params(self, **kwargs):
+        if os.path.exists(self.f_params):
+            return joblib.load(self.f_params)
+        else:
+            return {}
 
     def _compute_embedding_vector(self, tokens, **da):
         sample_space = self.RBP_hash.sample_space
