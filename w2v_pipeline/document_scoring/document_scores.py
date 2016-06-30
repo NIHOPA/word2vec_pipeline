@@ -1,6 +1,7 @@
 import collections, itertools, os
 import numpy as np
 import h5py
+import tqdm
 
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
@@ -19,6 +20,14 @@ def L2_norm(doc_vec):
         doc_vec = np.zeros(doc_vec.shape)
         
     return doc_vec
+
+def touch_h5(f_db):
+    # Create the h5 file if it doesn't exist
+    if not os.path.exists(f_db):
+        h5 = h5py.File(f_db,'w')
+    else:
+        h5 = h5py.File(f_db,'r+')
+    return h5
 
 ##################################################################################    
 
@@ -83,72 +92,57 @@ class generic_document_score(corpus_iterator):
         da['doc_vec'] = self._compute_doc_vector(**da)
         
         # Sanity check, should not have any NaNs
-        assert(not np.isnan(da['doc_vec']).any()) 
+        assert(not np.isnan(da['doc_vec']).any())
 
         return [da['doc_vec'],idx,] + other_args
         
 
     def compute(self, config):
+        # Save each block (table_name, f_sql) as its own
+        
 
         assert(self.method is not None)
-        
+
         print "Scoring {}".format(self.method)
-        ITR = itertools.imap(self.score_document, self)
-            
-        data = []
-        for result in ITR:
-            data.append(result)
-
-        data = np.array(data)
-        self.save(config, data)
-
-    def save(self, config, data):
-
-        N = len(self)
-        V,_ref,table_name,f_sql = data.T
-
-        # Restructure the data so it is a proper np array
-        V = np.vstack(V)
-        _ref = np.hstack(_ref)
-        dim_V = V.shape[1]
         
-        print "Saving the scored documents"
+        for block in self:
+            
+            ITR = itertools.imap(self.score_document, tqdm.tqdm(block))
+            data = zip(*(list(ITR)))
+            f_sql = data[3][0]
+            table_name = data[2][0]
+            V = np.array(data[0])
+            _ref = np.array(data[1])
+            
+            self.save(config, V, _ref, f_sql, table_name)
+            
+
+    
+    def save(self, config, V, _ref, f_sql, table_name):
+        
+        # Set the size explictly as a sanity check
+        size_n, dim_V = V.shape
+        
+        # print "Saving the scored documents"
         out_dir = config["output_data_directory"]
         f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
 
-        # Create the h5 file if it doesn't exist
-        if not os.path.exists(f_db):
-            h5 = h5py.File(f_db,'w')
-        else:
-            h5 = h5py.File(f_db,'r+')
+        h5 = touch_h5(f_db)
+        g1 = h5.require_group(self.method)
+        g2 = g1.require_group(table_name)
 
-        g1  = h5.require_group(self.method)
-
-
-        for key_table in np.unique(table_name):
-            
-            g2 = g1.require_group(key_table)
-            
-            for key_sql in np.unique(f_sql):
-
-                # Save into the group of the base file name
-                name = '.'.join(os.path.basename(key_sql).split('.')[:-1])
-
-                # Pull out the subset of the data
-                idx = (table_name==key_table) & (f_sql==key_sql)
-                size_n = idx.sum()
-
-                # Save the data array
-                print "Saving", self.method, key_table, name, size_n
+        # Save into the group of the base file name
+        name = '.'.join(os.path.basename(f_sql).split('.')[:-1])
+        
+        # Save the data array
+        print "Saving {} {} {} ({})".format(self.method, table_name, name, size_n)
                 
-                # Clear the dataset if it already exists
-                if name in g2: del g2[name]
+        # Clear the dataset if it already exists
+        if name in g2: del g2[name]
 
-                # Set the size explictly as a sanity check
-                g3 = g2.require_group(name)
-                g3.create_dataset("V",data=V[idx],compression='gzip',shape=(size_n,dim_V))
-                g3.create_dataset("_ref",data=_ref[idx],shape=(size_n,))
-
+        g3 = g2.require_group(name)
+        g3.create_dataset("V",data=V,compression='gzip',shape=(size_n,dim_V))
+        g3.create_dataset("_ref",data=_ref,shape=(size_n,))
 
         h5.close()
 
