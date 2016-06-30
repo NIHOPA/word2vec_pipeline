@@ -7,7 +7,6 @@ import tqdm
 
 _global_limit = 0
 
-#def item_iterator(name,cmd_config=None):
 class item_iterator(object):
 
     def __init__(self, name, cmd_config=None):
@@ -32,7 +31,6 @@ class item_iterator(object):
                         F_SQL2.add(f_sql)
             F_SQL = F_SQL2
 
-
         # Randomize the order of the input files (why? not needed for scoring)
         # F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
 
@@ -44,9 +42,7 @@ class item_iterator(object):
             conn = sqlite3.connect(f_sql, check_same_thread=False)
             self.total_items += count_rows(conn, target_col)
             conn.close()
-        progress_bar = tqdm.tqdm(total=self.total_items)
-
-        self.progress_bar = progress_bar
+        
         self.F_SQL = F_SQL
         self.config = config
 
@@ -54,6 +50,9 @@ class item_iterator(object):
         return self.total_items
 
     def __iter__(self):
+
+        # Setup the progress bar
+        progress_bar = tqdm.tqdm(total=self.total_items)
 
         # Rebuild the iterator
         DB_ITR = itertools.product(self.F_SQL,
@@ -82,7 +81,7 @@ class item_iterator(object):
 
             for item in INPUT_ITR:
                 yield list(item) + [f_sql,]
-                self.progress_bar.update()
+                progress_bar.update()
 
 if __name__ == "__main__":
 
