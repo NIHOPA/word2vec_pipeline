@@ -7,69 +7,81 @@ import tqdm
 
 _global_limit = 0
 
-def item_iterator(name,cmd_config=None):
+class item_iterator(object):
 
-    score_config = simple_config.load("parse")
-    input_data_dir = score_config["output_data_directory"]
+    def __init__(self, name, cmd_config=None):
 
-    F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
+        score_config = simple_config.load("parse")
+        input_data_dir = score_config["output_data_directory"]
 
-    # If there is a whitelist only keep the matching filename
-    try:
-        whitelist = cmd_config["command_whitelist"].strip()
-    except:
-        whitelist = None
-    if whitelist:
-        assert(type(whitelist)==list)
+        F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
 
-        F_SQL2 = set()
-        for f_sql in F_SQL:
-            for token in whitelist:
-                if token in f_sql:
-                    F_SQL2.add(f_sql)
-        F_SQL = F_SQL2
+        # If there is a whitelist only keep the matching filename
+        try:
+            whitelist = cmd_config["command_whitelist"].strip()
+        except:
+            whitelist = None
+        if whitelist:
+            assert(type(whitelist)==list)
 
-    
-    # Randomize the order of the input files (why? not needed for scoring)
-    # F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
-    
-    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+            F_SQL2 = set()
+            for f_sql in F_SQL:
+                for token in whitelist:
+                    if token in f_sql:
+                        F_SQL2.add(f_sql)
+            F_SQL = F_SQL2
 
-    # Get database sizes for progress bar
-    total_items = 0
-    for f_sql, target_col in DB_ITR:
-        conn = sqlite3.connect(f_sql, check_same_thread=False)
-        total_items += count_rows(conn, target_col)
-        conn.close()
-    progress_bar = tqdm.tqdm(total=total_items)
+        # Randomize the order of the input files (why? not needed for scoring)
+        # F_SQL = random.sample(sorted(F_SQL), len(F_SQL))
 
-    # Rebuild the iterator
-    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+        DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
-    for f_sql, target_col in DB_ITR:
+        # Get database sizes for progress bar
+        self.total_items = 0
+        for f_sql, target_col in DB_ITR:
+            conn = sqlite3.connect(f_sql, check_same_thread=False)
+            self.total_items += count_rows(conn, target_col)
+            conn.close()
         
-        conn = sqlite3.connect(f_sql, check_same_thread=False)
+        self.F_SQL = F_SQL
+        self.config = config
 
-        args = {
-            "column_name":"text",
-            "table_name" :target_col,
-            "conn":conn,
-            "limit":_global_limit,
-            "shuffle":False,
-            "include_table_name":True,
-        }
+    def __len__(self):
+        return self.total_items
 
-        requires_meta = []
-        requires_ref  = ["document_scores",]
+    def __iter__(self):
 
-        if name in requires_meta:
-            args["include_meta"] = True
-            
-        INPUT_ITR = database_iterator(**args)
+        # Setup the progress bar
+        progress_bar = tqdm.tqdm(total=self.total_items)
 
-        for item in INPUT_ITR:
-            yield list(item) + [f_sql,]
-            progress_bar.update()
+        # Rebuild the iterator
+        DB_ITR = itertools.product(self.F_SQL,
+                                   self.config["target_columns"])
+
+        for f_sql, target_col in DB_ITR:
+
+            conn = sqlite3.connect(f_sql, check_same_thread=False)
+
+            args = {
+                "column_name":"text",
+                "table_name" :target_col,
+                "conn":conn,
+                "limit":_global_limit,
+                "shuffle":False,
+                "include_table_name":True,
+            }
+
+            requires_meta = []
+            requires_ref  = ["document_scores",]
+
+            if name in requires_meta:
+                args["include_meta"] = True
+
+            INPUT_ITR = database_iterator(**args)
+
+            for item in INPUT_ITR:
+                yield list(item) + [f_sql,]
+                progress_bar.update()
 
 if __name__ == "__main__":
 
