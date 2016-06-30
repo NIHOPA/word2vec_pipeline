@@ -1,6 +1,5 @@
 import collections, itertools, os
 import numpy as np
-import pandas as pd
 import h5py
 
 from gensim.models.word2vec import Word2Vec
@@ -42,7 +41,7 @@ class generic_document_score(corpus_iterator):
         vocab_n = self.shape[0]
         self.word2index = dict(zip(self.M.index2word,range(vocab_n)))
         
-        # Set parallel option
+        # Set parallel option (currently does nothing)
         self._PARALLEL = kwargs["_PARALLEL"]
 
     def _compute_item_weights(self, **da):
@@ -101,15 +100,18 @@ class generic_document_score(corpus_iterator):
             data.append(result)
 
         data = np.array(data)
-            
-        df = pd.DataFrame(data=data,
-                          columns=["V","_ref","table_name","f_sql"])
-        df.set_index("_ref",inplace=True)
-        self.save(config, df)
+        self.save(config, data)
 
+    def save(self, config, data):
 
-    def save(self, config, df):
+        N = len(self)
+        V,_ref,table_name,f_sql = data.T
 
+        # Restructure the data so it is a proper np array
+        V = np.vstack(V)
+        _ref = np.hstack(_ref)
+        dim_V = V.shape[1]
+        
         print "Saving the scored documents"
         out_dir = config["output_data_directory"]
         f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
@@ -121,33 +123,31 @@ class generic_document_score(corpus_iterator):
             h5 = h5py.File(f_db,'r+')
 
         g1  = h5.require_group(self.method)
-        
-        for key_table,df2 in df.groupby("table_name"):
+
+
+        for key_table in np.unique(table_name):
+            
             g2 = g1.require_group(key_table)
             
-            for key_sql,df3 in df2.groupby("f_sql"):
+            for key_sql in np.unique(f_sql):
 
                 # Save into the group of the base file name
                 name = '.'.join(os.path.basename(key_sql).split('.')[:-1])
 
+                # Pull out the subset of the data
+                idx = (table_name==key_table) & (f_sql==key_sql)
+                size_n = idx.sum()
+
                 # Save the data array
-                print "Saving", self.method, key_table, name, df3["V"].shape
-                V = np.array(df3["V"].tolist())
-
-                # Save the _ref numbers
-                _ref = np.array(df3.index.tolist())
-
-                # Sanity check on sizes
-                all_sizes = set([x.shape for x in V])
-                if len(all_sizes) != 1:
-                    msg = "Method {} failed, sizes differ {}"
-                    raise ValueError(msg.format(name, all_sizes))
-
+                print "Saving", self.method, key_table, name, size_n
+                
+                # Clear the dataset if it already exists
                 if name in g2: del g2[name]
 
+                # Set the size explictly as a sanity check
                 g3 = g2.require_group(name)
-                g3.create_dataset("V",data=V,compression='gzip')
-                g3.create_dataset("_ref",data=_ref)
+                g3.create_dataset("V",data=V[idx],compression='gzip',shape=(size_n,dim_V))
+                g3.create_dataset("_ref",data=_ref[idx],shape=(size_n,))
 
 
         h5.close()
@@ -195,7 +195,8 @@ class score_simple_TF(score_simple):
 
         import sqlalchemy
         engine = sqlalchemy.create_engine('sqlite:///'+f_db)
-            
+
+        import pandas as pd
         IDF = pd.read_sql_table("term_document_frequency",engine)
         IDF = dict(zip(IDF["word"].values, IDF["count"].values))
             

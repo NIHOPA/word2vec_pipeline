@@ -23,10 +23,15 @@ class corpus_iterator(simple_mapreduce):
     def set_iterator_function(self, iter_func, *args):
         self.iter_func = iter_func
         self.iter_args = args
+        self.ITR = self.iter_func(*self.iter_args)
+        self.N = len(self.ITR)
 
     def __iter__(self):
-        for x in self.iter_func(*self.iter_args):
+        for x in self.ITR:
             yield x
+
+    def __len__(self):
+        return self.N
 
     def sentence_iterator(self):
         for item in self:
