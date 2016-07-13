@@ -134,8 +134,10 @@ class cluster_object(object):
 
     def compute_centroid_set(self, **kwargs):
 
-        INPUT_ITR = subset_iterator(self.docv,
-                                    self.subcluster_m)
+        INPUT_ITR = subset_iterator(
+            X = self.docv,
+            m = self.subcluster_m,
+            repeats = self.subcluster_repeats,      
 
         kn = self.subcluster_kn
         clf = SpectralClustering(
