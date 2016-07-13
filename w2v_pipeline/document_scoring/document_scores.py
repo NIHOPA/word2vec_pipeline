@@ -34,7 +34,6 @@ def touch_h5(f_db):
 class generic_document_score(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
-
         super(generic_document_score, self).__init__(*args,**kwargs)
 
         f_w2v = os.path.join(
@@ -52,6 +51,13 @@ class generic_document_score(corpus_iterator):
         
         # Set parallel option (currently does nothing)
         self._PARALLEL = kwargs["_PARALLEL"]
+
+        # Load the negative weights
+        if "negative_weights" in kwargs:
+            neg_W = kwargs["negative_weights"]
+            self.neg_W = dict((k, float(v)) for k,v in neg_W.items())
+        else:
+            self.neg_W = {}
 
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
@@ -80,7 +86,7 @@ class generic_document_score(corpus_iterator):
         valid_tokens = [w for w in tokens if w in self.M]
         
         da["local_counts"] = collections.Counter(valid_tokens)
-        da["tokens"] = set(valid_tokens)
+        da["tokens"] = list(set(valid_tokens))
         
         if not da["tokens"]:
             msg = "Document has no valid tokens! This is probably a problem."
@@ -161,7 +167,18 @@ class score_simple(generic_document_score):
     def _compute_doc_vector(self, weights, DV, tokens, **da):
         # Build the weight matrix
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
-        
+
+        # Apply the negative weights
+        # To do: This needs to be multipled across the unit sphere so it "spreads" across
+        # and not just applies it to a single word...
+
+        for neg_word,neg_weight in self.neg_W.items():
+            neg_vec = self.M[neg_word]
+            neg_scale = np.exp(-neg_weight * DV.dot(neg_vec))
+            # Don't oversample, max out weights to unity
+            neg_scale[neg_scale>1] = 1.0
+            W = W*neg_scale.reshape(-1,1)
+
         doc_vec = (W*DV).sum(axis=0)
         return L2_norm(doc_vec)
 
