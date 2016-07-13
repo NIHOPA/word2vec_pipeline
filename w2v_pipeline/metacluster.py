@@ -137,7 +137,8 @@ class cluster_object(object):
         INPUT_ITR = subset_iterator(
             X = self.docv,
             m = self.subcluster_m,
-            repeats = self.subcluster_repeats,      
+            repeats = self.subcluster_repeats,
+        )
 
         kn = self.subcluster_kn
         clf = SpectralClustering(
