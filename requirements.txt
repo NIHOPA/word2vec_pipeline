@@ -13,6 +13,9 @@ scipy
 #pyksvd
 psutil
 
+# For reporting and status bars
+tqdm
+
 # Replaces pythons multiprocessing
 joblib==0.9.4
 
