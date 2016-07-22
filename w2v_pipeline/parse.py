@@ -9,7 +9,10 @@ from utils.parallel_utils import jobmap
 global_limit = 0
 
 def dispatcher(item):
+
     text,idx  = item
+    if text is None:
+        text = ""
     meta = {}
     
     for f in parser_functions:
