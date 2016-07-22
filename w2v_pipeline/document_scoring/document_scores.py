@@ -168,9 +168,14 @@ class score_simple(generic_document_score):
         # Build the weight matrix
         W  = np.array([weights[w] for w in tokens]).reshape(-1,1)
 
+        # Empty document vector with no tokens, return zero
+        if not W.shape[0]:
+            dim = self.M.syn0.shape[1]
+            return np.zeros((dim,))
+
         # Apply the negative weights
-        # To do: This needs to be multipled across the unit sphere so it "spreads" across
-        # and not just applies it to a single word...
+        # This needs to be multipled across the unit sphere so 
+        # it "spreads" across and not just applies it to a single word.
 
         for neg_word,neg_weight in self.neg_W.items():
             neg_vec = self.M[neg_word]
