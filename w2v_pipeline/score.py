@@ -119,6 +119,9 @@ if __name__ == "__main__":
         if name in config:
             kwargs = config[name]
 
+        # Add in the embedding configuration options
+        kwargs["embedding"] = simple_config.load("embedding")
+
         val = name, obj(**kwargs)
         mapreduce_functions.append(val)
 

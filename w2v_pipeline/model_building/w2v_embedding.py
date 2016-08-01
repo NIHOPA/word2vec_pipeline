@@ -11,16 +11,30 @@ class w2v_embedding(corpus_iterator):
 
     def __init__(self,*args,**kwargs):
         super(w2v_embedding, self).__init__(*args,**kwargs)
-
         self.epoch_n = int(kwargs["epoch_n"])
 
-        self.clf = Word2Vec(workers=CPU_CORES,
-                            sg=0,
-                            window =int(kwargs["window"]),
-                            negative=int(kwargs["negative"]),
-                            sample=float(kwargs["sample"]),
-                            size=int(kwargs["size"]),
-                            min_count=int(kwargs["min_count"]),
+        # sg == skip_gram vs cbow
+        sg = int(kwargs["skip_gram"])
+        hs = int(kwargs["hierarchical_softmax"])
+        negative = int(kwargs["negative"])
+
+        # Input bounds checks
+        assert(sg in [0,1])
+        assert(hs in [0,1])
+
+        if hs and negative:
+            msg="If hierarchical_softmax is used negative must be zero"
+            raise ValueError(msg)           
+
+        self.clf = Word2Vec(
+            workers=CPU_CORES,
+            sg=sg,
+            hs=hs,
+            window =int(kwargs["window"]),
+            negative=negative,
+            sample=float(kwargs["sample"]),
+            size=int(kwargs["size"]),
+            min_count=int(kwargs["min_count"]),
         )
         
 
