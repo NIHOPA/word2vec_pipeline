@@ -36,7 +36,7 @@ class document_log_probability(simple_mapreduce):
         self.shape = self.M.syn0.shape
 
         f_partition_function = os.path.join(
-            kwargs["score"]["output_data_directory"],
+            kwargs["embedding"]["output_data_directory"],
             kwargs["f_partition_function"],
         )
         if not os.path.exists(f_partition_function):
@@ -78,6 +78,9 @@ class document_log_probability(simple_mapreduce):
         with h5py.File(f_h5,'r') as h5:
             return dict(zip(h5["words"][:], h5["Z"][:]))
 
+    #def sentence_iterator(self, sent):
+        
+
     def __call__(self,item):
         '''
         Compute the local partition function for each word.
@@ -110,7 +113,6 @@ class document_log_probability(simple_mapreduce):
             for i in range(n):
                 left_idx  = max(0,i-self.window+1)
                 right_idx = min(n,i+self.window+1)
-
                 inner_vecs = np.vstack([vecs[left_idx:i], vecs[i+1:right_idx]])
 
                 if not inner_vecs.size:
