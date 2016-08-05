@@ -4,6 +4,7 @@ import document_scoring as ds
 from utils.db_utils import database_iterator, count_rows
 import simple_config
 import tqdm
+import joblib
 
 _global_limit = 0
 

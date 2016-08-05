@@ -161,12 +161,12 @@ class document_log_probability(simple_mapreduce):
         df = pd.DataFrame(self.scores.items(),
                           columns=["_ref","log_prob"])
 
-        # Scale to the most negative
-        #df.log_prob -= df.log_prob.max()
-
         out_dir = config["output_data_directory"]
         f_sql = os.path.join(out_dir,
                              config["document_log_probability"]["f_db"])
+
+        if os.path.exists(f_sql):
+            os.remove(f_sql)
         
         engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
 
