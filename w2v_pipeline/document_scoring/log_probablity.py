@@ -47,11 +47,23 @@ class document_log_probability(simple_mapreduce):
         self.min_sent = int(minimum_sentence_length)
         self.scores = {}
 
-    def energy(self, v):
+    def energy(self, a, b):
+        return a.dot(b)
+
+    def unnorm_prob(self, v):
         return np.exp((v-1.0)/self.kT)
 
-    def probability(self, word, v):
-        return self.energy(v) / self.Z[word]
+    def probability(self, word, energy):
+        return self.unnorm_prob(energy) / self.Z[word]
+
+    def window_probability(self, word, word_vec, context_vec):
+        u = self.energy(context_vec, word_vec)
+        p = self.probability(word, u)
+
+        # Multiply the probability by the uniform distribution
+        # for eaiser human interperation.
+        vocab_N = self.shape[0]
+        return p*vocab_N
 
     def create_partition_function(self, f_h5):
         print "Building the partition function"
@@ -61,8 +73,8 @@ class document_log_probability(simple_mapreduce):
         
         for w in tqdm.tqdm(words):
             v  = self.M[w]
-            UE = np.dot(self.M.syn0, v)
-            Z.append( self.energy(UE).sum() )
+            UE = self.energy(self.M.syn0, v)
+            Z.append( self.unnorm_prob(UE).sum() )
 
         dt = h5py.special_dtype(vlen=unicode)
 
@@ -78,8 +90,28 @@ class document_log_probability(simple_mapreduce):
         with h5py.File(f_h5,'r') as h5:
             return dict(zip(h5["words"][:], h5["Z"][:]))
 
-    #def sentence_iterator(self, sent):
-        
+    def sentence_iterator(self, sent):
+        tokens = [w for w in sent.split() if w in self.M]
+        vecs = np.array([self.M[w] for w in tokens])
+        sent_N = vecs.shape[0]
+
+        if len(tokens) < self.min_sent:
+            raise StopIteration
+
+        for i in range(sent_N):
+            left_idx  = max(0,i-self.window+1)
+            right_idx = min(sent_N,i+self.window+1)
+            inner_vecs = np.vstack([vecs[left_idx:i], vecs[i+1:right_idx]])
+
+            context_vec  = inner_vecs.sum(axis=0)
+            context_vec /= np.linalg.norm(context_vec)
+
+            word = tokens[i]
+            word_vec = vecs[i]
+
+            yield word, word_vec, context_vec
+
+
 
     def __call__(self,item):
         '''
@@ -95,50 +127,24 @@ class document_log_probability(simple_mapreduce):
         # Only keep sentences that are this long
         #sents = [s for s in sents if len(s.split()) >= self.min_sent]
         sents_n = len(sents)
-
         doc_p = []
 
         for sent in sents:
-            tokens = [w for w in sent.split() if w in self.M]
-
-            if len(tokens) < self.min_sent:
-                continue
-            
-            vecs = np.array([self.M[w] for w in tokens])
-            n = vecs.shape[0]
-            N = self.shape[0]
 
             sent_p = []
-
-            for i in range(n):
-                left_idx  = max(0,i-self.window+1)
-                right_idx = min(n,i+self.window+1)
-                inner_vecs = np.vstack([vecs[left_idx:i], vecs[i+1:right_idx]])
-
-                if not inner_vecs.size:
-                    continue
-
-                inner_vecs = inner_vecs.sum(axis=0)
-
-                # These should already be unit normalized
-                #inner_vecs /= np.linalg.norm(inner_vecs)
-
-                uv = np.dot(inner_vecs, vecs[i])
+            window_itr = self.sentence_iterator(sent)
+            for word, word_vec, context_vec in window_itr:
                 
-                prob = self.probability(tokens[i], uv)
-               
-                # Multiple the probability by the uniform distribution
-                prob *= N
+                p = self.window_probability(word, word_vec, context_vec)
+                sent_p.append(p)
 
-                sent_p.append(prob)
+            if not sent_p:
+                continue
+
+            sent_p = np.array(sent_p)
 
             # Take the average of the sentence (if any tokens)
-            avg_sent_p = np.array(sent_p).mean()
-            doc_p.append( avg_sent_p )
-
-            # Debug print statement
-            #if avg_sent_p < 1.0:
-            #    print sent, avg_sent_p
+            doc_p.append( sent_p.mean() )
 
         if len(doc_p):
             avg_doc_p = np.array(doc_p).mean()
