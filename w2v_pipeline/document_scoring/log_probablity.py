@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import sqlalchemy
 import tqdm, h5py
+import itertools
 
 class document_log_probability(simple_mapreduce):
 
@@ -46,6 +47,7 @@ class document_log_probability(simple_mapreduce):
 
         self.min_sent = int(minimum_sentence_length)
         self.scores = {}
+
 
     def energy(self, a, b):
         return a.dot(b)
@@ -92,7 +94,7 @@ class document_log_probability(simple_mapreduce):
 
     def sentence_iterator(self, sent):
         tokens = [w for w in sent.split() if w in self.M]
-        vecs = np.array([self.M[w] for w in tokens])
+        vecs   = np.array([self.M[w] for w in tokens])
         sent_N = vecs.shape[0]
 
         if len(tokens) < self.min_sent:
@@ -111,7 +113,22 @@ class document_log_probability(simple_mapreduce):
 
             yield word, word_vec, context_vec
 
+    def score_sentence(self, sent):
 
+        if not sent:
+            return None
+
+        sent_p = []
+        window_itr = self.sentence_iterator(sent)
+        for word, word_vec, context_vec in window_itr:
+                
+            p = self.window_probability(word, word_vec, context_vec)
+            sent_p.append(p)
+
+        if not sent_p:
+            return None
+
+        return np.array(sent_p)
 
     def __call__(self,item):
         '''
@@ -129,19 +146,12 @@ class document_log_probability(simple_mapreduce):
         sents_n = len(sents)
         doc_p = []
 
-        for sent in sents:
+        ITR = itertools.imap(self.score_sentence, sents)
 
-            sent_p = []
-            window_itr = self.sentence_iterator(sent)
-            for word, word_vec, context_vec in window_itr:
-                
-                p = self.window_probability(word, word_vec, context_vec)
-                sent_p.append(p)
+        for sent_p in ITR:
 
-            if not sent_p:
+            if sent_p is None:
                 continue
-
-            sent_p = np.array(sent_p)
 
             # Take the average of the sentence (if any tokens)
             doc_p.append( sent_p.mean() )

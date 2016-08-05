@@ -4,7 +4,6 @@ import document_scoring as ds
 from utils.db_utils import database_iterator, count_rows
 import simple_config
 import tqdm
-import joblib
 
 _global_limit = 0
 
@@ -12,7 +11,9 @@ class item_iterator(object):
 
     def __init__(self, name, cmd_config=None, yield_single=False):
 
-        # yield_single returns one item at a time, not in chunks like (table_name, f_sql)
+        # yield_single returns one item at a time,
+        # not in chunks like (table_name, f_sql)
+        
         self.yield_single = yield_single
 
         score_config = simple_config.load("parse")
@@ -105,6 +106,8 @@ if __name__ == "__main__":
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
+    n_jobs = -1 if _PARALLEL else 1
+
     mkdir(config["output_data_directory"])
 
     ###########################################################
@@ -128,10 +131,9 @@ if __name__ == "__main__":
         mapreduce_functions.append(val)
 
     for name, func in mapreduce_functions:
-
+        print "Starting mapreduce {}".format(func.table_name)
         INPUT_ITR = item_iterator(name, config[name], yield_single=True)
         ITR = itertools.imap(func, INPUT_ITR)
-
         for item in ITR:
             result = item[0]
             func.reduce(result)
