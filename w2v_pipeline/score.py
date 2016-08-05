@@ -121,6 +121,7 @@ if __name__ == "__main__":
 
         # Add in the embedding configuration options
         kwargs["embedding"] = simple_config.load("embedding")
+        kwargs["score"] = simple_config.load("score")
 
         val = name, obj(**kwargs)
         mapreduce_functions.append(val)

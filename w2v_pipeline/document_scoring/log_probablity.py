@@ -5,18 +5,25 @@ import os
 
 import pandas as pd
 import sqlalchemy
-
+import tqdm, h5py
 
 class document_log_probability(simple_mapreduce):
 
     table_name = 'log_prob'
 
     def __init__(self, f_db, minimum_sentence_length, *args, **kwargs):
+
         '''
         Computes the average log probability of a document.
-        # (maybe not...) requires that the embedding model has hs=1, negative=0.
+        Break document up into sentences, then breaks document into windows.
+        Each window computes the probability that a phase is formed, scaled
+        by the center word's partition function. Will precompute the
+        partition function if it doesn't exist.
         '''
 
+        # Internal temperature (not configurable yet)
+        self.kT = 1.0
+        
         self.window = int(kwargs['embedding']['w2v_embedding']['window'])
 
         f_w2v = os.path.join(
@@ -28,26 +35,48 @@ class document_log_probability(simple_mapreduce):
         self.M = M = Word2Vec.load(f_w2v)
         self.shape = self.M.syn0.shape
 
-        N = self.shape[0]
-        self.Z = {}
-        #self.word2index = dict(zip(*[range(N), M.index2word]))
-        for w in self.M.index2word:
-            v = M[w]
-            UE = np.dot(self.M.syn0, v)
-            self.Z[w] = np.exp(UE-1.0).sum()
+        f_partition_function = os.path.join(
+            kwargs["score"]["output_data_directory"],
+            kwargs["f_partition_function"],
+        )
+        if not os.path.exists(f_partition_function):
+            self.create_partition_function(f_partition_function)
 
-        '''
-        if M.hs != 1:
-            msg = "hierarchical_softmax=1 is required for log_probablity"
-            raise ValueError(msg)
-
-        if M.negative:
-            msg = "negative=0 is required for log_probablity"
-            raise ValueError(msg)
-        '''
+        self.Z = self.load_partition_function(f_partition_function)
 
         self.min_sent = int(minimum_sentence_length)
-        self.scores = {}        
+        self.scores = {}
+
+    def energy(self, v):
+        return np.exp((v-1.0)/self.kT)
+
+    def probability(self, word, v):
+        return self.energy(v) / self.Z[word]
+
+    def create_partition_function(self, f_h5):
+        print "Building the partition function"
+
+        words = self.M.index2word
+        Z = []
+        
+        for w in tqdm.tqdm(words):
+            v  = self.M[w]
+            UE = np.dot(self.M.syn0, v)
+            Z.append( self.energy(UE).sum() )
+
+        dt = h5py.special_dtype(vlen=unicode)
+
+        with h5py.File(f_h5,'w') as h5:
+                       
+            h5.create_dataset("words", (len(words),),
+                              dtype=dt,
+                              data=[w.encode('utf8') for w in words])
+            h5['Z'] = Z
+
+        
+    def load_partition_function(self, f_h5):
+        with h5py.File(f_h5,'r') as h5:
+            return dict(zip(h5["words"][:], h5["Z"][:]))
 
     def __call__(self,item):
         '''
@@ -93,13 +122,12 @@ class document_log_probability(simple_mapreduce):
                 #inner_vecs /= np.linalg.norm(inner_vecs)
 
                 uv = np.dot(inner_vecs, vecs[i])
-                prob = np.exp(uv-1.0)
-
-                prob /= self.Z[tokens[i]]
-
+                
+                prob = self.probability(tokens[i], uv)
+               
                 # Multiple the probability by the uniform distribution
                 prob *= N
-                
+
                 sent_p.append(prob)
 
             # Take the average of the sentence (if any tokens)
