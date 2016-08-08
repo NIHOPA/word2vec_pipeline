@@ -57,14 +57,22 @@ class pos_tokenizer(object):
             for y in L: self.POS_map[y]=pos
                                         
     def __call__(self,doc,force_lemma=True):
+        
         pos_tags = []
         tokens = self.parse(doc)
         doc2 = []
+        
         for sentence in tokens.split():
             sent2 = []
+
             for word,tag in sentence:
 
                 if "PHRASE_" in word:
+                    sent2.append(word)
+                    pos_tags.append(_POS_shorthand["noun"])
+                    continue
+
+                if "MeSH_" in word:
                     sent2.append(word)
                     pos_tags.append(_POS_shorthand["noun"])
                     continue
