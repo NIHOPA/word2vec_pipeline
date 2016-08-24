@@ -4,80 +4,84 @@ import numpy as np
 import os
 
 import pandas as pd
-import sqlalchemy
 import tqdm, h5py
-import itertools
+import scipy.stats
+
+def compute_partition_stats(UE):
+    
+    # Remove the largest element (the energy of self interaction)
+    UE  = np.sort(UE)[:-1]
+    n_words = len(UE)
+    
+    return UE.sum() / n_words
+
+
+def compute_stats(X, data, prefix):
+    # Compute various measures of central tendency
+    
+    name = "{}_".format(prefix)
+    
+    data[name+"mu"]       = np.mean(X)
+    data[name+"std"]      = np.std(X)
+    data[name+"skew"]     = scipy.stats.skew(X)
+    data[name+"kurtosis"] = scipy.stats.kurtosis(X)
 
 class document_log_probability(simple_mapreduce):
 
     table_name = 'log_prob'
 
-    def __init__(self, f_db, minimum_sentence_length, *args, **kwargs):
+    def __init__(self, f_db, intra_document_cutoff, *args, **kwargs):
 
         '''
-        Computes the average log probability of a document.
-        Break document up into sentences, then breaks document into windows.
-        Each window computes the probability that a phase is formed, scaled
-        by the center word's partition function. Will precompute the
-        partition function if it doesn't exist.
+        Computes various measures of central tendency of a document.
+        For Z_X scores, the raw word tokens are summed over the partition
+        function. For I_X scores, the same statistics are computed over
+        the similarity of all word pairs for words with top 10% Z values.
+        This will precompute the partition function if it doesn't exist.
         '''
-
-        # Internal temperature (not configurable yet)
-        self.kT = 1.0
         
         self.window = int(kwargs['embedding']['w2v_embedding']['window'])
-
+        
         f_w2v = os.path.join(
             kwargs["embedding"]["output_data_directory"],
             kwargs["embedding"]["w2v_embedding"]["f_db"],
         )
-        
-        # Load the model from disk
-        self.M = M = Word2Vec.load(f_w2v)
-        self.shape = self.M.syn0.shape
 
         f_partition_function = os.path.join(
             kwargs["embedding"]["output_data_directory"],
             kwargs["f_partition_function"],
         )
+        
         if not os.path.exists(f_partition_function):
-            self.create_partition_function(f_partition_function)
+            self.create_partition_function(f_w2v, f_partition_function)
 
         self.Z = self.load_partition_function(f_partition_function)
+        self.scores = []
+        self.intra_document_cutoff = float(intra_document_cutoff)
 
-        self.min_sent = int(minimum_sentence_length)
-        self.scores = {}
-
+        self.model = Word2Vec.load(f_w2v)
 
     def energy(self, a, b):
         return a.dot(b)
 
-    def unnorm_prob(self, v):
-        return np.exp((v-1.0)/self.kT)
-
-    def probability(self, word, energy):
-        return self.unnorm_prob(energy) / self.Z[word]
-
-    def window_probability(self, word, word_vec, context_vec):
-        u = self.energy(context_vec, word_vec)
-        p = self.probability(word, u)
-
-        # Multiply the probability by the uniform distribution
-        # for eaiser human interperation.
-        vocab_N = self.shape[0]
-        return p*vocab_N
-
-    def create_partition_function(self, f_h5):
+    def create_partition_function(self, f_w2v, f_h5):
         print "Building the partition function"
-
-        words = self.M.index2word
-        Z = []
         
-        for w in tqdm.tqdm(words):
-            v  = self.M[w]
-            UE = self.energy(self.M.syn0, v)
-            Z.append( self.unnorm_prob(UE).sum() )
+        # Load the model from disk
+        M = Word2Vec.load(f_w2v)
 
+        words = M.index2word
+        ZT = []
+        INPUT_ITR = tqdm.tqdm(words)
+
+        # Compute the partition function for each word
+        for w in INPUT_ITR:
+            UE = self.energy(M.syn0, M[w])
+            z  = compute_partition_stats(UE)
+            ZT.append(z)
+
+        # Save the partition function to disk
+        # (special care needed for h5py unicode strings)
         dt = h5py.special_dtype(vlen=unicode)
 
         with h5py.File(f_h5,'w') as h5:
@@ -85,102 +89,85 @@ class document_log_probability(simple_mapreduce):
             h5.create_dataset("words", (len(words),),
                               dtype=dt,
                               data=[w.encode('utf8') for w in words])
-            h5['Z'] = Z
 
+            h5.attrs['vocab_N'] = len(words)
+            h5['Z'] = ZT            
         
     def load_partition_function(self, f_h5):
+        '''
+        The partition function is a dictionary of the 
+        Standardized (zero-mean, unit-variance) Z scores are returned
+        that were precomputed over the corpus embedding.
+
+        '''
+        
         with h5py.File(f_h5,'r') as h5:
-            return dict(zip(h5["words"][:], h5["Z"][:]))
+            words = h5["words"][:]
+            Z = h5['Z'][:]
+            
+        # Standardize Z scores
+        Z = (Z-Z.mean())/Z.std()
 
-    def sentence_iterator(self, sent):
-        tokens = [w for w in sent.split() if w in self.M]
-        vecs   = np.array([self.M[w] for w in tokens])
-        sent_N = vecs.shape[0]
+        # Sanity check that the number of words matches what was saved
+        assert( len(words) == len(Z) )
 
-        if len(tokens) < self.min_sent:
-            raise StopIteration
-
-        for i in range(sent_N):
-            left_idx  = max(0,i-self.window+1)
-            right_idx = min(sent_N,i+self.window+1)
-            inner_vecs = np.vstack([vecs[left_idx:i], vecs[i+1:right_idx]])
-
-            context_vec  = inner_vecs.sum(axis=0)
-            context_vec /= np.linalg.norm(context_vec)
-
-            word = tokens[i]
-            word_vec = vecs[i]
-
-            yield word, word_vec, context_vec
-
-    def score_sentence(self, sent):
-
-        if not sent:
-            return None
-
-        sent_p = []
-        window_itr = self.sentence_iterator(sent)
-        for word, word_vec, context_vec in window_itr:
-                
-            p = self.window_probability(word, word_vec, context_vec)
-            sent_p.append(p)
-
-        if not sent_p:
-            return None
-
-        return np.array(sent_p)
-
+        return dict(zip(words,Z))
+        
     def __call__(self,item):
         '''
-        Compute the local partition function for each word.
+        Compute partition function stats over each document.
         '''
-        _ref = item[1]
+    
+        text, _ref = item[0], item[1]
+        
+        stat_names = [
+            'Z_mu', 'Z_std', 'Z_skew', 'Z_kurtosis',
+            'I_mu', 'I_std', 'I_skew', 'I_kurtosis',
+        ]
+        stats = {}
+        for key in stat_names: stats[key] = 0.0
 
-        # Debug line
-        #if _ref>20:return [(_ref,-400)] + item[1:]
+        # Only keep words that are defined in the embedding
+        valid_tokens = [w for w in text.split() if w in self.Z]
 
-        sents = item[0].split('\n')        
+        # Take only the unique words in the document
+        all_tokens = np.array(list(set(valid_tokens)))
 
-        # Only keep sentences that are this long
-        #sents = [s for s in sents if len(s.split()) >= self.min_sent]
-        sents_n = len(sents)
-        doc_p = []
+        if len(all_tokens) > 3:
 
-        ITR = itertools.imap(self.score_sentence, sents)
+            # Possibly clip the values here as very large Z don't contribute
+            doc_z = np.array([self.Z[w] for w in all_tokens])
+            compute_stats(doc_z, stats, "Z")
 
-        for sent_p in ITR:
+            # Take top x% most descriptive words
+            z_sort_idx = np.argsort(doc_z)[::-1]
+            z_cut = max(int(self.intra_document_cutoff *  len(doc_z)), 3)
+            
+            important_index = z_sort_idx[:z_cut]
+            sub_tokens = all_tokens[important_index]
+            doc_v = np.array([self.model[w] for w in sub_tokens])
+            upper_idx = np.triu_indices(doc_v.shape[0],k=1)
+            dist  = np.dot(doc_v, doc_v.T)[upper_idx]
 
-            if sent_p is None:
-                continue
+            compute_stats(dist, stats, "I")
 
-            # Take the average of the sentence (if any tokens)
-            doc_p.append( sent_p.mean() )
+        return [(_ref,stats)] + item[1:]
 
-        if len(doc_p):
-            avg_doc_p = np.array(doc_p).mean()
-        else:
-            avg_doc_p = 0.0
-
-        return [(_ref,avg_doc_p)] + item[1:]
-
-    def reduce(self,(_ref,score)):
-        self.scores[_ref] = score
+    def reduce(self,(_ref,stats)):
+        stats['_ref'] = _ref
+        self.scores.append(stats)
 
     def save(self, config):
 
-        df = pd.DataFrame(self.scores.items(),
-                          columns=["_ref","log_prob"])
-
         out_dir = config["output_data_directory"]
-        f_sql = os.path.join(out_dir,
-                             config["document_log_probability"]["f_db"])
+        f_h5    = os.path.join(out_dir,
+                               config["document_log_probability"]["f_db"])
 
-        if os.path.exists(f_sql):
-            os.remove(f_sql)
-        
-        engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
+        df = pd.DataFrame(self.scores)
 
-        df.to_sql(self.table_name,
-                  engine,
-                  index=False,
-                  if_exists='replace')
+        with h5py.File(f_h5,'w') as h5:
+            h5['_ref'] = df['_ref'].astype(int)
+            del df['_ref']
+
+            for key in df.columns:
+                h5[key] = df[key].astype(float)
