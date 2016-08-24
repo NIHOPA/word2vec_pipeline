@@ -42,6 +42,9 @@ if __name__ == "__main__":
 
     for (method, cat_col, data_col) in ITR:
 
+        text = "Predicting [{}] [{}:{}]"
+        print text.format(method, cat_col, data_col)
+
         assert(method in h5)    
         assert(data_col in h5[method])
         g = h5[method][data_col]
@@ -72,16 +75,19 @@ if __name__ == "__main__":
 
         Y = np.hstack(Y)
 
+        counts = np.array(collections.Counter(Y).values(),dtype=float)
+        counts /= counts.sum()
+        print "  Class balance for catergorical prediction: ", counts
+
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores,errors,pred = categorical_predict(X,Y,method,config)
+        scores,F1,errors,pred = categorical_predict(X,Y,method,config)
 
-        text = "Predicting [{}] [{}:{}] {:0.4f} ({:0.4f})"
-        print text.format(method, cat_col, data_col,
-                          scores.mean(), baseline_score)
+        text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
+        print text.format(scores.mean(), F1.mean(), baseline_score)
 
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors

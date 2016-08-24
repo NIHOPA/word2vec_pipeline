@@ -2,6 +2,7 @@ import numpy as np
 import itertools, collections
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
+from sklearn.metrics import f1_score
 import sklearn.ensemble
 
 from utils.parallel_utils import jobmap
@@ -39,12 +40,8 @@ def categorical_predict(X,y_org,method_name,config):
     y = enc.fit_transform(y_org)
 
     label_n = np.unique(y).shape[0]
-    msg = "[{}] number of unique entries in [y {}]: {}"
-    print msg.format(method_name, X.shape, label_n)
-
-    counts = np.array(collections.Counter(y).values(),dtype=float)
-    counts /= counts.sum()
-    print "  Class balance for catergorical prediction: ", counts
+    #msg = "[{}] number of unique entries in [y {}]: {}"
+    #print msg.format(method_name, X.shape, label_n)
 
     use_SMOTE = bool(config["use_SMOTE"])
     print "  Adjusting class balance using SMOTE"
@@ -60,6 +57,7 @@ def categorical_predict(X,y_org,method_name,config):
                           n_folds=10,
                           shuffle=False)
     scores = []
+    F1_scores = []
 
     INPUT_ITR = ((clf_args, idx, X, y, use_SMOTE) for idx in skf)
 
@@ -80,10 +78,11 @@ def categorical_predict(X,y_org,method_name,config):
         scores.append(1-errors.mean())        
         error_counts[test_index[errors]] += 1
 
+        F1_scores.append(f1_score(y_test, pred))
         predict_scores[test_index] = pred_proba
 
     # For StratifiedKFold, each test set is hit only once
     # so normalization is simple
     error_counts /= 1.0
 
-    return np.array(scores), error_counts, predict_scores
+    return np.array(scores), np.array(F1_scores), error_counts, predict_scores
