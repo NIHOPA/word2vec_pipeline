@@ -42,12 +42,12 @@ def categorical_predict(X,y_org,method_name,config):
     msg = "[{}] number of unique entries in [y {}]: {}"
     print msg.format(method_name, X.shape, label_n)
 
-    use_SMOTE = bool(config["use_SMOTE"])
-    print "  Adjusting class balance using SMOTE"
-    
     counts = np.array(collections.Counter(y).values(),dtype=float)
     counts /= counts.sum()
     print "  Class balance for catergorical prediction: ", counts
+
+    use_SMOTE = bool(config["use_SMOTE"])
+    print "  Adjusting class balance using SMOTE"
 
     is_PARALLEL = bool(config["_PARALLEL"])
     
