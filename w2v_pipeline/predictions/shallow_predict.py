@@ -1,19 +1,25 @@
 import numpy as np
-import itertools
+import itertools, collections
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
 import sklearn.ensemble
 
 from utils.parallel_utils import jobmap
+from imblearn.over_sampling import SMOTE
 
 def clf_extratree_predictor(item):
-    (clf_args,idx,X,y) = item
+    (clf_args,idx,X,y,use_SMOTE) = item
     train_index, test_index = idx
 
     clf = sklearn.ensemble.ExtraTreesClassifier(**clf_args)
         
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
+
+    if use_SMOTE:
+        sampler = SMOTE(ratio='auto', kind='regular')
+        X_train, y_train = sampler.fit_sample(X_train,y_train)
+    
     clf.fit(X_train,y_train)
     
     pred   = clf.predict(X_test)
@@ -35,19 +41,27 @@ def categorical_predict(X,y_org,method_name,config):
     label_n = np.unique(y).shape[0]
     msg = "[{}] number of unique entries in [y {}]: {}"
     print msg.format(method_name, X.shape, label_n)
+
+    use_SMOTE = bool(config["use_SMOTE"])
+    print "  Adjusting class balance using SMOTE"
+    
+    counts = np.array(collections.Counter(y).values(),dtype=float)
+    counts /= counts.sum()
+    print "  Class balance for catergorical prediction: ", counts
+
+    is_PARALLEL = bool(config["_PARALLEL"])
     
     clf_args = {
-        "n_jobs" : -1,
+        "n_jobs" : -1 if is_PARALLEL else 1,
         "n_estimators" : int(config["n_estimators"]),
     }
     
-
     skf = StratifiedKFold(y,
                           n_folds=10,
                           shuffle=False)
     scores = []
 
-    INPUT_ITR = ((clf_args, idx, X, y) for idx in skf)
+    INPUT_ITR = ((clf_args, idx, X, y, use_SMOTE) for idx in skf)
 
     ITR = jobmap(clf_extratree_predictor, INPUT_ITR, True)
 
