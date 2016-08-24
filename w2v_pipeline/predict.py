@@ -97,11 +97,14 @@ if __name__ == "__main__":
                         in config["meta_methods"]])
     
     method = "meta"
-    scores,errors,pred = categorical_predict(META_X,Y,method,config)
 
-    text = "Predicting [{}] [{}:{}] {:0.4f} ({:0.4f})"
-    print text.format(method, cat_col, data_col,
-                      scores.mean(), baseline_score)
+    text = "Predicting [{}] [{}:{}]"
+    print text.format(method, cat_col, data_col)
+    
+    scores,F1,errors,pred = categorical_predict(META_X,Y,method,config)
+
+    text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
+    print text.format(scores.mean(), F1.mean(), baseline_score)
 
     PREDICTIONS[method] = pred
     ERROR_MATRIX[method] = errors
