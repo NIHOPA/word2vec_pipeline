@@ -1,5 +1,5 @@
 from gensim.models.word2vec import Word2Vec
-from utils.mapreduce import simple_mapreduce
+from utils.mapreduce import corpus_iterator
 import numpy as np
 import os
 
@@ -26,11 +26,12 @@ def compute_stats(X, data, prefix):
     data[name+"skew"]     = scipy.stats.skew(X)
     data[name+"kurtosis"] = scipy.stats.kurtosis(X)
 
-class document_log_probability(simple_mapreduce):
+class document_log_probability(corpus_iterator):
 
     table_name = 'log_prob'
+    method = 'document_log_probability'
 
-    def __init__(self, f_db, intra_document_cutoff, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
         '''
         Computes various measures of central tendency of a document.
@@ -39,17 +40,17 @@ class document_log_probability(simple_mapreduce):
         the similarity of all word pairs for words with top 10% Z values.
         This will precompute the partition function if it doesn't exist.
         '''
-        
-        self.window = int(kwargs['embedding']['w2v_embedding']['window'])
-        
+        cfg_embed = kwargs["embedding"]
+        cfg_score = kwargs["score"]
+
         f_w2v = os.path.join(
-            kwargs["embedding"]["output_data_directory"],
-            kwargs["embedding"]["w2v_embedding"]["f_db"],
+            cfg_embed["output_data_directory"],
+            cfg_embed["w2v_embedding"]["f_db"],
         )
 
         f_partition_function = os.path.join(
-            kwargs["embedding"]["output_data_directory"],
-            kwargs["f_partition_function"],
+            cfg_embed["output_data_directory"],
+            cfg_score["document_log_probability"]["f_partition_function"],
         )
         
         if not os.path.exists(f_partition_function):
@@ -57,7 +58,9 @@ class document_log_probability(simple_mapreduce):
 
         self.Z = self.load_partition_function(f_partition_function)
         self.scores = []
-        self.intra_document_cutoff = float(intra_document_cutoff)
+
+        val = cfg_score["document_log_probability"]["intra_document_cutoff"]
+        self.intra_document_cutoff = float(val)
 
         self.model = Word2Vec.load(f_w2v)
 

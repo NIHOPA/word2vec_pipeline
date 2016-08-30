@@ -152,6 +152,7 @@ if __name__ == "__main__":
             kwargs.update(config[name])
 
         # Add in the embedding configuration options
+        kwargs["score"] = simple_config.load("score")
         kwargs["embedding"] = simple_config.load("embedding")
         
         func = obj(**kwargs)
