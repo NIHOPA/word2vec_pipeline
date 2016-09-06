@@ -15,7 +15,7 @@ gensim
 psutil
 
 # For loading configuration files
-simple_config
+configobj
 
 # For reporting and status bars
 tqdm
