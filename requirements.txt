@@ -1,17 +1,21 @@
+# Standard numerical libraries
+numpy
+scipy
 pandas
 sqlalchemy
+h5py
+
+# NLP core libraries
 unidecode
 pyparsing
 pattern
-
 gensim
 
-numpy
-h5py
-scipy
-
-#pyksvd
+# Figures out how many cores on machine (for parallel)
 psutil
+
+# For loading configuration files
+simple_config
 
 # For reporting and status bars
 tqdm
