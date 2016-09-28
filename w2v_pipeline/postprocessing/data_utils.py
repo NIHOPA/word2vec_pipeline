@@ -1,11 +1,41 @@
-import h5py, sqlite3, os
+import h5py, sqlite3, os, glob
+import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 # Required for import from previous path (may fix someday)
 from os import sys, path
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 import simple_config
+
+def load_SQL_data(extra_columns=None):
+    print "Loading SQL data"
+
+    if extra_columns is None:
+        extra_columns = []
+
+    cols = ["_ref",] + extra_columns
+    cmd = "SELECT {} FROM original".format(','.join(cols))
+
+    F_SQL = glob.glob("data_sql/*.sqlite")
+    data = []
+
+    
+    for f in tqdm(F_SQL):
+        conn = sqlite3.connect(f)
+        cursor = conn.execute(cmd)
+        for item in cursor.fetchall():
+            data.append(item)
+
+    df = pd.DataFrame(data,columns=cols)#.set_index('_ref')
+
+    # Require the _refs to be in order as a sanity check
+    if not (np.sort(df._ref) == df._ref).all():
+        msg = "WARNING, data out of sort order from _refs"
+        raise ValueError(msg)
+    
+    return df
 
 def load_metacluster_data(*args):
 
