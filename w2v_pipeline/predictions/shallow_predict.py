@@ -1,5 +1,5 @@
 import numpy as np
-import itertools, collections, ast
+import itertools, collections
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
 from sklearn.metrics import f1_score
@@ -43,10 +43,10 @@ def categorical_predict(X,y_org,method_name,config):
     #msg = "[{}] number of unique entries in [y {}]: {}"
     #print msg.format(method_name, X.shape, label_n)
 
-    use_SMOTE = ast.literal_eval(config["use_SMOTE"])
+    use_SMOTE = config["use_SMOTE"]
     print "  Adjusting class balance using SMOTE"
 
-    is_PARALLEL = ast.literal_eval(config["_PARALLEL"])
+    is_PARALLEL = config["_PARALLEL"]
     
     clf_args = {
         "n_jobs" : -1 if is_PARALLEL else 1,
