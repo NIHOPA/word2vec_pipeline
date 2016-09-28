@@ -43,6 +43,8 @@ def load(subset=None, f_config = "config.ini"):
     local_path = os.path.dirname(os.path.realpath(__file__))
     f_config_spec = os.path.join(local_path, 'config_validation.ini')
 
+    print f_config_spec
+
     config = ConfigObj(f_config, configspec=f_config_spec)
 
     errors = config.validate(Validator(), preserve_errors=True)
