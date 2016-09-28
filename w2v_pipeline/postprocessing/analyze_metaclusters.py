@@ -56,5 +56,11 @@ if __name__ == "__main__" and __package__ is None:
     df.index.name = "cluster_id"
     df["word2vec_description"] = MC["describe_clusters"]
 
+    cols = ["counts", "avg_centroid_distance",
+            "intra_document_dispersion",
+            "word2vec_description"]
+
+    df = df[cols]
+
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
