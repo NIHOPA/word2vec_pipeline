@@ -40,7 +40,7 @@ def load(subset=None, f_config = "config.ini"):
         raise IOError(msg)
 
     # The config spec should be located in the same directory as simple_config
-    local_path = os.path.dirname(__file__)
+    local_path = os.path.dirname(os.path.realpath(__file__))
     f_config_spec = os.path.join(local_path, 'config_validation.ini')
 
     config = ConfigObj(f_config, configspec=f_config_spec)
