@@ -9,6 +9,37 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 import simple_config
 
+def load_h5_file(f_h5, *args):
+    '''
+    Generically  loads a h5 files top level data structures (assumes
+    no nesting). If *args is specified, only the *args subset will be loaded.
+    '''
+    data = {}
+    
+    with h5py.File(f_h5,'r') as h5:
+        if not args:
+            args = h5.keys()
+            
+        for key in args:
+            if key not in h5:
+                raise ValueError("{} not found in {}".format(key, f_h5))
+
+        for key in args:
+            data[key] = h5[key][:]
+            
+    return data
+
+def load_dispersion_data():
+    print "Loading dispersion data"
+
+    config_post = simple_config.load("postprocessing")
+
+    f_h5 = os.path.join(
+        config_post["output_data_directory"],
+        "cluster_dispersion.h5")
+
+    return load_h5_file(f_h5)
+
 def load_SQL_data(extra_columns=None):
     print "Loading SQL data"
 
@@ -20,7 +51,6 @@ def load_SQL_data(extra_columns=None):
 
     F_SQL = glob.glob("data_sql/*.sqlite")
     data = []
-
     
     for f in tqdm(F_SQL):
         conn = sqlite3.connect(f)
@@ -45,20 +75,7 @@ def load_metacluster_data(*args):
         config_metacluster["output_data_directory"],
         config_metacluster["f_centroids"])
 
-    data = {}
-    
-    with h5py.File(f_h5,'r') as h5:
-        if not args:
-            args = h5.keys()
-            
-        for key in args:
-            if key not in h5:
-                raise ValueError("{} not found in {}".format(key, f_h5))
-
-        for key in args:
-            data[key] = h5[key][:]
-
-    return data
+    return load_h5_file(f_h5, *args)
 
 
 def load_document_vectors():
@@ -91,3 +108,4 @@ def load_document_vectors():
             "docv" : docv,
             "_refs": _refs
         }
+

@@ -38,7 +38,7 @@ def cluster():
 def metacluster():
     local("python w2v_pipeline/metacluster.py")
 
-def analyze_metacluster():
+def analyze_metaclusters():
     local("python w2v_pipeline/postprocessing/analyze_metaclusters.py")
 
 def test():
@@ -51,6 +51,7 @@ def test():
     predict()
     #cluster()
     metacluster()
+    analyze_metaclusters()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
