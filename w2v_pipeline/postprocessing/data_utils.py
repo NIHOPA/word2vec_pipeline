@@ -46,10 +46,10 @@ def load_SQL_data(extra_columns=None):
     if extra_columns is None:
         extra_columns = []
 
-    cols = ["_ref",] + extra_columns
-    cmd = "SELECT {} FROM original".format(','.join(cols))
+    cols = ["_ref",] + ['"{}"'.format(x) for x in extra_columns]
+    cmd = '''SELECT {} FROM original'''.format(','.join(cols))
 
-    F_SQL = glob.glob("data_sql/*.sqlite")
+    F_SQL = sorted(glob.glob("data_sql/*.sqlite"))
     data = []
     
     for f in tqdm(F_SQL):
@@ -61,6 +61,7 @@ def load_SQL_data(extra_columns=None):
     df = pd.DataFrame(data,columns=cols)#.set_index('_ref')
 
     # Require the _refs to be in order as a sanity check
+    
     if not (np.sort(df._ref) == df._ref).all():
         msg = "WARNING, data out of sort order from _refs"
         raise ValueError(msg)

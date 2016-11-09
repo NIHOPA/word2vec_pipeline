@@ -24,7 +24,7 @@ def _compute_dispersion_matrix(X,labels):
         else:
             d = cdist(X[labels==i],X[labels==j],metric='cosine')
             # Only take upper diagonal (+diagonal elements)
-            d = d[np.triu_indices(n,0)]
+            d = d[np.triu_indices(n=d.shape[0],m=d.shape[1],k=0)]
         
         dist[i,j] = dist[j,i] = d.mean()
         
