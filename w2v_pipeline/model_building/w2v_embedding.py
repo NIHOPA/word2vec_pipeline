@@ -44,6 +44,8 @@ class w2v_embedding(corpus_iterator):
         ITR = self.sentence_iterator()
         self.clf.build_vocab(ITR)
 
+        print "{} words in vocabulary".format(len(self.clf.index2word))
+
         print "Training the features"
         for n in tqdm(range(self.epoch_n)):
             #print " - Epoch {}".format(n)
