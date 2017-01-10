@@ -10,7 +10,7 @@ def mkdir(directory):
 
 def grab_files(pattern, directory=""):
     g_pattern = os.path.join(directory, pattern)
-    FILES = glob.glob(g_pattern)
+    FILES = sorted(glob.glob(g_pattern))
 
     msg = "Found {} files to import in {}."
     print (msg.format(len(FILES),directory))

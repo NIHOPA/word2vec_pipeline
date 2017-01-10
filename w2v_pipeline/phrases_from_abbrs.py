@@ -1,9 +1,9 @@
 import glob, sqlite3, string, os, collections, itertools
 from utils.os_utils import grab_files, mkdir
-import utils.db_utils
+import utils.db_utils as db_utils
 
+import os
 import pandas as pd
-from sqlalchemy import create_engine
 import pyparsing as pypar
 import tqdm
 
@@ -80,8 +80,8 @@ def check_matching(word, k, tokens):
 
     return tuple(subtokens)
 
-def evaluate_document(item):
-    doc,idx = item
+def evaluate_document(row, col):
+    doc = row[target_column]
     
     doc = unicode(doc)
     doc = doc.replace('-',' ')
@@ -161,60 +161,43 @@ if __name__ == "__main__":
     _FORCE = config.as_bool("_FORCE")
     output_dir = config["output_data_directory"]
 
-    target_columns = config["target_columns"]
+    target_column = config["target_column"]
 
     import_config = simple_config.load("import_data")
     input_data_dir = import_config["output_data_directory"]
-    input_table = import_config["output_table"]
     
-    F_SQL = grab_files("*.sqlite", input_data_dir)
+    F_CSV = grab_files("*.csv", input_data_dir)
 
     ABR = collections.Counter()
     P = parenthesis_nester()
 
-    dfunc = utils.db_utils.database_iterator
+    dfunc = db_utils.CSV_database_iterator
+    INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
+    ITR = jobmap(evaluate_document, INPUT_ITR, _PARALLEL, col=target_column)
 
-    FILE_COL_ITR = itertools.product(F_SQL, target_columns)
+    for result in ITR:
+        ABR.update(result)
 
-    for f_sql,column_name in FILE_COL_ITR:
-
-        conn = sqlite3.connect(f_sql,check_same_thread=False)
-
-        INPUT_ITR = dfunc(column_name,
-                          input_table,
-                          conn,
-                          limit=global_limit,
-                          offset=global_offset,
-                          progress_bar=True,
-        )
-
-        ITR = jobmap(evaluate_document, INPUT_ITR, _PARALLEL)
-
-        for result in ITR:
-            ABR.update(result)
-
-        msg = "Completed {} {}. {} total abbrs found."
-        print msg.format(f_sql,column_name,len(ABR))
-
+    msg = "\n{} total abbrs found."
+    print msg.format(len(ABR))
+    
     # Merge abbreviations that are similar
-    print "Deduping list"    
+    print "Deduping abbr list."
     ABR = dedupe_abbr(ABR)
     print "{} abbrs remain after deduping".format(len(ABR))
-
 
     # Convert abbrs to a list
     data_insert = [(phrase,abbr,count) 
                    for (phrase,abbr),count in ABR.most_common()]
 
-    # Convert the list to a dataframe for insert
+    # Convert the list to a dataframe and sort
     df = pd.DataFrame(data_insert, 
                       columns=("phrase","abbr","count"))
+    df = df.sort_values(["count","phrase"],ascending=False).set_index("phrase")
+
+    # Output top phrase
+    print "Top 5 abbreviations"
+    print df[:5]
 
     mkdir(output_dir)
-    f_sql = os.path.join(output_dir, config["f_abbreviations"])
-    engine = create_engine('sqlite:///'+f_sql)
-
-    # Save the abbrs to a table
-    df.to_sql(config["output_table"],
-              engine,
-              if_exists='replace')
+    f_csv = os.path.join(output_dir, config["f_abbreviations"])

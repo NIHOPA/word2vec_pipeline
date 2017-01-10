@@ -108,3 +108,71 @@ def pretty_counter(C,min_count=1):
         if count>min_count:
             s = "{:10s} {: 10d} {}".format(abbr,count,' '.join(phrase))
             yield s
+
+
+#######################################################################
+import csv, os
+
+def CSV_list_columns(f_csv):
+    if not os.path.exists(f_csv):
+        msg = "File not found {}".format(f_csv)
+        raise IOError(msg)
+    with open(f_csv,'rb') as FIN:
+        reader = csv.reader(FIN)
+        return tuple(reader.next())
+
+class CSV_database_iterator(object):
+
+    def __init__(self,
+                 F_CSV,
+                 target_column=None,
+                 progress_bar=False,
+                 shuffle=False,
+                 limit=0,
+                 offset=0,
+                 include_meta=False,
+                 include_table_name=False,
+    ):
+        self.F_CSV = sorted(F_CSV)
+        self.col = target_column
+        
+        # Raise Exception if column is missing in a CSV
+        if self.col is not None:
+            for f in F_CSV:
+                if self.col not in CSV_list_columns(f):
+                    msg = "Missing column {} in {}"
+                    raise SyntaxError(msg.format(column_name,f))
+
+        # Functions that may be added later (came from SQLite iterator)
+        if limit:
+            raise NotImplementedError("CSV_database_iterator limit")
+        if shuffle:
+            raise NotImplementedError("CSV_database_iterator shuffle")
+        #if progress_bar:
+        #    raise NotImplementedError("CSV_database_iterator progress_bar")
+        if include_table_name:
+            raise NotImplementedError("CSV_database_iterator include_table_name")
+        if include_meta:
+            raise NotImplementedError("CSV_database_iterator include_meta")
+
+        self.progress_bar = tqdm.tqdm() if progress_bar else None
+
+    def _update_progress_bar(self):
+        if self.progress_bar is not None:
+            self.progress_bar.update()
+
+    def __iter__(self):
+
+        for f in self.F_CSV:
+            with open(f,'rb') as FIN:
+                reader = csv.DictReader(FIN)
+                for row in reader:
+                    
+                    # Return only the _ref and target_column if col is set
+                    if self.col is not None:
+                        yield {k: row[k] for k in ('_ref', self.col)}
+                    # Otherwise return the whole row
+                    else:
+                        yield row
+                        
+                    self._update_progress_bar()

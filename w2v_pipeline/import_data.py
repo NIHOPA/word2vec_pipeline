@@ -3,7 +3,6 @@ import itertools
 from utils.os_utils import mkdir, grab_files
 
 import pandas as pd
-from sqlalchemy import create_engine
 from unidecode import unidecode
 
 from utils.parallel_utils import jobmap
@@ -36,7 +35,7 @@ def load_csv(f_csv, clean=True):
     Runs the dataframe through a cleaner.
     '''
 
-    print "Starting", f_csv
+    print "Starting import of", f_csv
 
     df = pd.read_csv(f_csv)
     
@@ -47,12 +46,13 @@ def load_csv(f_csv, clean=True):
 
 def import_directory_csv(d_in, d_out, output_table):
     '''
-    Takes a input_directory, output_directory and builds
-    and SQLite database with attached _ref numbers to each entry.
+    Takes a input_directory and output_directory and builds
+    and cleaned (free of encoding errors) CSV for all input
+    and attaches unique _ref numbers to each entry.
     '''
 
-    F_CSV = []
-    F_SQL = {}
+    F_CSV     = []
+    F_CSV_OUT = {}
 
     INPUT_FILES = grab_files("*.csv",d_in)
     
@@ -61,17 +61,14 @@ def import_directory_csv(d_in, d_out, output_table):
         exit(2)
 
     for f_csv in INPUT_FILES:
-        f_sql = '.'.join(os.path.basename(f_csv).split('.')[:-1])
-        f_sql += ".sqlite"                        
-        f_sql = os.path.join(d_out,f_sql)
+        f_csvx = os.path.join(d_out, os.path.basename(f_csv))
 
-        if os.path.exists(f_sql) and not _FORCE:
-            print "{} already exists, skipping".format(f_sql)
+        if os.path.exists(f_csvx) and not _FORCE:
+            print "{} already exists, skipping".format(f_csvx)
             continue
 
         F_CSV.append(f_csv)
-        F_SQL[f_csv] = f_sql
-
+        F_CSV_OUT[f_csv] = f_csvx
 
     # Create the output directory if needed
     mkdir(d_out)
@@ -82,20 +79,13 @@ def import_directory_csv(d_in, d_out, output_table):
 
     for (f_csv,df) in ITR:
 
-        f_sql = F_SQL[f_csv]
-        engine = create_engine('sqlite:///'+f_sql)
-
-        n_data_items = len(df)
-        df["_ref"] = [_ref_counter.next()
-                      for _ in range(n_data_items)]
+        df["_ref"] = list(itertools.islice(_ref_counter, len(df)))
         df.set_index("_ref",inplace=True)
 
-        df.to_sql(output_table,
-                  engine,
-                  if_exists='replace')
-
-        print "Finished {}, {}, {}".format(f_csv, len(df), list(df.columns))
-
+        df.to_csv(F_CSV_OUT[f_csv])
+        
+        msg = "Imported {} to {}, {}, {}"
+        print msg.format(f_csv, F_CSV_OUT[f_csv], len(df), list(df.columns))
 
 if __name__ == "__main__":
 

@@ -56,7 +56,7 @@ def test():
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
-    local("rm -rf data_sql data_parsed data_document_scores data_clustering data_embeddings")
+    local("rm -rf data_import data_parsed data_document_scores data_clustering data_embeddings")
 
     
 
