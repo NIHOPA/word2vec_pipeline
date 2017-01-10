@@ -1,4 +1,4 @@
-import glob, sqlite3, string, os, collections, itertools
+import string, os, collections, itertools
 from utils.os_utils import grab_files, mkdir
 import utils.db_utils as db_utils
 

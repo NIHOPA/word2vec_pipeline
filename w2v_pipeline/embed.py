@@ -1,5 +1,5 @@
 import sqlite3, glob, os, itertools, random
-from utils.os_utils import mkdir
+from utils.os_utils import mkdir, grab_files
 import model_building as mb
 from utils.db_utils import database_iterator
 import simple_config
@@ -11,7 +11,7 @@ def item_iterator(name,cmd_config=None):
     score_config = simple_config.load("parse")
     input_data_dir = score_config["output_data_directory"]
 
-    F_SQL = glob.glob(os.path.join(input_data_dir,'*'))
+    F_SQL = grab_files("*", input_data_dir)
 
     # If there is a whitelist only keep the matching filename
     try:
