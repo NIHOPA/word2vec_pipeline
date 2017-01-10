@@ -14,8 +14,6 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
 
     with joblib.Parallel(n_jobs=n_jobs) as MP:
 
-        ### BUG MISSING LAST batch_size!
-
         # Yield the whole thing if there isn't a batch_size
         if batch_size is None:
             for z in MP(dfunc(x,*args,**kwargs) for x in INPUT_ITR):
@@ -23,5 +21,6 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
             raise StopIteration
 
         for block in grouper(INPUT_ITR,batch_size):
+            raise NotImplementedError("batch_size has bug, do not use")
             for z in MP(dfunc(x,*args,**kwargs) for x in block):
                 yield z
