@@ -10,6 +10,9 @@ global_limit = 0
 
 def dispatcher(item):
 
+    print "HERE", item
+    exit()
+
     text,idx  = item
     if text is None:
         text = ""
@@ -55,8 +58,17 @@ if __name__ == "__main__":
         parser_functions.append( obj(**kwargs) )
 
     F_CSV = sorted(glob.glob(os.path.join(input_data_dir,'*')))
+    INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
 
+    for x in INPUT_ITR:
+        print x
+
+    #ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL)
     ## DEBUG WORKING HERE
+    #dfunc = db_utils.CSV_database_iterator
+    #INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
+    #TR = jobmap(evaluate_document, INPUT_ITR, _PARALLEL, col=target_column)
+    
     print F_CSV
     exit()
     
