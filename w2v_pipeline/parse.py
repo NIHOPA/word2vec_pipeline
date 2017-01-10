@@ -67,7 +67,8 @@ if __name__ == "__main__":
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True,
                       progress_bar=True)
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
-                 batch_size=_global_batch_size, target_column=col)
+                 #batch_size=_global_batch_size,
+                 target_column=col)
     
     F_CSV_OUT = {}
     F_WRITERS = {}
