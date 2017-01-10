@@ -14,8 +14,11 @@ def map_to_unicode(s):
     return s.decode('utf-8',errors='replace')
 
 def clean_dataframe(df):
-    # Changes all columns of type object into strings
-    # mapped through unidecode
+    '''
+    Changes all columns of type object into strings.
+    All string types are mapped through unidecode.
+    '''
+    
     for col,dtype in zip(df.columns,df.dtypes):
         if dtype=="object":
 
@@ -27,17 +30,26 @@ def clean_dataframe(df):
                 df[col] = df[col].astype(float)
     return df
 
-def load_csv(f_csv):
-    # Loads a CSV file into a pandas DataFrame
+def load_csv(f_csv, clean=True):
+    '''
+    Loads a CSV file into a pandas DataFrame. 
+    Runs the dataframe through a cleaner.
+    '''
 
     print "Starting", f_csv
 
     df = pd.read_csv(f_csv)
-    df = clean_dataframe(df)
+    
+    if clean:
+        df = clean_dataframe(df)
 
     return f_csv, df
 
 def import_directory_csv(d_in, d_out, output_table):
+    '''
+    Takes a input_directory, output_directory and builds
+    and SQLite database with attached _ref numbers to each entry.
+    '''
 
     F_CSV = []
     F_SQL = {}
