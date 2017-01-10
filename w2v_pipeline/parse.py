@@ -54,7 +54,12 @@ if __name__ == "__main__":
 
         parser_functions.append( obj(**kwargs) )
 
-    F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
+    F_CSV = sorted(glob.glob(os.path.join(input_data_dir,'*')))
+
+    ## DEBUG WORKING HERE
+    print F_CSV
+    exit()
+    
     DB_ITR = itertools.product(F_SQL, config["target_columns"])
 
     for f_sql, target_col in DB_ITR:

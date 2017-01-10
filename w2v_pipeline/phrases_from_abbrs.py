@@ -201,3 +201,4 @@ if __name__ == "__main__":
 
     mkdir(output_dir)
     f_csv = os.path.join(output_dir, config["f_abbreviations"])
+    df.to_csv(f_csv)

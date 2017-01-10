@@ -1,4 +1,5 @@
-import sqlite3, os
+import os
+import pandas as pd
 from tokenizers import word_tokenizer
         
 class replace_phrases(object):
@@ -13,22 +14,18 @@ class replace_phrases(object):
         self.load_phrase_database(f_abbr)
 
     def load_phrase_database(self, f_abbreviations):
+
+        df = pd.read_csv(f_abbreviations)
+
+        counts = df.phrase.str.split().apply(len)
+        self.max_n = counts.max()
+        self.min_n = counts.min()
         
-        # Load the phrases from abbrs
-        conn = sqlite3.connect(f_abbreviations,check_same_thread=False)
-        cmd  = "SELECT phrase,abbr,count FROM abbreviations"
-        cursor = conn.execute(cmd)
-
         self.P = {}
-        self.max_n = 0
-        self.min_n = 10**10
 
-        for phrase,abbr,count in cursor:
+        for phrase,abbr in zip(df.phrase,df.abbr):
             phrase = tuple(phrase.split(' '))
             self.P[phrase] = abbr
-            self.max_n = max(self.max_n,len(phrase))
-            self.min_n = min(self.min_n,len(phrase))
-
 
     def ngram_tokens(self, tokens, n):
 

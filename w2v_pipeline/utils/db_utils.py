@@ -148,8 +148,6 @@ class CSV_database_iterator(object):
             raise NotImplementedError("CSV_database_iterator limit")
         if shuffle:
             raise NotImplementedError("CSV_database_iterator shuffle")
-        #if progress_bar:
-        #    raise NotImplementedError("CSV_database_iterator progress_bar")
         if include_table_name:
             raise NotImplementedError("CSV_database_iterator include_table_name")
         if include_meta:
