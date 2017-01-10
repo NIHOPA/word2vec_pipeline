@@ -126,12 +126,13 @@ class CSV_database_iterator(object):
     def __init__(self,
                  F_CSV,
                  target_column=None,
-                 progress_bar=False,
+                 progress_bar=True,
                  shuffle=False,
                  limit=0,
                  offset=0,
                  include_meta=False,
                  include_table_name=False,
+                 include_filename=False,
     ):
         self.F_CSV = sorted(F_CSV)
         self.col = target_column
@@ -144,8 +145,6 @@ class CSV_database_iterator(object):
                     raise SyntaxError(msg.format(column_name,f))
 
         # Functions that may be added later (came from SQLite iterator)
-        if limit:
-            raise NotImplementedError("CSV_database_iterator limit")
         if shuffle:
             raise NotImplementedError("CSV_database_iterator shuffle")
         if include_table_name:
@@ -154,23 +153,40 @@ class CSV_database_iterator(object):
             raise NotImplementedError("CSV_database_iterator include_meta")
 
         self.progress_bar = tqdm.tqdm() if progress_bar else None
+        self.limit = limit
+        self.include_filename = include_filename
 
     def _update_progress_bar(self):
         if self.progress_bar is not None:
             self.progress_bar.update()
 
     def __iter__(self):
+        self.iter_state = self._iterate_items()
+        return self
+
+    def next(self):
+        self._update_progress_bar()
+        return self.iter_state.next()
+        
+    def _iterate_items(self):
 
         for f in self.F_CSV:
             with open(f,'rb') as FIN:
                 reader = csv.DictReader(FIN)
-                for row in reader:
+                for k,row in enumerate(reader):
+                    
+                    if self.limit and k>self.limit:
+                        raise StopIteration
                     
                     # Return only the _ref and target_column if col is set
-                    if self.col is not None:
-                        yield {k: row[k] for k in ('_ref', self.col)}
                     # Otherwise return the whole row
-                    else:
-                        yield row
+                    if self.col is not None:
+                        row = {k: row[k] for k in ('_ref', self.col)}
+
+                    if self.include_filename:
+                        row["_filename"] = f
                         
-                    self._update_progress_bar()
+                    yield row                        
+ 
+        if self.progress_bar is not None:
+            self.progress_bar.close()

@@ -1,13 +1,27 @@
-
+import itertools
 import joblib
 
-def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, *args, **kwargs):
+def grouper(iterable, n, fillvalue=None):
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return itertools.izip(*args)
+
+def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
+           *args, **kwargs):
     
     n_jobs = -1 if FLAG_PARALLEL else 1
-    MP = joblib.Parallel(n_jobs=n_jobs)
     dfunc = joblib.delayed(func)
 
-    ITR = (dfunc(x,*args,**kwargs) for x in INPUT_ITR)
+    with joblib.Parallel(n_jobs=n_jobs) as MP:
 
-    for x in MP(ITR):
-        yield x
+        ### BUG MISSING LAST batch_size!
+
+        # Yield the whole thing if there isn't a batch_size
+        if batch_size is None:
+            for z in MP(dfunc(x,*args,**kwargs) for x in INPUT_ITR):
+                yield z
+            raise StopIteration
+
+        for block in grouper(INPUT_ITR,batch_size):
+            for z in MP(dfunc(x,*args,**kwargs) for x in block):
+                yield z

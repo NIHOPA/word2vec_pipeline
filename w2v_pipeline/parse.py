@@ -1,23 +1,21 @@
-import sqlite3, glob, os, itertools
-from utils.db_utils import database_iterator, list_tables, count_rows
+import glob, os, itertools
 from utils.os_utils import mkdir
+import utils.db_utils as db_utils
 import preprocessing as pre
-import gc
+import csv
 
 from utils.parallel_utils import jobmap
 
-global_limit = 0
+_global_batch_size = 1000
 
-def dispatcher(item):
+def dispatcher(row, target_column):
+    text = row[target_column] if target_column in row else None
 
-    print "HERE", item
-    exit()
+    for f in parser_functions:
+        text = unicode(f(text))
 
-    text,idx  = item
-    if text is None:
-        text = ""
-    meta = {}
-    
+    '''
+    meta = {}    
     for f in parser_functions:
         result = f(text)
         text   = unicode(result)
@@ -26,9 +24,12 @@ def dispatcher(item):
             meta.update(result.meta)
 
     # Convert the meta information into a unicode string for serialization
-    meta = unicode(meta)
+    #meta = unicode(meta)
+    '''
+    
+    row[col] = text
+    return row
 
-    return idx, text, meta
 
 if __name__ == "__main__":
 
@@ -57,86 +58,34 @@ if __name__ == "__main__":
 
         parser_functions.append( obj(**kwargs) )
 
-    F_CSV = sorted(glob.glob(os.path.join(input_data_dir,'*')))
-    INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
+    col = config["target_column"]
+        
+    F_CSV = sorted(glob.glob(os.path.join(input_data_dir,'*.csv')))
 
-    for x in INPUT_ITR:
-        print x
-
-    #ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL)
-    ## DEBUG WORKING HERE
-    #dfunc = db_utils.CSV_database_iterator
-    #INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
-    #TR = jobmap(evaluate_document, INPUT_ITR, _PARALLEL, col=target_column)
     
-    print F_CSV
-    exit()
+    dfunc = db_utils.CSV_database_iterator
+    INPUT_ITR = dfunc(F_CSV, col, include_filename=True,
+                      progress_bar=True)
+    ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
+                 batch_size=_global_batch_size, target_column=col)
     
-    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+    F_CSV_OUT = {}
+    F_WRITERS = {}
 
-    for f_sql, target_col in DB_ITR:
+    for row in ITR:
+        f = row.pop("_filename")
 
-        f_sql_out = os.path.join(output_dir, os.path.basename(f_sql))
-        mkdir(output_dir)
-        conn_out  = sqlite3.connect(f_sql_out)
-        conn = sqlite3.connect(f_sql, check_same_thread=False)
+        # Create a CSV file object for all outputs
+        if f not in F_CSV_OUT:
+            f_csv_out = os.path.join(output_dir, os.path.basename(f))
 
-        tables = list_tables(conn_out)
-
-        if target_col in tables:
-
-            if not _FORCE:
-
-                row_n_conn = count_rows(conn, import_column)
-                row_n_conn_out = count_rows(conn_out, target_col)
-
-                if row_n_conn == row_n_conn_out:
-                    msg = "{}:{} already exists, skipping"
-                    print msg.format(f_sql,target_col)
-                    continue
-
-                msg = "{} already exists but there is a size mismatch {} to {}"
-                print msg.format(target_col, row_n_conn, row_n_conn_out)
-
-            # Remove the table if it exists
-            print "Removing table {}:{}".format(f_sql,target_col)
-            conn_out.execute("DROP TABLE {}".format(target_col))
-        
-        
-        print "Parsing {}:{}".format(f_sql, target_col)       
-
-        args = {
-            "column_name":target_col,
-            "table_name":import_config["output_table"],
-            "conn":conn,
-            "limit":global_limit,
-            "progress_bar":True,
-        }
+            F = open(f_csv_out,'w')
+            F_CSV_OUT[f] = F
+            F_WRITERS[f] = csv.DictWriter(F, fieldnames=['_ref', col])
+            F_WRITERS[f].writeheader()
             
-        INPUT_ITR = database_iterator(**args)
+        F_WRITERS[f].writerow(row)
 
-        ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL)
-
-        cmd_create = '''
-        DROP TABLE IF EXISTS {table_name};
-        CREATE TABLE IF NOT EXISTS {table_name} (
-        _ref INTEGER PRIMARY KEY,
-        text STRING,
-        meta STRING
-        );
-        '''.format(table_name=target_col)
-        
-        conn_out.executescript(cmd_create)
-
-        cmd_insert = '''
-        INSERT INTO {table_name} (_ref,text,meta)
-        VALUES (?,?,?)
-        '''.format(table_name=target_col)
-
-        conn_out.executemany(cmd_insert, ITR)
-        conn_out.commit()
-        conn_out.close()
-        conn.close()
-            
-        del INPUT_ITR, ITR, conn, conn_out, tables
-        gc.collect()
+    # Close the open files
+    for F in F_CSV_OUT.values():
+        F.close()
