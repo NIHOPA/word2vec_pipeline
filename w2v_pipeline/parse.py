@@ -1,5 +1,5 @@
-import glob, os, itertools
-from utils.os_utils import mkdir
+import os, itertools
+from utils.os_utils import mkdir,  grab_files
 import utils.db_utils as db_utils
 import preprocessing as pre
 import csv
@@ -59,9 +59,7 @@ if __name__ == "__main__":
         parser_functions.append( obj(**kwargs) )
 
     col = config["target_column"]
-        
-    F_CSV = sorted(glob.glob(os.path.join(input_data_dir,'*.csv')))
-
+    F_CSV = grab_files("*.csv",input_data_dir)
     
     dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True,
