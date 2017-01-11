@@ -1,4 +1,8 @@
 import sqlite3, random, tqdm
+import simple_config
+import csv, os
+from os_utils import grab_files
+
 
 def list_tables(conn):
     cmd = "SELECT name FROM sqlite_master WHERE type='table';"
@@ -111,7 +115,6 @@ def pretty_counter(C,min_count=1):
 
 
 #######################################################################
-import csv, os
 
 def CSV_list_columns(f_csv):
     if not os.path.exists(f_csv):
@@ -190,3 +193,45 @@ class CSV_database_iterator(object):
  
         if self.progress_bar is not None:
             self.progress_bar.close()
+
+#######################################################################
+
+
+def item_iterator(
+        config,
+        randomize_file_order=False,
+        whitelist=[],
+        section='parse',
+):
+    '''
+    Iterates over the parsed corpus items and respects a given whitelist.
+    '''
+    
+
+    parse_config = simple_config.load(section)
+    input_data_dir = parse_config["output_data_directory"]
+    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
+
+    if whitelist:
+        assert(type(whitelist)==list)
+
+        F_CSV2 = set()
+        for f_csv in F_CSV:
+            for token in whitelist:
+                if token in f_csv:
+                    F_CSV2.add(f_csv)
+        F_CSV = F_CSV2
+    
+    # Randomize the order of the input files each time we get here
+    if randomize_file_order:
+        F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
+
+    INPUT_ITR = CSV_database_iterator(
+        F_CSV,
+        config["target_column"],
+        progress_bar=False
+    )
+
+    for item in INPUT_ITR:
+        yield item
+    
