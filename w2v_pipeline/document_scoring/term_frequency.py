@@ -19,57 +19,48 @@ class frequency_counter(simple_mapreduce):
         self.TF = collections.Counter()       
         super(frequency_counter, self).__init__(*args,**kwargs)
 
-
     def reduce(self, C):
         self.TF.update(C)
 
     def report(self):
         return self.TF
-
     
     def save(self, config):
+
+        f_csv = os.path.join(
+            config["output_data_directory"],
+            config[self.table_name]["f_db"])
 
         df = pd.DataFrame(self.TF.most_common(),
                           columns=["word","count"])
 
-        out_dir = config["output_data_directory"]
-        f_sql = os.path.join(out_dir, config["term_frequency"]["f_db"])
-        
-        engine = sqlalchemy.create_engine('sqlite:///'+f_sql)
-
-        df.to_sql(self.table_name,
-                  engine,
-                  index=False,
-                  if_exists='replace')
-    
+        df.set_index('word').to_csv(f_csv)
 
 class term_frequency(frequency_counter):
 
     table_name = "term_frequency"
 
-    def __call__(self, item):
-
-        text = item[0]   
+    def __call__(self, text):
         tokens = unicode(text).split()
         C = collections.Counter(tokens)
 
         # Add an empty string token to keep track of total documents
         C[""] += 1
-
-        return [C,] + item[1:]
+        
+        return C
     
 
 class term_document_frequency(frequency_counter):
 
     table_name = "term_document_frequency"
 
-    def __call__(self, item):
+    def __call__(self, text):
 
-        text = item[0]   
+        # For document frequency keep only the unique items
         tokens = set(unicode(text).split())
         C = collections.Counter(tokens)
 
         # Add an empty string token to keep track of total documents
         C[""] += 1
 
-        return [C,] + item[1:]
+        return C

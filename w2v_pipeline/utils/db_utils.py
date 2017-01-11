@@ -202,6 +202,8 @@ def item_iterator(
         randomize_file_order=False,
         whitelist=[],
         section='parse',
+        progress_bar=False,
+        text_only_column=None,
 ):
     '''
     Iterates over the parsed corpus items and respects a given whitelist.
@@ -229,9 +231,12 @@ def item_iterator(
     INPUT_ITR = CSV_database_iterator(
         F_CSV,
         config["target_column"],
-        progress_bar=False
+        progress_bar=progress_bar,
     )
 
-    for item in INPUT_ITR:
-        yield item
+    for row in INPUT_ITR:
+        if text_only_column is not None:
+            yield row[text_only_column]
+        else:
+            yield row
     

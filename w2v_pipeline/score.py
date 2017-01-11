@@ -1,12 +1,16 @@
-import sqlite3, glob, os, random
-from utils.os_utils import mkdir
+import os
+import random
+import itertools
+from utils.os_utils import mkdir, grab_files
 import document_scoring as ds
-from utils.db_utils import database_iterator, count_rows
 import simple_config
-import tqdm
+from utils.db_utils import item_iterator
 
-_global_limit = 0
+#from utils.db_utils import database_iterator, count_rows
+#import tqdm
+#import sqlite3
 
+'''
 class item_iterator(object):
 
     def __init__(self, name, cmd_config=None, yield_single=False):
@@ -19,7 +23,7 @@ class item_iterator(object):
         score_config = simple_config.load("parse")
         input_data_dir = score_config["output_data_directory"]
 
-        F_SQL = sorted(glob.glob(os.path.join(input_data_dir,'*')))
+        F_SQL = grab_files("*.csv",input_data_dir)
 
         # If there is a whitelist only keep the matching filename
         try:
@@ -71,7 +75,7 @@ class item_iterator(object):
                 "column_name":"text",
                 "table_name" :target_col,
                 "conn":conn,
-                "limit":_global_limit,
+                #"limit":_global_limit,
                 "shuffle":False,
                 "include_table_name":True,
             }
@@ -98,6 +102,7 @@ class item_iterator(object):
 
             if not self.yield_single:
                 yield data
+'''
 
 if __name__ == "__main__":
 
@@ -107,7 +112,6 @@ if __name__ == "__main__":
     _FORCE = config.as_bool("_FORCE")
 
     n_jobs = -1 if _PARALLEL else 1
-
     mkdir(config["output_data_directory"])
 
     ###########################################################
@@ -130,14 +134,17 @@ if __name__ == "__main__":
         val = name, obj(**kwargs)
         mapreduce_functions.append(val)
 
+
+    col = config['target_column']
+    
     for name, func in mapreduce_functions:
         print "Starting mapreduce {}".format(func.table_name)
-        INPUT_ITR = item_iterator(name, config[name], yield_single=True)
-        ITR = itertools.imap(func, INPUT_ITR)
-        for item in ITR:
-            result = item[0]
-            func.reduce(result)
+        INPUT_ITR = item_iterator(config, text_only_column=col,
+                                  progress_bar=True)
 
+        ITR = itertools.imap(func, INPUT_ITR)
+        map(func.reduce, ITR)
+        
         func.save(config)
 
     ###########################################################
@@ -152,11 +159,8 @@ if __name__ == "__main__":
             kwargs.update(config[name])
 
         # Add in the embedding configuration options
-        kwargs["score"] = simple_config.load("score")
-        kwargs["embedding"] = simple_config.load("embedding")
         
         func = obj(**kwargs)
-        
-        func.set_iterator_function(item_iterator,name,config[name])
-        func.compute(config)
-        
+        func.set_iterator_function(item_iterator,config)
+        func.compute()
+        func.save()

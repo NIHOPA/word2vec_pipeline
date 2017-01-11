@@ -1,11 +1,16 @@
 import collections, itertools, os, joblib
+import simple_config
 import numpy as np
 import h5py
-import tqdm
+import pandas as pd
+
+from tqdm import tqdm
 
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
+
+from utils.parallel_utils import jobmap
 
 
 def L2_norm(doc_vec):
@@ -29,16 +34,17 @@ def touch_h5(f_db):
         h5 = h5py.File(f_db,'r+')
     return h5
 
-##############################################################################    
+############################################################################    
 
 class generic_document_score(corpus_iterator):
 
-    def __init__(self,*args,**kwargs):
+    def __init__(self,*args,**kwargs):    
         super(generic_document_score, self).__init__(*args,**kwargs)
 
+        config_embed = simple_config.load("embedding")
         f_w2v = os.path.join(
-            kwargs["embedding"]["output_data_directory"],
-            kwargs["embedding"]["w2v_embedding"]["f_db"],
+            config_embed["output_data_directory"],
+            config_embed["w2v_embedding"]["f_db"],
         )
 
         # Load the model from disk
@@ -59,6 +65,12 @@ class generic_document_score(corpus_iterator):
         else:
             self.neg_W = {}
 
+        # Save the target column to compute
+        self.target_column = simple_config.load()["target_column"]
+
+        # Make sure nothing has been set yet
+        self.V = self._ref = None
+
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
         raise KeyError(msg)
@@ -71,12 +83,10 @@ class generic_document_score(corpus_iterator):
         msg = "UNKNOWN w2v doc vec {}".format(self.method)
         raise KeyError(msg)
 
-    def score_document(self, item):
+    def score_document(self, row):
 
-        text = unicode(item[0])
-        idx  = item[1]
-        other_args = item[2:]
-        
+        text = row[self.target_column]
+        text = unicode(text)        
         tokens = text.split()
 
         # Document args
@@ -100,60 +110,58 @@ class generic_document_score(corpus_iterator):
         # Sanity check, should not have any NaNs
         assert(not np.isnan(da['doc_vec']).any())
 
-        return [da['doc_vec'],idx,] + other_args
+        row['doc_vec'] = da['doc_vec']
+        return row
         
 
-    def compute(self, config):
+    def compute(self):
         # Save each block (table_name, f_sql) as its own
         
-
         assert(self.method is not None)
-
         print "Scoring {}".format(self.method)
-        
-        for block in self:
-            
-            ITR = itertools.imap(self.score_document, tqdm.tqdm(block))
-            data = zip(*(list(ITR)))
-            f_sql = data[3][0]
-            table_name = data[2][0]
-            V = np.array(data[0])
-            _ref = np.array(data[1])
-            
-            self.save(config, V, _ref, f_sql, table_name)
-            
+
+        ITR = tqdm(itertools.imap(self.score_document, self))
+
+        data = {}
+        for k,row in enumerate(ITR):
+            data[int(row['_ref'])] = row['doc_vec']
+
+        self._ref = sorted(data.keys())
+        self.V = np.vstack([data[k] for k in self._ref])
 
     
-    def save(self, config, V, _ref, f_sql, table_name):
+    def save(self):
+
+        assert(self.V is not None)
+        assert(self._ref is not None)
         
         # Set the size explictly as a sanity check
-        size_n, dim_V = V.shape
+        size_n, dim_V = self.V.shape
         
         # print "Saving the scored documents"
-        out_dir = config["output_data_directory"]
-        f_db = os.path.join(out_dir, config["document_scores"]["f_db"])
+        config_score = simple_config.load("score")
+        f_db = os.path.join(
+            config_score["output_data_directory"],
+            config_score["document_scores"]["f_db"]
+        )
 
         h5 = touch_h5(f_db)
-        g1 = h5.require_group(self.method)
-        g2 = g1.require_group(table_name)
 
-        # Save into the group of the base file name
-        name = '.'.join(os.path.basename(f_sql).split('.')[:-1])
-        
-        # Save the data array
-        print "Saving {} {} {} ({})".format(self.method, table_name, name, size_n)
-                
         # Clear the dataset if it already exists
-        if name in g2: del g2[name]
+        if self.method in h5: del h5[self.method]
+        
+        g = h5.require_group(self.method)
 
-        g3 = g2.require_group(name)
-        g3.create_dataset("V",data=V,compression='gzip',shape=(size_n,dim_V))
-        g3.create_dataset("_ref",data=_ref,shape=(size_n,))
+        # Save the data array
+        print "Saving {} ({})".format(self.method, size_n)
 
+        g.create_dataset("V",data=self.V,compression='gzip')
+        g.create_dataset("_ref",data=self._ref)
+        
         h5.close()
 
 
-##################################################################################
+##########################################################################
         
 class score_simple(generic_document_score):
     method = "simple"
@@ -193,7 +201,7 @@ class score_unique(score_simple):
     def _compute_item_weights(self, local_counts, tokens, **da):
         return dict.fromkeys(tokens, 1.0)
 
-##################################################################################    
+#############################################################################   
 
 class score_simple_TF(score_simple):
     method = "simple_TF"
@@ -209,33 +217,38 @@ class score_simple_TF(score_simple):
             msg = "{} not computed yet, needed for TF methods!"
             raise ValueError(msg.format(f_db))
 
-        import sqlalchemy
-        engine = sqlalchemy.create_engine('sqlite:///'+f_db)
-
-        import pandas as pd
-        IDF = pd.read_sql_table("term_document_frequency",engine)
+        score_config = simple_config.load("score")
+        f_csv = os.path.join(
+            score_config["output_data_directory"],
+            score_config["term_document_frequency"]["f_db"],
+        )
+        IDF = pd.read_csv(f_csv).fillna("")
         IDF = dict(zip(IDF["word"].values, IDF["count"].values))
-            
         self.corpus_N = IDF.pop("")
             
         # Compute the IDF
         for key in IDF:
             IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
         self.IDF = IDF
-        
+
+    def get_IDF(self, word):
+        if word in self.IDF:
+            return self.IDF[word]
+        else:
+            return 0.0
 
     def _compute_item_weights(self, local_counts, tokens, **da):
-        return dict([(w,local_counts[w]*self.IDF[w]) for w in tokens])
+        return dict([(w,local_counts[w]*self.get_IDF(w)) for w in tokens])
     
-##################################################################################
+##########################################################################
 
 class score_unique_TF(score_simple_TF):
     method = "unique_TF"
 
     def _compute_item_weights(self, tokens, **da):
-        return dict([(w,self.IDF[w]*1.0) for w in tokens])
+        return dict([(w,self.get_IDF(w)*1.0) for w in tokens])
 
-##################################################################################
+##########################################################################
 
 class score_locality_hash(score_unique):
     method = "locality_hash"

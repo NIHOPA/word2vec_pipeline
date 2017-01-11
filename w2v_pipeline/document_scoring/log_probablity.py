@@ -7,6 +7,8 @@ import pandas as pd
 import tqdm, h5py
 import scipy.stats
 
+import simple_config
+
 def compute_partition_stats(UE):
     
     # Remove the largest element (the energy of self interaction)
@@ -40,8 +42,8 @@ class document_log_probability(corpus_iterator):
         the similarity of all word pairs for words with top 10% Z values.
         This will precompute the partition function if it doesn't exist.
         '''
-        cfg_embed = kwargs["embedding"]
-        cfg_score = kwargs["score"]
+        cfg_embed = simple_config.load("embedding")
+        cfg_score = simple_config.load("score")
 
         f_w2v = os.path.join(
             cfg_embed["output_data_directory"],
