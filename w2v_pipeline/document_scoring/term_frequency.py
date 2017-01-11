@@ -40,7 +40,9 @@ class term_frequency(frequency_counter):
 
     table_name = "term_frequency"
 
-    def __call__(self, text):
+    def __call__(self, row):
+        text = row['text']
+        
         tokens = unicode(text).split()
         C = collections.Counter(tokens)
 
@@ -54,7 +56,8 @@ class term_document_frequency(frequency_counter):
 
     table_name = "term_document_frequency"
 
-    def __call__(self, text):
+    def __call__(self, row):
+        text = row['text']
 
         # For document frequency keep only the unique items
         tokens = set(unicode(text).split())

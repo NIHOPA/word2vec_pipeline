@@ -118,12 +118,11 @@ class document_log_probability(corpus_iterator):
 
         return dict(zip(words,Z))
         
-    def __call__(self,item):
+    def __call__(self,row):
         '''
         Compute partition function stats over each document.
         '''
-    
-        text, _ref = item[0], item[1]
+        text = row['text']
         
         stat_names = [
             'Z_mu', 'Z_std', 'Z_skew', 'Z_kurtosis',
@@ -156,10 +155,10 @@ class document_log_probability(corpus_iterator):
 
             compute_stats(dist, stats, "I")
 
-        return [(_ref,stats)] + item[1:]
+        stats['_ref'] = row['_ref']
+        return stats
 
-    def reduce(self,(_ref,stats)):
-        stats['_ref'] = _ref
+    def reduce(self,stats):
         self.scores.append(stats)
 
     def save(self, config):

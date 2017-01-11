@@ -203,7 +203,7 @@ def item_iterator(
         whitelist=[],
         section='parse',
         progress_bar=False,
-        text_only_column=None,
+        text_column=None,
 ):
     '''
     Iterates over the parsed corpus items and respects a given whitelist.
@@ -235,8 +235,7 @@ def item_iterator(
     )
 
     for row in INPUT_ITR:
-        if text_only_column is not None:
-            yield row[text_only_column]
-        else:
-            yield row
+        if text_column is not None:
+            row['text'] = row[text_column]
+        yield row
     
