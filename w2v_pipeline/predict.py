@@ -2,8 +2,8 @@ import predictions as pred
 import numpy as np
 import pandas as pd
 import h5py
-import os, glob, itertools, collections
-from sqlalchemy import create_engine
+import os, itertools, collections
+from utils.os_utils import grab_files
 
 from predictions import categorical_predict
 
@@ -29,56 +29,33 @@ if __name__ == "__main__":
 
     methods = h5.keys()
     pred_dir = import_config["output_data_directory"]
+    pred_files = grab_files('*.csv',pred_dir)
+    pred_col = config["target_column"]
 
-    input_glob  = os.path.join(pred_dir,'*')
-    input_files = glob.glob(input_glob)
-    input_names = ['.'.join(os.path.basename(x).split('.')[:-1])
-                   for x in input_files]
+    # Load the categorical columns
+    cols = ['_ref',] + config["categorical_columns"]
+    ITR = (pd.read_csv(x,usecols=cols).set_index('_ref') for x in pred_files)
+    df = pd.concat(list(ITR))
 
-
-    ITR = itertools.product(methods,
-                            config["categorical_columns"],
-                            config["target_columns"])
-
-    for (method, cat_col, data_col) in ITR:
+    ITR = itertools.product(methods,config["categorical_columns"])
+    
+    for (method, cat_col) in ITR:
 
         text = "Predicting [{}] [{}:{}]"
-        print text.format(method, cat_col, data_col)
+        print text.format(method, cat_col, pred_col)
 
-        assert(method in h5)    
-        assert(data_col in h5[method])
-        g = h5[method][data_col]
+        assert(method in h5)
+        g = h5[method]
     
-        # Make sure every file has been scored or skip it.
-        saved_input_names = []
-        for f in input_names:
-            if f not in g:
-                msg = "'{}' not in {}:{} skipping"
-                print msg.format(f,method,cat_col)
-                continue
-            saved_input_names.append(f)
-
-            
         # Load document score data
-        X = np.vstack([g[name]["V"][:]
-                       for name in saved_input_names])
+        X = g["V"][:]
+        _ref = g["_ref"][:]
 
-        # Load the categorical columns
-        Y = []
-        for name in saved_input_names:
-            f_sql = os.path.join(pred_dir,name) + '.sqlite'
-            engine = create_engine('sqlite:///'+f_sql)
-            df = pd.read_sql_table("original",engine,
-                                   columns=[cat_col,])
-            y = df[cat_col].values
-            Y.append(y)
-
-        Y = np.hstack(Y)
-
+        Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(),dtype=float)
         counts /= counts.sum()
         print "  Class balance for catergorical prediction: ", counts
-
+    
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()
         baseline_score = max(y_counts) / float(sum(y_counts))
@@ -92,6 +69,7 @@ if __name__ == "__main__":
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
 
+
     # Build meta predictor
     META_X = np.hstack([PREDICTIONS[method] for method
                         in config["meta_methods"]])
@@ -99,7 +77,7 @@ if __name__ == "__main__":
     method = "meta"
 
     text = "Predicting [{}] [{}:{}]"
-    print text.format(method, cat_col, data_col)
+    print text.format(method, cat_col, pred_col)
     
     scores,F1,errors,pred = categorical_predict(META_X,Y,method,config)
 

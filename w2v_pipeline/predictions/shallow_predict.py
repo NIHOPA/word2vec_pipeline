@@ -44,7 +44,8 @@ def categorical_predict(X,y_org,method_name,config):
     #print msg.format(method_name, X.shape, label_n)
 
     use_SMOTE = config["use_SMOTE"]
-    print "  Adjusting class balance using SMOTE"
+    if use_SMOTE:
+        print "  Adjusting class balance using SMOTE"
 
     is_PARALLEL = config["_PARALLEL"]
     
