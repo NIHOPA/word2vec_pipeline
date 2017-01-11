@@ -8,6 +8,8 @@ from os import sys, path
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 import simple_config
+from utils.os_utils import grab_files
+
 
 def load_h5_file(f_h5, *args):
     '''
@@ -40,31 +42,28 @@ def load_dispersion_data():
 
     return load_h5_file(f_h5)
 
-def load_SQL_data(extra_columns=None):
-    print "Loading SQL data"
+def load_ORG_data(extra_columns=None):
+    print "Loading import data"
 
-    if extra_columns is None:
-        extra_columns = []
-
-    cols = ["_ref",] + ['"{}"'.format(x) for x in extra_columns]
-    cmd = '''SELECT {} FROM original'''.format(','.join(cols))
-
-    F_SQL = sorted(glob.glob("data_sql/*.sqlite"))
-    data = []
+    cols = ["_ref",]
     
-    for f in tqdm(F_SQL):
-        conn = sqlite3.connect(f)
-        cursor = conn.execute(cmd)
-        for item in cursor.fetchall():
-            data.append(item)
+    if extra_columns is not None:
+        cols += extra_columns
 
-    df = pd.DataFrame(data,columns=cols)#.set_index('_ref')
+    config_import = simple_config.load("import_data")
 
-    # Require the _refs to be in order as a sanity check
-    
+    # Load the input columns
+    F_CSV = grab_files("*.csv", config_import["output_data_directory"])
+    ITR = (pd.read_csv(f,usecols=cols) for f in F_CSV)
+    df = pd.concat(list(ITR))
+
+    # Require the _refs to be in order as a sanity check    
     if not (np.sort(df._ref) == df._ref).all():
         msg = "WARNING, data out of sort order from _refs"
         raise ValueError(msg)
+
+    df = df.set_index('_ref')
+    df['_ref'] = df.index
     
     return df
 
@@ -92,18 +91,17 @@ def load_document_vectors():
     )
 
     with h5py.File(f_h5,'r') as h5:
-        g = h5[score_method][text_column]
-        corpus_keys = g.keys()
+        g = h5[score_method]
 
         # Load the _refs
-        _refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
+        _refs = g["_ref"][:]
         
         # Require the _refs to be in order as a sanity check
         if not (np.sort(_refs) == _refs).all():
             msg = "WARNING, data out of sort order from _refs"
             raise ValueError(msg)
         
-        docv = np.vstack([g[k]["V"][:] for k in corpus_keys])
+        docv = g["V"][:]
 
         return {
             "docv" : docv,

@@ -8,7 +8,8 @@ import h5py
 from scipy.spatial.distance import cdist, pdist
 from scipy.cluster import hierarchy
 
-from data_utils import load_metacluster_data, load_document_vectors, load_SQL_data
+from data_utils import load_metacluster_data, load_document_vectors
+from data_utils import load_ORG_data
 
 def _compute_centroid_dist(X,cx):
     return cdist(X, [cx,], metric='cosine').mean()
@@ -38,7 +39,7 @@ if __name__ == "__main__" and __package__ is None:
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
 
-    SQL = load_SQL_data(config["master_columns"])
+    ORG = load_ORG_data(config["master_columns"])
 
     MC = load_metacluster_data()
     C = MC["meta_centroids"]
@@ -56,7 +57,7 @@ if __name__ == "__main__" and __package__ is None:
     linkage = hierarchy.linkage(dist, method='average')
     d_idx   = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
-    ################################################################################
+    #########################################################################
         
     V = DV["docv"]
     data = []
@@ -86,25 +87,26 @@ if __name__ == "__main__" and __package__ is None:
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
 
-    ################################################################################
+    ##########################################################################
     
     print "Computing master-label spreadsheets."
     cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
-    SQL["cluster_id"] = MC["meta_labels"]
-    SQL["dendrogram_order"] = -1
+    ORG["cluster_id"] = MC["meta_labels"]
+    ORG["dendrogram_order"] = -1
 
     for i,j in cluster_lookup.items():
-        idx = SQL["cluster_id"]==i
-        SQL.loc[idx, "dendrogram_order"] = j
+        idx = ORG["cluster_id"]==i
+        ORG.loc[idx, "dendrogram_order"] = j
 
     special_cols = ["_ref","cluster_id","dendrogram_order"]
-    cols = [x for x in SQL.columns if x not in special_cols]
-    SQL = SQL[special_cols + cols]
+    cols = [x for x in ORG.columns if x not in special_cols]
+
+    ORG = ORG[special_cols + cols]
         
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
-    SQL.to_csv(f_csv,index=False)
+    ORG.to_csv(f_csv,index=False)
 
-    ################################################################################
+    ##########################################################################
     
     df["cluster_id"] = df.index
     df = df.sort_values("cluster_id")
