@@ -1,4 +1,4 @@
-import os, itertools
+import os
 from utils.os_utils import mkdir,  grab_files
 import utils.db_utils as db_utils
 import preprocessing as pre

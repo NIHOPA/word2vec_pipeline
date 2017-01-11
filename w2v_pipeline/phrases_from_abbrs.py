@@ -1,4 +1,4 @@
-import string, os, collections, itertools
+import string, os, collections
 from utils.os_utils import grab_files, mkdir
 import utils.db_utils as db_utils
 

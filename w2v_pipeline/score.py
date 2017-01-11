@@ -1,4 +1,4 @@
-import sqlite3, glob, os, itertools, random
+import sqlite3, glob, os, random
 from utils.os_utils import mkdir
 import document_scoring as ds
 from utils.db_utils import database_iterator, count_rows

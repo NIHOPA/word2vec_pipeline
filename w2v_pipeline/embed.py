@@ -5,19 +5,20 @@ import simple_config
 
 import utils.db_utils as db_utils
 
+def item_iterator(
+        randomize_file_order=False,
+        whitelist=[],
+        section='parse',
+):
+    '''
+    Iterates over the parsed corpus items and respects a given whitelist.
+    '''
+    
 
-def item_iterator(name,cmd_config=None):
-
-    score_config = simple_config.load("parse")
-    input_data_dir = score_config["output_data_directory"]
-
+    parse_config = simple_config.load(section)
+    input_data_dir = parse_config["output_data_directory"]
     F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
 
-    # If there is a whitelist only keep the matching filename
-    try:
-        whitelist = cmd_config["command_whitelist"].strip()
-    except:
-        whitelist = None
     if whitelist:
         assert(type(whitelist)==list)
 
@@ -27,10 +28,10 @@ def item_iterator(name,cmd_config=None):
                 if token in f_csv:
                     F_CSV2.add(f_csv)
         F_CSV = F_CSV2
-
     
     # Randomize the order of the input files each time we get here
-    F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
+    if randomize_file_order:
+        F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
 
     dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, config["target_column"],
@@ -46,6 +47,13 @@ if __name__ == "__main__":
     _FORCE = config.as_bool("_FORCE")
 
     mkdir(config["output_data_directory"])
+
+    score_config = simple_config.load("score")
+    # If there is a whitelist only keep the matching filename
+    try:
+        whitelist = score_config["input_file_whitelist"]
+    except:
+        whitelist = []
     
     ###########################################################
     # Run the functions that act globally on the data
@@ -59,5 +67,5 @@ if __name__ == "__main__":
             kwargs.update(config[name])
             
         func = obj(**kwargs)
-        func.set_iterator_function(item_iterator,name,config[name])
-        func.compute(config)        
+        func.set_iterator_function(item_iterator,whitelist,section="parse")
+        func.compute(config)
