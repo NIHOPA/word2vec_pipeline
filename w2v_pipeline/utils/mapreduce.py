@@ -1,6 +1,6 @@
 import os
-
 import gensim.models.doc2vec
+
 LabeledSentence = gensim.models.doc2vec.LabeledSentence
 
 class simple_mapreduce(object):
@@ -20,19 +20,20 @@ class simple_mapreduce(object):
 
 class corpus_iterator(simple_mapreduce):
 
-    def set_iterator_function(self, iter_func, *args):
+    def set_iterator_function(self, iter_func, *args, **kwargs):
         self.iter_func = iter_func
         self.iter_args = args
+        self.iter_kwargs = kwargs
 
     def __iter__(self):
-        for x in self.iter_func(*self.iter_args):
+        for x in self.iter_func(*self.iter_args, **self.iter_kwargs):
             yield x
 
-    def sentence_iterator(self):
-        for item in self:
-            text = item[0]
+    def sentence_iterator(self, target_column):
+        for row in self:
+            text = row[target_column]
             yield unicode(text).split()
-
+    
     def labelized_sentence_iterator(self):
         for item in self:
             text  = item[0]

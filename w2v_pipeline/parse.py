@@ -62,8 +62,7 @@ if __name__ == "__main__":
     F_CSV = grab_files("*.csv",input_data_dir)
     
     dfunc = db_utils.CSV_database_iterator
-    INPUT_ITR = dfunc(F_CSV, col, include_filename=True,
-                      progress_bar=True)
+    INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  #batch_size=_global_batch_size,
                  target_column=col)

@@ -1,17 +1,17 @@
-import sqlite3, glob, os, itertools, random
+import random
 from utils.os_utils import mkdir, grab_files
 import model_building as mb
-from utils.db_utils import database_iterator
 import simple_config
 
-_global_limit = 0
+import utils.db_utils as db_utils
+
 
 def item_iterator(name,cmd_config=None):
 
     score_config = simple_config.load("parse")
     input_data_dir = score_config["output_data_directory"]
 
-    F_SQL = grab_files("*", input_data_dir)
+    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
 
     # If there is a whitelist only keep the matching filename
     try:
@@ -21,37 +21,24 @@ def item_iterator(name,cmd_config=None):
     if whitelist:
         assert(type(whitelist)==list)
 
-        F_SQL2 = set()
-        for f_sql in F_SQL:
+        F_CSV2 = set()
+        for f_csv in F_CSV:
             for token in whitelist:
-                if token in f_sql:
-                    F_SQL2.add(f_sql)
-        F_SQL = F_SQL2
+                if token in f_csv:
+                    F_CSV2.add(f_csv)
+        F_CSV = F_CSV2
 
     
-    # Randomize the order of the input files
-    F_SQL = random.sample(sorted(F_SQL), len(F_SQL))  
-    DB_ITR = itertools.product(F_SQL, config["target_columns"])
+    # Randomize the order of the input files each time we get here
+    F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
 
-    for f_sql, target_col in DB_ITR:
+    dfunc = db_utils.CSV_database_iterator
+    INPUT_ITR = dfunc(F_CSV, config["target_column"],
+                      progress_bar=False)
 
-        #print ("Computing {}:{}".format(f_sql, target_col))
-        
-        conn = sqlite3.connect(f_sql, check_same_thread=False)
-
-        args = {
-            "column_name":"text",
-            "table_name" :target_col,
-            "conn":conn,
-            "limit":_global_limit,
-            "shuffle":False,
-            "include_table_name":True,
-        }
-
-        INPUT_ITR = database_iterator(**args)
-        for item in INPUT_ITR:
-            yield list(item) + [f_sql,]
-
+    for item in INPUT_ITR:
+        yield item
+    
 if __name__ == "__main__":
 
     import simple_config

@@ -8,11 +8,12 @@ def mkdir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def grab_files(pattern, directory=""):
+def grab_files(pattern, directory="", verbose=True):
     g_pattern = os.path.join(directory, pattern)
     FILES = sorted(glob.glob(g_pattern))
 
-    msg = "Found {} files to import in {}."
-    print (msg.format(len(FILES),directory))
+    if verbose:
+        msg = "Found {} files to import in {}."
+        print (msg.format(len(FILES),directory))
 
     return sorted(FILES)
