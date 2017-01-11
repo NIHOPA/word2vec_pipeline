@@ -10,8 +10,6 @@ from sklearn.cluster import SpectralClustering
 from scipy.spatial.distance import cdist, pdist
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-
 def subset_iterator(X, m, repeats = 1):
     '''
     Iterates over array X in chunks of m, repeat number of times.
@@ -96,29 +94,19 @@ class cluster_object(object):
         print "Loading document data from", f_h5
 
         h5 = h5py.File(f_h5,'r')
-        g = h5[method][text_column]
-        corpus_keys = g.keys()
+        g = h5[method]
 
         # Load the _refs
-        self._refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
+        #self._refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
+        self._ref = g["_ref"][:]
 
         # Require the _refs to be in order as a sanity check
-        if not (np.sort(self._refs) == self._refs).all():
+        if not (np.sort(self._ref) == self._ref).all():
             msg = "WARNING, data out of sort order from _refs"
             raise ValueError(msg)
-        
-        self.docv = np.vstack([g[k]["V"][:] for k in corpus_keys])
+
+        self.docv = g["V"][:]
         self.N,self.dim = self.docv.shape
-
-
-        # Document key lookup
-        print "Building doc lookup key"
-        self.doc_lookup = {}
-        counter = 0
-        for key in corpus_keys:
-            for offset in range(g[key]["V"].shape[0]):
-                self.doc_lookup[counter] = key
-                counter += 1
                 
         h5.close()
 
