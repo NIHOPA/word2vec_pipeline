@@ -7,7 +7,7 @@ import joblib
 import simple_config
 from sklearn.cluster import SpectralClustering
 
-from scipy.spatial.distance import cdist, pdist
+from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import cosine_similarity
 
 def subset_iterator(X, m, repeats = 1):
@@ -85,30 +85,24 @@ class cluster_object(object):
         )
         
         score_method = config['score_method']
-        text_column  = config['score_column']
 
-        self._load_data(self.f_h5_docvecs, score_method, text_column)
+        self._load_data(self.f_h5_docvecs, score_method)
 
-    def _load_data(self, f_h5, method, text_column):
+    def _load_data(self, f_h5, method):
 
         print "Loading document data from", f_h5
 
-        h5 = h5py.File(f_h5,'r')
-        g = h5[method]
-
-        # Load the _refs
-        #self._refs = np.hstack([g[key]["_ref"][:] for key in corpus_keys])
-        self._ref = g["_ref"][:]
+        with h5py.File(f_h5,'r') as h5:
+            g = h5[method]
+            self._ref = g["_ref"][:]
+            self.docv = g["V"][:]
 
         # Require the _refs to be in order as a sanity check
         if not (np.sort(self._ref) == self._ref).all():
             msg = "WARNING, data out of sort order from _refs"
             raise ValueError(msg)
 
-        self.docv = g["V"][:]
         self.N,self.dim = self.docv.shape
-                
-        h5.close()
 
     def _load_embedding(self):
         f_model = "data_embeddings/w2v.gensim"
@@ -139,6 +133,7 @@ class cluster_object(object):
         for X in INPUT_ITR:
             # Remove any rows that have zero vectors
             bad_row_idx = ((X**2).sum(axis=1)==0)
+            
             X = X[~bad_row_idx]
             A = cosine_affinity(X)
 
@@ -159,10 +154,8 @@ class cluster_object(object):
         return np.vstack(C)
     
     def load_centroid_dataset(self, name):
-        h5 = h5py.File(self.f_h5_centroids,'r')
-        data = h5[name][:]
-        h5.close()
-        return data       
+        with h5py.File(self.f_h5_centroids,'r') as h5:
+            return h5[name][:]
 
     def compute_meta_centroid_set(self, **kwargs):
 
