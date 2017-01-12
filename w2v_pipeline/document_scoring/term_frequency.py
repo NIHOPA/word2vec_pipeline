@@ -46,8 +46,8 @@ class term_frequency(frequency_counter):
         tokens = unicode(text).split()
         C = collections.Counter(tokens)
 
-        # Add an empty string token to keep track of total documents
-        C[""] += 1
+        # Add a token to keep track of total documents
+        C["__pipeline_document_counter"] += 1
         
         return C
     
@@ -64,6 +64,6 @@ class term_document_frequency(frequency_counter):
         C = collections.Counter(tokens)
 
         # Add an empty string token to keep track of total documents
-        C[""] += 1
+        C["__pipeline_document_counter"] += 1
 
         return C

@@ -222,14 +222,15 @@ class score_simple_TF(score_simple):
             score_config["output_data_directory"],
             score_config["term_document_frequency"]["f_db"],
         )
-        IDF = pd.read_csv(f_csv).fillna("")
+        IDF = pd.read_csv(f_csv)
         IDF = dict(zip(IDF["word"].values, IDF["count"].values))
-        self.corpus_N = IDF.pop("")
+        self.corpus_N = IDF.pop("__pipeline_document_counter")
             
         # Compute the IDF
         for key in IDF:
             IDF[key] = np.log(float(self.corpus_N)/(IDF[key]+1))
         self.IDF = IDF
+
 
     def get_IDF(self, word):
         if word in self.IDF:
