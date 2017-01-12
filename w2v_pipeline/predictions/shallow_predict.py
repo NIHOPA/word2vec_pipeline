@@ -1,7 +1,7 @@
 import numpy as np
 import itertools, collections
 from sklearn.preprocessing import LabelEncoder
-from sklearn.cross_validation import cross_val_score, StratifiedKFold
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import f1_score
 import sklearn.ensemble
 
@@ -54,9 +54,7 @@ def categorical_predict(X,y_org,method_name,config):
         "n_estimators" : int(config["n_estimators"]),
     }
     
-    skf = StratifiedKFold(y,
-                          n_folds=10,
-                          shuffle=False)
+    skf = StratifiedKFold(n_splits=10, shuffle=False).split(X,y)
     scores = []
     F1_scores = []
 
