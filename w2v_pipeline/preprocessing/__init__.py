@@ -13,4 +13,7 @@ __all__ = [
     'token_replacement',
     'decaps_text',
     'pos_tokenizer',
+    'dedash',
+    'titlecaps',
+    'replace_from_dictionary',
 ]

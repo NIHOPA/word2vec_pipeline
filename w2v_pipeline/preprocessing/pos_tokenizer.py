@@ -2,46 +2,47 @@ import pattern.en
 from tokenizers import meta_text
 
 _POS_shorthand = {
-    "adjective"   : "ADJ",
-    "noun"        : "N",
-    "verb"        : "V",
-    "modal_verb"  : "V",
-    "adverb"      : "RB",
-    "unknown"     : "UNK",
+    "adjective": "ADJ",
+    "noun": "N",
+    "verb": "V",
+    "modal_verb": "V",
+    "adverb": "RB",
+    "unknown": "UNK",
 }
 
+
 class pos_tokenizer(object):
-    
+
     def __init__(self, POS_blacklist):
         '''
         Uses pattern.en to remove POS terms on the blacklist
         '''
 
-        self.parse = lambda x:pattern.en.parse(x,chunks=False,tags=True)
+        self.parse = lambda x: pattern.en.parse(x, chunks=False, tags=True)
 
         # connectors = conjunction,determiner,infinitival to,
         #              interjection,predeterminer
         # w_word = which, what, who, whose, when, where & there ...
 
         POS = {
-            "connector"   : ["CC","IN","DT","TO","UH","PDT"],
-            "cardinal"    : ["CD","LS"],
-            "adjective"   : ["JJ","JJR","JJS"],
-            "noun"        : ["NN","NNS","NNP","NNPS"],
-            "pronoun"     : ["PRP","PRP$"],
-            "adverb"      : ["RB","RBR","RBS","RP"],
-            "symbol"      : ["SYM",'$',],
-            "punctuation" : [".",",",":",')','('],
-            "modal_verb"  : ["MD"],
-            "verb"        : ["VB","VBZ","VBP","VBD","VBG","VBN"],
-            "w_word"      : ["WDT","WP","WP$","WRB","EX"],
-            "unknown"     : ["FW", "``"],
+            "connector": ["CC", "IN", "DT", "TO", "UH", "PDT"],
+            "cardinal": ["CD", "LS"],
+            "adjective": ["JJ", "JJR", "JJS"],
+            "noun": ["NN", "NNS", "NNP", "NNPS"],
+            "pronoun": ["PRP", "PRP$"],
+            "adverb": ["RB", "RBR", "RBS", "RP"],
+            "symbol": ["SYM", '$', ],
+            "punctuation": [".", ",", ":", ')', '('],
+            "modal_verb": ["MD"],
+            "verb": ["VB", "VBZ", "VBP", "VBD", "VBG", "VBN"],
+            "w_word": ["WDT", "WP", "WP$", "WRB", "EX"],
+            "unknown": ["FW", "``"],
         }
 
         self.filtered_POS = POS_blacklist
 
         '''
-                set(("connector", 
+                set(("connector",
                      "cardinal",
                      "pronoun",
                      "adverb",
@@ -53,19 +54,20 @@ class pos_tokenizer(object):
         '''
 
         self.POS_map = {}
-        for pos,L in POS.items():
-            for y in L: self.POS_map[y]=pos
-                                        
-    def __call__(self,doc,force_lemma=True):
-        
+        for pos, L in POS.items():
+            for y in L:
+                self.POS_map[y] = pos
+
+    def __call__(self, doc, force_lemma=True):
+
         pos_tags = []
         tokens = self.parse(doc)
         doc2 = []
-        
+
         for sentence in tokens.split():
             sent2 = []
 
-            for word,tag in sentence:
+            for word, tag in sentence:
 
                 if "PHRASE_" in word:
                     sent2.append(word)
@@ -78,29 +80,28 @@ class pos_tokenizer(object):
                     continue
 
                 tag = tag.split('|')[0].split('-')[0].split("&")[0]
-                
+
                 try:
                     pos = self.POS_map[tag]
                 except:
                     print "UNKNOWN POS *{}*".format(tag)
                     pos = "unknown"
 
-                                
                 if pos in self.filtered_POS:
                     continue
 
                 org_word = word
 
-                word = pattern.en.singularize(word,pos)
+                word = pattern.en.singularize(word, pos)
 
                 if pos == "verb" or force_lemma:
-                    lem = pattern.en.lemma(word,parse=False)
-                    if lem is not None: word = lem
+                    lem = pattern.en.lemma(word, parse=False)
+                    if lem is not None:
+                        word = lem
 
                 sent2.append(word)
                 pos_tags.append(_POS_shorthand[pos])
 
-                
             doc2.append(' '.join(sent2))
 
         doc2 = '\n'.join(doc2)
@@ -108,5 +109,5 @@ class pos_tokenizer(object):
         # The number of POS tokens should match the number of word tokens
         assert(len(pos_tags) == len(doc2.split()))
 
-        result = meta_text(doc2,POS=pos_tags)
+        result = meta_text(doc2, POS=pos_tags)
         return result

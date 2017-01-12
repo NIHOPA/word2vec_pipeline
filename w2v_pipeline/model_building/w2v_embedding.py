@@ -7,10 +7,11 @@ CPU_CORES = psutil.cpu_count()
 
 from tqdm import tqdm
 
+
 class w2v_embedding(corpus_iterator):
 
-    def __init__(self,*args,**kwargs):
-        super(w2v_embedding, self).__init__(*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(w2v_embedding, self).__init__(*args, **kwargs)
         self.epoch_n = int(kwargs["epoch_n"])
 
         # sg == skip_gram vs cbow
@@ -19,29 +20,28 @@ class w2v_embedding(corpus_iterator):
         negative = int(kwargs["negative"])
 
         # Input bounds checks
-        assert(sg in [0,1])
-        assert(hs in [0,1])
+        assert(sg in [0, 1])
+        assert(hs in [0, 1])
 
         if hs and negative:
-            msg="If hierarchical_softmax is used negative must be zero"
-            raise ValueError(msg)           
+            msg = "If hierarchical_softmax is used negative must be zero"
+            raise ValueError(msg)
 
         self.clf = Word2Vec(
             workers=CPU_CORES,
             sg=sg,
             hs=hs,
-            window =int(kwargs["window"]),
+            window=int(kwargs["window"]),
             negative=negative,
             sample=float(kwargs["sample"]),
             size=int(kwargs["size"]),
             min_count=int(kwargs["min_count"]),
         )
-        
 
     def compute(self, config):
 
         print "Learning the vocabulary"
-        
+
         ITR = self.sentence_iterator(config["target_column"])
         self.clf.build_vocab(ITR)
 
@@ -49,7 +49,7 @@ class w2v_embedding(corpus_iterator):
 
         print "Training the features"
         for n in tqdm(range(self.epoch_n)):
-            #print " - Epoch {}".format(n)
+            # print " - Epoch {}".format(n)
             ITR = self.sentence_iterator(config["target_column"])
             self.clf.train(ITR)
 

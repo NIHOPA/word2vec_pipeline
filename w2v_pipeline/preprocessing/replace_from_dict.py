@@ -1,19 +1,21 @@
-import sqlite3, os
+import os
 import pandas as pd
-import numpy as np
 from pattern.en import tokenize
+
 
 def contains_sublist(lst, sublst):
     # Finds all cases of a sublist and lists where it happens
     n = len(sublst)
-    idx = [(sublst == lst[i:i+n]) for i in xrange(len(lst)-n+1)]
+    idx = [(sublst == lst[i:i + n]) for i in xrange(len(lst) - n + 1)]
     return idx
 
+
 class replace_from_dictionary(object):
+
     '''
     DOCSTRING: TO WRITE.
     '''
-    
+
     def __init__(self, f_dict, input_data_directory):
 
         f_dict = os.path.join(input_data_directory, f_dict)
@@ -25,8 +27,8 @@ class replace_from_dictionary(object):
         df = pd.read_csv(f_dict)
         items = df["SYNONYM"].str.lower(), df["replace_token"]
         self.X = dict(zip(*items))
-        
-    def __call__(self,org_doc):
+
+    def __call__(self, org_doc):
 
         doc = org_doc
 
@@ -35,19 +37,18 @@ class replace_from_dictionary(object):
 
         # Identify which phrases were used
         keywords = [key for key in self.X if key in ldoc]
-        punctuation=".,;:!?()[]{}`''\"@#$^&*+-|=~"           
-        
+        punctuation = ".,;:!?()[]{}`''\"@#$^&*+-|=~"
+
         # Loop over the keywords and replace them one-by-one.
         # This is inefficient, but less error prone.
 
         parsed_sent = []
 
         for sent in tokenize(doc, punctuation=punctuation):
-            
+
             for word in keywords:
                 word_n_tokens = len(word.split())
-                worn_n = len(word)
-                
+
                 new_word = self.X[word]
                 word_tokens = word.split()
 
@@ -57,13 +58,14 @@ class replace_from_dictionary(object):
                 while any(mask):
                     idx = mask.index(True)
                     sent = sent.split()
-                    args = sent[:idx] + [new_word,] + sent[idx+word_n_tokens:]
+                    args = sent[:idx] + [new_word, ] + sent[
+                        idx + word_n_tokens:]
                     sent = ' '.join(args)
                     tokens = sent.lower().split()
                     mask = contains_sublist(tokens, word_tokens)
 
             parsed_sent.append(sent)
-        
+
         doc = ' '.join(parsed_sent)
 
         """

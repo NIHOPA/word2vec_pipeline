@@ -7,19 +7,21 @@ from unidecode import unidecode
 
 from utils.parallel_utils import jobmap
 
+
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
-    return s.decode('utf-8',errors='replace')
+    return s.decode('utf-8', errors='replace')
+
 
 def clean_dataframe(df):
     '''
     Changes all columns of type object into strings.
     All string types are mapped through unidecode.
     '''
-    
-    for col,dtype in zip(df.columns,df.dtypes):
-        if dtype=="object":
+
+    for col, dtype in zip(df.columns, df.dtypes):
+        if dtype == "object":
 
             all_types = set(df[col].map(type).values)
 
@@ -29,20 +31,22 @@ def clean_dataframe(df):
                 df[col] = df[col].astype(float)
     return df
 
+
 def load_csv(f_csv, clean=True):
     '''
-    Loads a CSV file into a pandas DataFrame. 
+    Loads a CSV file into a pandas DataFrame.
     Runs the dataframe through a cleaner.
     '''
 
     print "Starting import of", f_csv
 
     df = pd.read_csv(f_csv)
-    
+
     if clean:
         df = clean_dataframe(df)
 
     return f_csv, df
+
 
 def import_directory_csv(d_in, d_out, output_table):
     '''
@@ -51,11 +55,11 @@ def import_directory_csv(d_in, d_out, output_table):
     and attaches unique _ref numbers to each entry.
     '''
 
-    F_CSV     = []
+    F_CSV = []
     F_CSV_OUT = {}
 
-    INPUT_FILES = grab_files("*.csv",d_in)
-    
+    INPUT_FILES = grab_files("*.csv", d_in)
+
     if not INPUT_FILES:
         print "No matching CSV files found, exiting"
         exit(2)
@@ -77,13 +81,13 @@ def import_directory_csv(d_in, d_out, output_table):
     # Create a reference ID for each item
     _ref_counter = itertools.count()
 
-    for (f_csv,df) in ITR:
+    for (f_csv, df) in ITR:
 
         df["_ref"] = list(itertools.islice(_ref_counter, len(df)))
-        df.set_index("_ref",inplace=True)
+        df.set_index("_ref", inplace=True)
 
         df.to_csv(F_CSV_OUT[f_csv])
-        
+
         msg = "Imported {} to {}, {}, {}"
         print msg.format(f_csv, F_CSV_OUT[f_csv], len(df), list(df.columns))
 
@@ -98,10 +102,8 @@ if __name__ == "__main__":
     output_table = config["output_table"]
 
     # Require `input_data_directories` to be a list
-    data_in_list  = config["input_data_directories"]
-    assert(type(data_in_list) == list)
-  
+    data_in_list = config["input_data_directories"]
+    assert(isinstance(data_in_list, list))
+
     for d_in in data_in_list:
         import_directory_csv(d_in, data_out, output_table)
-
-

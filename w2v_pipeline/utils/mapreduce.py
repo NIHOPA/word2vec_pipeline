@@ -1,22 +1,23 @@
-import os
 import gensim.models.doc2vec
 
 LabeledSentence = gensim.models.doc2vec.LabeledSentence
 
+
 class simple_mapreduce(object):
-    
-    def __init__(self,*args,**kwargs):
+
+    def __init__(self, *args, **kwargs):
         # Set any function arguments for calling
         self.kwargs = kwargs
-            
+
     def __call__(self, x):
         raise NotImplementedError
 
-    def reduce(self,*x):
+    def reduce(self, *x):
         raise NotImplementedError
 
     def report(self):
         raise NotImplementedError
+
 
 class corpus_iterator(simple_mapreduce):
 
@@ -33,15 +34,15 @@ class corpus_iterator(simple_mapreduce):
         for row in self:
             text = row[target_column]
             yield unicode(text).split()
-    
+
     def labelized_sentence_iterator(self):
         for item in self:
-            text  = item[0]
-            idx   = item[1]
+            text = item[0]
+            idx = item[1]
             f_sql = item[-1]
 
             for sentence in text.split('\n'):
                 sentence = unicode(sentence)
                 tokens = sentence.split()
-                label  = "{}_{}".format(f_sql,idx)
-                yield LabeledSentence(tokens, [label,])
+                label = "{}_{}".format(f_sql, idx)
+                yield LabeledSentence(tokens, [label, ])

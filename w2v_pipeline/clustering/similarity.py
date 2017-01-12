@@ -1,8 +1,10 @@
-from scipy.spatial.distance import cdist, pdist
+from scipy.spatial.distance import cdist
 import numpy as np
-import simple_config, os
+import simple_config
+import os
 
-def spectral_clustering(S,X,config):
+
+def spectral_clustering(S, X, config):
     '''
     Computes spectral clustering from an input similarity matrix.
     Returns the labels associated with the clustering.
@@ -10,10 +12,11 @@ def spectral_clustering(S,X,config):
     from sklearn.cluster import SpectralClustering
 
     nk = int(config["n_clusters"])
-    clf = SpectralClustering(affinity='cosine',n_clusters=nk)
+    clf = SpectralClustering(affinity='cosine', n_clusters=nk)
     return clf.fit_predict(X)
 
-def hdbscan_clustering(S,X,config):
+
+def hdbscan_clustering(S, X, config):
     '''
     Computes H-DBSCAN clustering from an input similarity matrix.
     Returns the labels associated with the clustering.
@@ -30,7 +33,7 @@ def load_embeddings():
     Loads the gensim word embedding model.
     '''
     config = simple_config.load("embedding")
-    
+
     from gensim.models.word2vec import Word2Vec
 
     f_w2v = os.path.join(
@@ -40,23 +43,24 @@ def load_embeddings():
 
     return Word2Vec.load(f_w2v)
 
+
 def compute_document_similarity(X):
     '''
     From a matrix of unit distances, computes the cosine similarity
     then changes to the angular distance (for a proper metric).
     '''
-    
-    S = cdist(X,X,metric='cosine')
+
+    S = cdist(X, X, metric='cosine')
     S -= 1
     S *= -1
-    S[S>1] = 1.0
-    S[S<0] = 0.0
+    S[S > 1] = 1.0
+    S[S < 0] = 0.0
 
     # Set nan values to zero
     S[np.isnan(S)] = 0
 
     # Convert to angular distance (a proper metric)
-    S = 1 - (np.arccos(S)/np.pi)
+    S = 1 - (np.arccos(S) / np.pi)
     assert(not np.isnan(S).any())
     assert(not np.isinf(S).any())
 
@@ -70,7 +74,7 @@ class random_unit_hypersphere(object):
 
     def generate_random_unit_hypersphere_point(self,*args):
         return np.random.normal(size=self.dim)
-        
+
     def __call__(self, n=5):
         func = self.generate_random_unit_hypersphere_point
         INPUT_ITR = itertools.repeat(self.dim,n)
@@ -117,8 +121,8 @@ def compute_cluster_measure(X,clusters):
             Z = X[idx].dot(MU[j])
             M[i,j] = Z.mean()
 
-    return M 
-    
+    return M
+
 def compute_cluster_compactness(X,clusters):
     # W_k
     compactness = []

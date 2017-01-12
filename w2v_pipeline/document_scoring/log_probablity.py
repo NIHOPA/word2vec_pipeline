@@ -4,29 +4,32 @@ import numpy as np
 import os
 
 import pandas as pd
-import tqdm, h5py
+import tqdm
+import h5py
 import scipy.stats
 
 import simple_config
 
+
 def compute_partition_stats(UE):
-    
+
     # Remove the largest element (the energy of self interaction)
-    UE  = np.sort(UE)[:-1]
+    UE = np.sort(UE)[:-1]
     n_words = len(UE)
-    
+
     return UE.sum() / n_words
 
 
 def compute_stats(X, data, prefix):
     # Compute various measures of central tendency
-    
+
     name = "{}_".format(prefix)
-    
-    data[name+"mu"]       = np.mean(X)
-    data[name+"std"]      = np.std(X)
-    data[name+"skew"]     = scipy.stats.skew(X)
-    data[name+"kurtosis"] = scipy.stats.kurtosis(X)
+
+    data[name + "mu"] = np.mean(X)
+    data[name + "std"] = np.std(X)
+    data[name + "skew"] = scipy.stats.skew(X)
+    data[name + "kurtosis"] = scipy.stats.kurtosis(X)
+
 
 class document_log_probability(corpus_iterator):
 
@@ -34,7 +37,6 @@ class document_log_probability(corpus_iterator):
     method = 'document_log_probability'
 
     def __init__(self, *args, **kwargs):
-
         '''
         Computes various measures of central tendency of a document.
         For Z_X scores, the raw word tokens are summed over the partition
@@ -54,7 +56,7 @@ class document_log_probability(corpus_iterator):
             cfg_embed["output_data_directory"],
             cfg_score["document_log_probability"]["f_partition_function"],
         )
-        
+
         if not os.path.exists(f_partition_function):
             self.create_partition_function(f_w2v, f_partition_function)
 
@@ -71,7 +73,7 @@ class document_log_probability(corpus_iterator):
 
     def create_partition_function(self, f_w2v, f_h5):
         print "Building the partition function"
-        
+
         # Load the model from disk
         M = Word2Vec.load(f_w2v)
 
@@ -82,54 +84,55 @@ class document_log_probability(corpus_iterator):
         # Compute the partition function for each word
         for w in INPUT_ITR:
             UE = self.energy(M.syn0, M[w])
-            z  = compute_partition_stats(UE)
+            z = compute_partition_stats(UE)
             ZT.append(z)
 
         # Save the partition function to disk
         # (special care needed for h5py unicode strings)
         dt = h5py.special_dtype(vlen=unicode)
 
-        with h5py.File(f_h5,'w') as h5:
-                       
+        with h5py.File(f_h5, 'w') as h5:
+
             h5.create_dataset("words", (len(words),),
                               dtype=dt,
                               data=[w.encode('utf8') for w in words])
 
             h5.attrs['vocab_N'] = len(words)
-            h5['Z'] = ZT            
-        
+            h5['Z'] = ZT
+
     def load_partition_function(self, f_h5):
         '''
-        The partition function is a dictionary of the 
+        The partition function is a dictionary of the
         Standardized (zero-mean, unit-variance) Z scores are returned
         that were precomputed over the corpus embedding.
 
         '''
-        
-        with h5py.File(f_h5,'r') as h5:
+
+        with h5py.File(f_h5, 'r') as h5:
             words = h5["words"][:]
             Z = h5['Z'][:]
-            
+
         # Standardize Z scores
-        Z = (Z-Z.mean())/Z.std()
+        Z = (Z - Z.mean()) / Z.std()
 
         # Sanity check that the number of words matches what was saved
-        assert( len(words) == len(Z) )
+        assert(len(words) == len(Z))
 
-        return dict(zip(words,Z))
-        
-    def __call__(self,row):
+        return dict(zip(words, Z))
+
+    def __call__(self, row):
         '''
         Compute partition function stats over each document.
         '''
         text = row['text']
-        
+
         stat_names = [
             'Z_mu', 'Z_std', 'Z_skew', 'Z_kurtosis',
             'I_mu', 'I_std', 'I_skew', 'I_kurtosis',
         ]
         stats = {}
-        for key in stat_names: stats[key] = 0.0
+        for key in stat_names:
+            stats[key] = 0.0
 
         # Only keep words that are defined in the embedding
         valid_tokens = [w for w in text.split() if w in self.Z]
@@ -145,31 +148,31 @@ class document_log_probability(corpus_iterator):
 
             # Take top x% most descriptive words
             z_sort_idx = np.argsort(doc_z)[::-1]
-            z_cut = max(int(self.intra_document_cutoff *  len(doc_z)), 3)
-            
+            z_cut = max(int(self.intra_document_cutoff * len(doc_z)), 3)
+
             important_index = z_sort_idx[:z_cut]
             sub_tokens = all_tokens[important_index]
             doc_v = np.array([self.model[w] for w in sub_tokens])
-            upper_idx = np.triu_indices(doc_v.shape[0],k=1)
-            dist  = np.dot(doc_v, doc_v.T)[upper_idx]
+            upper_idx = np.triu_indices(doc_v.shape[0], k=1)
+            dist = np.dot(doc_v, doc_v.T)[upper_idx]
 
             compute_stats(dist, stats, "I")
 
         stats['_ref'] = row['_ref']
         return stats
 
-    def reduce(self,stats):
+    def reduce(self, stats):
         self.scores.append(stats)
 
     def save(self, config):
 
         out_dir = config["output_data_directory"]
-        f_h5    = os.path.join(out_dir,
-                               config["document_log_probability"]["f_db"])
+        f_h5 = os.path.join(out_dir,
+                            config["document_log_probability"]["f_db"])
 
         df = pd.DataFrame(self.scores)
 
-        with h5py.File(f_h5,'w') as h5:
+        with h5py.File(f_h5, 'w') as h5:
             h5['_ref'] = df['_ref'].astype(int)
             del df['_ref']
 
