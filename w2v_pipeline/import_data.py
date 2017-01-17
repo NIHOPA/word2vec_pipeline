@@ -4,49 +4,38 @@ from utils.os_utils import mkdir, grab_files
 
 import pandas as pd
 from unidecode import unidecode
+import csv
 
-from utils.parallel_utils import jobmap
+from tqdm import tqdm
 
+#from utils.parallel_utils import jobmap
+
+# Create a global reference ID for each item
+_ref_counter = itertools.count()
 
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
     return s.decode('utf-8', errors='replace')
 
-
-def clean_dataframe(df):
+def clean_row(row):
     '''
-    Changes all columns of type object into strings.
-    All string types are mapped through unidecode.
+    Maps all keys through a unicode and unidecode fixer.
     '''
+    for key,val in row.iteritems():
+        row[key] = unidecode(map_to_unicode(val))
+    return row
 
-    for col, dtype in zip(df.columns, df.dtypes):
-        if dtype == "object":
-
-            all_types = set(df[col].map(type).values)
-
-            if str in all_types:
-                df[col] = df[col].map(map_to_unicode).map(unidecode)
-            elif float in all_types:
-                df[col] = df[col].astype(float)
-    return df
-
-
-def load_csv(f_csv, clean=True):
+def csv_iterator(f_csv, clean=True):
     '''
-    Loads a CSV file into a pandas DataFrame.
-    Runs the dataframe through a cleaner.
+    Creates and iterator over a CSV file, optionally cleans it.
     '''
-
-    print "Starting import of", f_csv
-
-    df = pd.read_csv(f_csv)
-
-    if clean:
-        df = clean_dataframe(df)
-
-    return f_csv, df
-
+    with open(f_csv) as FIN:
+        CSV = csv.DictReader(FIN)
+        for row in CSV:
+            if clean:
+                row = clean_row(row)
+            yield row
 
 def import_directory_csv(d_in, d_out, output_table):
     '''
@@ -57,6 +46,7 @@ def import_directory_csv(d_in, d_out, output_table):
 
     F_CSV = []
     F_CSV_OUT = {}
+    F_CSV_OUT_HANDLE = {}
 
     INPUT_FILES = grab_files("*.csv", d_in)
 
@@ -72,24 +62,28 @@ def import_directory_csv(d_in, d_out, output_table):
             continue
 
         F_CSV.append(f_csv)
-        F_CSV_OUT[f_csv] = f_csvx
+        F_CSV_OUT[f_csv] = open(f_csvx,'w')
+        F_CSV_OUT_HANDLE[f_csv] = None
 
     # Create the output directory if needed
     mkdir(d_out)
-    ITR = jobmap(load_csv, F_CSV, _PARALLEL)
+    
+    #ITR = jobmap(load_csv, F_CSV, _PARALLEL)
+    
+    for f_csv in F_CSV:
+        for k, row in tqdm(enumerate(csv_iterator(f_csv))):
+            row["_ref"] = _ref_counter.next()
 
-    # Create a reference ID for each item
-    _ref_counter = itertools.count()
+            if F_CSV_OUT_HANDLE[f_csv] is None:
+                F_CSV_OUT_HANDLE[f_csv] = csv.DictWriter(F_CSV_OUT[f_csv],
+                                                         sorted(row.keys()))
+                F_CSV_OUT_HANDLE[f_csv].writeheader()
+                
+            F_CSV_OUT_HANDLE[f_csv].writerow(row)            
 
-    for (f_csv, df) in ITR:
+        msg = "Imported {}, {} entries"
+        print msg.format(f_csv, k)
 
-        df["_ref"] = list(itertools.islice(_ref_counter, len(df)))
-        df.set_index("_ref", inplace=True)
-
-        df.to_csv(F_CSV_OUT[f_csv])
-
-        msg = "Imported {} to {}, {}, {}"
-        print msg.format(f_csv, F_CSV_OUT[f_csv], len(df), list(df.columns))
 
 if __name__ == "__main__":
 
