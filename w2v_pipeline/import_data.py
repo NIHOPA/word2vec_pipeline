@@ -66,11 +66,6 @@ def import_directory_csv(d_in, d_out, output_table):
         F_CSV_OUT[f_csv] = open(f_csvx, 'w')
         F_CSV_OUT_HANDLE[f_csv] = None
 
-    # Create the output directory if needed
-    mkdir(d_out)
-
-    # ITR = jobmap(load_csv, F_CSV, _PARALLEL)
-
     for f_csv in F_CSV:
         for k, row in tqdm(enumerate(csv_iterator(f_csv))):
             row["_ref"] = _ref_counter.next()
@@ -94,6 +89,7 @@ if __name__ == "__main__":
     _FORCE = config.as_bool("_FORCE")
 
     data_out = config["output_data_directory"]
+    mkdir(data_out)
     output_table = config["output_table"]
 
     # Require `input_data_directories` to be a list
