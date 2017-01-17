@@ -2,29 +2,29 @@ import os
 import itertools
 from utils.os_utils import mkdir, grab_files
 
-import pandas as pd
 from unidecode import unidecode
 import csv
 
 from tqdm import tqdm
 
-#from utils.parallel_utils import jobmap
-
 # Create a global reference ID for each item
 _ref_counter = itertools.count()
+
 
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
     return s.decode('utf-8', errors='replace')
 
+
 def clean_row(row):
     '''
     Maps all keys through a unicode and unidecode fixer.
     '''
-    for key,val in row.iteritems():
+    for key, val in row.iteritems():
         row[key] = unidecode(map_to_unicode(val))
     return row
+
 
 def csv_iterator(f_csv, clean=True):
     '''
@@ -36,6 +36,7 @@ def csv_iterator(f_csv, clean=True):
             if clean:
                 row = clean_row(row)
             yield row
+
 
 def import_directory_csv(d_in, d_out, output_table):
     '''
@@ -62,14 +63,14 @@ def import_directory_csv(d_in, d_out, output_table):
             continue
 
         F_CSV.append(f_csv)
-        F_CSV_OUT[f_csv] = open(f_csvx,'w')
+        F_CSV_OUT[f_csv] = open(f_csvx, 'w')
         F_CSV_OUT_HANDLE[f_csv] = None
 
     # Create the output directory if needed
     mkdir(d_out)
-    
-    #ITR = jobmap(load_csv, F_CSV, _PARALLEL)
-    
+
+    # ITR = jobmap(load_csv, F_CSV, _PARALLEL)
+
     for f_csv in F_CSV:
         for k, row in tqdm(enumerate(csv_iterator(f_csv))):
             row["_ref"] = _ref_counter.next()
@@ -78,8 +79,8 @@ def import_directory_csv(d_in, d_out, output_table):
                 F_CSV_OUT_HANDLE[f_csv] = csv.DictWriter(F_CSV_OUT[f_csv],
                                                          sorted(row.keys()))
                 F_CSV_OUT_HANDLE[f_csv].writeheader()
-                
-            F_CSV_OUT_HANDLE[f_csv].writerow(row)            
+
+            F_CSV_OUT_HANDLE[f_csv].writerow(row)
 
         msg = "Imported {}, {} entries"
         print msg.format(f_csv, k)
