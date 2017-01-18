@@ -202,8 +202,6 @@ class CSV_database_iterator(object):
         if self.progress_bar is not None:
             self.progress_bar.close()
 
-#
-
 
 def item_iterator(
         config,

@@ -6,7 +6,7 @@ import csv
 
 from utils.parallel_utils import jobmap
 
-_global_batch_size = 1000
+_global_batch_size = 500
 
 
 def dispatcher(row, target_column):
@@ -65,13 +65,13 @@ if __name__ == "__main__":
     dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
-                 # batch_size=_global_batch_size,
+                 batch_size=_global_batch_size,
                  target_column=col)
 
     F_CSV_OUT = {}
     F_WRITERS = {}
 
-    for row in ITR:
+    for k, row in enumerate(ITR):
         f = row.pop("_filename")
 
         # Create a CSV file object for all outputs

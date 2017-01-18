@@ -1,11 +1,22 @@
-import itertools
 import joblib
 
 
-def grouper(iterable, n, fillvalue=None):
-    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n
-    return itertools.izip(*args)
+def grouper(iterable, n):
+    '''
+    Reads ahead n items on an iterator.
+    On last pass returns a smaller list with the remaining items.
+    '''
+    block = []
+    while True:
+        try:
+            block.append(iterable.next())
+        except StopIteration:
+            break
+        if len(block) == n:
+            yield block
+            block = []
+
+    yield block
 
 
 def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
@@ -22,7 +33,7 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
                 yield z
             raise StopIteration
 
-        for block in grouper(INPUT_ITR, batch_size):
-            raise NotImplementedError("batch_size has bug, do not use")
+        ITR = iter(INPUT_ITR)
+        for k, block in enumerate(grouper(ITR, batch_size)):
             for z in MP(dfunc(x, *args, **kwargs) for x in block):
                 yield z
