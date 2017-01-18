@@ -27,7 +27,7 @@ def clean_row(row):
     return row
 
 
-def csv_iterator(f_csv, clean=True, _PARALLEL=True):
+def csv_iterator(f_csv, clean=True, _PARALLEL=False):
     '''
     Creates and iterator over a CSV file, optionally cleans it.
     '''
