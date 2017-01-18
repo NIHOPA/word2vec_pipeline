@@ -34,8 +34,10 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
     with open(f_csv) as FIN:
         CSV = csv.DictReader(FIN)
 
-        if clean:
+        if clean and _PARALLEL:
             CSV = jobmap(clean_row, CSV, FLAG_PARALLEL=_PARALLEL)
+        elif clean and not _PARALLEL:
+            CSV = itertools.imap(clean_row, CSV)
 
         for row in CSV:
             yield row
