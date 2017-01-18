@@ -1,6 +1,7 @@
 import os
 import itertools
 from utils.os_utils import mkdir, grab_files
+from utils.parallel_utils import jobmap
 
 from unidecode import unidecode
 import csv
@@ -26,15 +27,17 @@ def clean_row(row):
     return row
 
 
-def csv_iterator(f_csv, clean=True):
+def csv_iterator(f_csv, clean=True, _PARALLEL=True):
     '''
     Creates and iterator over a CSV file, optionally cleans it.
     '''
     with open(f_csv) as FIN:
         CSV = csv.DictReader(FIN)
+
+        if clean:
+            CSV = jobmap(clean_row, CSV, FLAG_PARALLEL=_PARALLEL)
+
         for row in CSV:
-            if clean:
-                row = clean_row(row)
             yield row
 
 
@@ -67,6 +70,7 @@ def import_directory_csv(d_in, d_out, output_table):
         F_CSV_OUT_HANDLE[f_csv] = None
 
     for f_csv in F_CSV:
+
         for k, row in tqdm(enumerate(csv_iterator(f_csv))):
             row["_ref"] = _ref_counter.next()
 
