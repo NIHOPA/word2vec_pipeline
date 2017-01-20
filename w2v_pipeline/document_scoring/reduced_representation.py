@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.decomposition import IncrementalPCA
 
 #from log_probablity import document_log_probability
 from document_scores import score_unique_TF
@@ -10,28 +11,38 @@ class reduced_representation(score_unique_TF):
     def __init__(self, *args, **kwargs):
         '''
         The reduced representation takes an incremental PCA decomposition
-        for all specified sets of scores.
+        for all specified sets of scores. Right now it is hard-coded to be unique_TF
         '''
 
-        score_unique_TF.__init__(self, *args, **kwargs)
+        super(reduced_representation,self).__init__(*args, **kwargs)
+        
+        config = kwargs['reduced_representation']
+        self.clf = IncrementalPCA(n_components=int(config['n_components']))
+        self.batch = []
+        self.batch_n = 2000
 
-        print "HI!"
-        exit()
+    def process_doc_vec(self, v):
+        self.batch.append(v)
+        if len(self.batch) >= self.batch_n:
+            self.clf.partial_fit(self.batch)
+            self.batch = []
 
-        self.kT = float(kwargs["kT"])
-        self.threshold = float(kwargs["threshold"])
+    def _compute_doc_vector(self, weights, DV, tokens, **da):
 
-        self.weights = {}
+        func = super(reduced_representation,self)._compute_doc_vector
+        doc_vec = func(weights,DV,tokens,**da)
 
-        # min_val = np.array(self.Z.values()).min()
-        # print min_val
+        self.process_doc_vec(doc_vec)
+        return doc_vec
+    
+    def save(self):
 
-        for key, val in self.Z.items():
-            z = np.exp(min(self.threshold, val) / self.kT)
-            self.weights[key] = z
+        # Fit the remaining batch
+        self.clf.partial_fit(self.batch)
 
-        # Remove all negative items, weights come from Z
-        self.neg_W = {}
+        # Transform the batch
+        self.V = self.clf.transform(self.V)
 
-    def _compute_item_weights(self, local_counts, tokens, **da):
-        return dict([(w, self.weights[w]) for w in tokens])
+        # Run the standard save
+        score_unique_TF.save(self)
+
