@@ -1,48 +1,59 @@
 import numpy as np
 from sklearn.decomposition import IncrementalPCA
 
-#from log_probablity import document_log_probability
-from document_scores import score_unique_TF
+from utils.mapreduce import corpus_iterator
+import simple_config
+import h5py
+import os
 
-class reduced_representation(score_unique_TF):
+class reduced_representation(corpus_iterator):
 
     method = 'reduced_representation'
 
     def __init__(self, *args, **kwargs):
         '''
         The reduced representation takes an incremental PCA decomposition
-        for all specified sets of scores. Right now it is hard-coded to be unique_TF
+        for all specified sets of scores.
         '''
 
         super(reduced_representation,self).__init__(*args, **kwargs)
+
+        config = simple_config.load()['score']
+        f_db = os.path.join(
+            config["output_data_directory"],
+            config["document_scores"]["f_db"]
+        )
         
-        config = kwargs['reduced_representation']
-        self.clf = IncrementalPCA(n_components=int(config['n_components']))
-        self.batch = []
-        self.batch_n = 2000
+        self.nc = int(config['reduced_representation']['n_components'])
+        self.names = config['reduced_representation']['scores_to_reduce']
+        self.h5 = h5py.File(f_db,'r+')
 
-    def process_doc_vec(self, v):
-        self.batch.append(v)
-        if len(self.batch) >= self.batch_n:
-            self.clf.partial_fit(self.batch)
-            self.batch = []
+    def compute(self):
+        
+        for name in self.names:
 
-    def _compute_doc_vector(self, weights, DV, tokens, **da):
+            # Check that the name has been pre-scored before reducing
+            if name not in self.h5:
+                msg = "Must compute {} before running the reduced representation"
+                raise ValueError(msg.format(name))
+            
+            print "Reducing {} to dimension {}".format(name, self.nc)
 
-        func = super(reduced_representation,self)._compute_doc_vector
-        doc_vec = func(weights,DV,tokens,**da)
+            clf = IncrementalPCA(n_components=self.nc)
+            V  = self.h5[name]['V'][:]
+            VX = clf.fit_transform(V)
+            _ref = self.h5[name]['_ref'][:]
 
-        self.process_doc_vec(doc_vec)
-        return doc_vec
+            save_name = "{}_reduced".format(name)
+            if save_name in self.h5:
+                del self.h5[save_name]
+
+            g = self.h5.require_group(save_name)
+            g.create_dataset("V", data=VX, compression='gzip')
+            g.create_dataset("_ref", data=_ref)
+
     
     def save(self):
+        self.h5.close()
 
-        # Fit the remaining batch
-        self.clf.partial_fit(self.batch)
-
-        # Transform the batch
-        self.V = self.clf.transform(self.V)
-
-        # Run the standard save
-        score_unique_TF.save(self)
 

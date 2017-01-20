@@ -18,6 +18,7 @@ if __name__ == "__main__":
     config = simple_config.load("predict")
     score_config = simple_config.load("score")
     import_config = simple_config.load("import_data")
+    use_meta = config['use_meta'] == "True"
 
     # For now, we can only deal with one column using meta!
     assert(len(config["categorical_columns"]) == 1)
@@ -71,25 +72,31 @@ if __name__ == "__main__":
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
 
-    # Build meta predictor
-    META_X = np.hstack([PREDICTIONS[method] for method
-                        in config["meta_methods"]])
+    if use_meta:
+        # Build meta predictor
+        META_X = np.hstack([PREDICTIONS[method] for method
+                            in config["meta_methods"]])
 
-    method = "meta"
+        method = "meta"
 
-    text = "Predicting [{}] [{}:{}]"
-    print text.format(method, cat_col, pred_col)
+        text = "Predicting [{}] [{}:{}]"
+        print text.format(method, cat_col, pred_col)
 
-    scores, F1, errors, pred = categorical_predict(META_X, Y, method, config)
+        scores, F1, errors, pred = categorical_predict(META_X, Y,
+                                                       method, config)
 
-    text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
-    print text.format(scores.mean(), F1.mean(), baseline_score)
+        text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
+        print text.format(scores.mean(), F1.mean(), baseline_score)
 
-    PREDICTIONS[method] = pred
-    ERROR_MATRIX[method] = errors
+        PREDICTIONS[method] = pred
+        ERROR_MATRIX[method] = errors
 
 
-names = methods + ["meta", ]
+names = methods
+
+if use_meta:
+    names += ["meta", ]
+
 df = pd.DataFrame(0, index=names, columns=names)
 
 max_offdiagonal = 0
