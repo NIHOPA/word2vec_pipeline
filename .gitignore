@@ -5,6 +5,7 @@ data_clustering/*
 data_document_scores/*
 data_import/*
 datasets
+results
 
 # Temp UNIX files
 *~
