@@ -12,6 +12,7 @@ from tqdm import tqdm
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
+from sklearn.decomposition import IncrementalPCA
 
 from utils.parallel_utils import jobmap
 
@@ -76,6 +77,14 @@ class generic_document_score(corpus_iterator):
         # Make sure nothing has been set yet
         self.V = self._ref = None
 
+        # Set the variables for reduced representation
+        config_score = simple_config.load()["score"]
+        self.compute_reduced = config_score["compute_reduced_representation"]
+
+        if self.compute_reduced:
+            sec = config_score['reduced_representation']
+            self.reduced_n_components = sec['n_components']
+            
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
         raise KeyError(msg)
@@ -159,13 +168,22 @@ class generic_document_score(corpus_iterator):
         # Save the data array
         print "Saving {} ({})".format(self.method, size_n)
 
+
         g.create_dataset("V", data=self.V, compression='gzip')
         g.create_dataset("_ref", data=self._ref)
 
+        # Compute the reduced representation if required
+        if self.compute_reduced:
+            nc = self.reduced_n_components
+            clf = IncrementalPCA(n_components=nc)
+            
+            msg = "Performing PCA on {}, ({})->({})"
+            print msg.format(self.method, self.V.shape[1], nc)
+            
+            VX = clf.fit_transform(self.V)
+            g.create_dataset("VX", data=VX, compression='gzip')
+
         h5.close()
-
-
-#
 
 class score_simple(generic_document_score):
     method = "simple"

@@ -18,7 +18,8 @@ if __name__ == "__main__":
     config = simple_config.load("predict")
     score_config = simple_config.load("score")
     import_config = simple_config.load("import_data")
-    use_meta = config['use_meta'] == "True"
+    use_meta = config['use_meta']
+    use_reduced = config['use_reduced']
 
     # For now, we can only deal with one column using meta!
     assert(len(config["categorical_columns"]) == 1)
@@ -51,7 +52,10 @@ if __name__ == "__main__":
         g = h5[method]
 
         # Load document score data
-        X = g["V"][:]
+        if use_reduced:
+            X = g["VX"][:]
+        else:
+            X = g["V"][:]
         _ref = g["_ref"][:]
 
         Y = np.hstack(df[cat_col].values)
