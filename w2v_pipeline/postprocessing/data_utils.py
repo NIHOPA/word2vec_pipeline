@@ -55,10 +55,11 @@ def load_ORG_data(extra_columns=None):
     if extra_columns is not None:
         cols += extra_columns
 
-    config_import = simple_config.load("import_data")
+    config_import = simple_config.load()["import_data"]
 
     # Load the input columns
     F_CSV = grab_files("*.csv", config_import["output_data_directory"])
+
     ITR = (pd.read_csv(f, usecols=cols) for f in F_CSV)
     df = pd.concat(list(ITR))
 
@@ -89,7 +90,6 @@ def load_document_vectors():
     config_MC = simple_config.load("metacluster")
 
     score_method = config_MC['score_method']
-    text_column = config_MC['score_column']
 
     f_h5 = os.path.join(
         config_score["output_data_directory"],

@@ -36,7 +36,7 @@ def _compute_dispersion_matrix(X, labels):
 if __name__ == "__main__" and __package__ is None:
 
     import simple_config
-    config = simple_config.load("postprocessing")
+    config = simple_config.load()["postprocessing"]
 
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
