@@ -25,21 +25,21 @@ class d2v_embedding(corpus_iterator):
                            )
 
     def compute(self, config):
-        print "Learning the vocabulary"
+        print("Learning the vocabulary")
 
         ITR = self.labelized_sentence_iterator()
         self.clf.build_vocab(ITR)
 
-        print "Training the features"
+        print("Training the features")
         for n in range(self.epoch_n):
-            print " - Epoch {}".format(n)
+            print(" - Epoch {}".format(n))
             ITR = self.labelized_sentence_iterator()
             self.clf.train(ITR)
 
-        print "Reducing the features"
+        print("Reducing the features")
         self.clf.init_sims(replace=True)
 
-        print "Saving the features"
+        print("Saving the features")
         out_dir = config["output_data_directory"]
         f_features = os.path.join(out_dir, config["d2v_embedding"]["f_db"])
         self.clf.save(f_features)

@@ -46,7 +46,7 @@ if __name__ == "__main__":
     for (method, cat_col) in ITR:
 
         text = "Predicting [{}] [{}:{}]"
-        print text.format(method, cat_col, pred_col)
+        print(text.format(method, cat_col, pred_col))
 
         assert(method in h5)
         g = h5[method]
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
-        print "  Class balance for catergorical prediction: ", counts
+        print("  Class balance for catergorical prediction: ", counts)
 
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         scores, F1, errors, pred = categorical_predict(X, Y, method, config)
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
-        print text.format(scores.mean(), F1.mean(), baseline_score)
+        print(text.format(scores.mean(), F1.mean(), baseline_score))
 
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
@@ -84,13 +84,13 @@ if __name__ == "__main__":
         method = "meta"
 
         text = "Predicting [{}] [{}:{}]"
-        print text.format(method, cat_col, pred_col)
+        print(text.format(method, cat_col, pred_col))
 
         scores, F1, errors, pred = categorical_predict(META_X, Y,
                                                        method, config)
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
-        print text.format(scores.mean(), F1.mean(), baseline_score)
+        print(text.format(scores.mean(), F1.mean(), baseline_score))
 
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
@@ -113,7 +113,7 @@ for na, nb in itertools.product(names, repeat=2):
 
     df[na][nb] = idx.sum()
 
-print df
+print(df)
 
 import seaborn as sns
 plt = sns.plt

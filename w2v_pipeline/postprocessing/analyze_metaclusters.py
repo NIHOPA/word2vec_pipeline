@@ -52,7 +52,7 @@ if __name__ == "__main__" and __package__ is None:
     # Build the results for the metaclusters
     labels = np.unique(MC["meta_labels"])
 
-    print "Computing intra-document dispersion."
+    print("Computing intra-document dispersion.")
     dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
 
     # Compute the linkage and the order
@@ -91,7 +91,7 @@ if __name__ == "__main__" and __package__ is None:
 
     #
 
-    print "Computing master-label spreadsheets."
+    print("Computing master-label spreadsheets.")
     cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
     ORG["cluster_id"] = MC["meta_labels"]
     ORG["dendrogram_order"] = -1
@@ -112,7 +112,7 @@ if __name__ == "__main__" and __package__ is None:
 
     df["cluster_id"] = df.index
     df = df.sort_values("cluster_id")
-    print df
+    print(df)
     f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
     with h5py.File(f_h5_save, 'w') as h5_save:
         h5_save["dispersion"] = dist

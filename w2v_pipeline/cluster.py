@@ -1,8 +1,6 @@
 import numpy as np
 import h5py
 import os
-import itertools
-import collections
 
 import clustering.similarity as CSIM
 from utils.os_utils import mkdir
@@ -108,7 +106,7 @@ def load_document_vectors(target_column):
         assert(method in h5_score)
         g = h5_score[method]
 
-        print "Loading the document scores", g
+        print("Loading the document scores", g)
         X = g["V"][:]
 
     return X
@@ -148,7 +146,7 @@ if __name__ == "__main__":
     if "similarity" not in group:
 
         # Compute and save the similarity matrix
-        print "Computing the similarity matrix"
+        print("Computing the similarity matrix")
 
         # Save the similarity matrix
         S = CSIM.compute_document_similarity(X)
@@ -156,7 +154,7 @@ if __name__ == "__main__":
 
     if "tSNE" not in group:
         # Compute the tSNE
-        print "Computing tSNE for {}".format(method)
+        print("Computing tSNE for {}".format(method))
 
         if S is None:
             S = group["similarity"][:]
@@ -180,7 +178,7 @@ if __name__ == "__main__":
             if W is None:
                 W = CSIM.load_embeddings()
 
-            print "Clustering {} {}".format(method, name)
+            print("Clustering {} {}".format(method, name))
 
             func = getattr(CSIM, name)
             labels = func(S, X, config[name])
@@ -219,7 +217,7 @@ if __name__ == "__main__":
     plt = sns.plt
 
     fig = plt.figure(figsize=(9, 9))
-    print "Plotting tSNE"
+    print("Plotting tSNE")
     colors = sns.color_palette("hls", C.cluster_n)
 
     for i in C._label_iter:
@@ -232,7 +230,7 @@ if __name__ == "__main__":
     plt.tight_layout()
 
     fig = plt.figure(figsize=(12, 12))
-    print "Plotting heatmap"
+    print("Plotting heatmap")
     df = pd.DataFrame(C.S, index=C.labels, columns=C.labels)
     labeltick = int(len(df) / 50)
 

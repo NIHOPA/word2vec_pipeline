@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from tokenizers import sentence_tokenizer
-import os
 
 
 def is_any_lowercase(tokens):
@@ -32,7 +31,7 @@ class titlecaps(object):
             if not is_any_lowercase(sent):
 
                 if len(sent) > 4:
-                    print "DECAPING: '{}'".format(' '.join(sent))
+                    print("DECAPING: '{}'".format(' '.join(sent)))
 
                 sent = map(unicode.lower, sent)
 

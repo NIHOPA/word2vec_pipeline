@@ -40,23 +40,23 @@ class w2v_embedding(corpus_iterator):
 
     def compute(self, config):
 
-        print "Learning the vocabulary"
+        print("Learning the vocabulary")
 
         ITR = self.sentence_iterator(config["target_column"])
         self.clf.build_vocab(ITR)
 
-        print "{} words in vocabulary".format(len(self.clf.index2word))
+        print("{} words in vocabulary".format(len(self.clf.index2word)))
 
-        print "Training the features"
+        print("Training the features")
         for n in tqdm(range(self.epoch_n)):
             # print " - Epoch {}".format(n)
             ITR = self.sentence_iterator(config["target_column"])
             self.clf.train(ITR)
 
-        print "Reducing the features"
+        print("Reducing the features")
         self.clf.init_sims(replace=True)
 
-        print "Saving the features"
+        print("Saving the features")
         out_dir = config["output_data_directory"]
         f_features = os.path.join(out_dir, config["w2v_embedding"]["f_db"])
         self.clf.save(f_features)

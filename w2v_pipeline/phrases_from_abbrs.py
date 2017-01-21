@@ -183,12 +183,12 @@ if __name__ == "__main__":
         ABR.update(result)
 
     msg = "\n{} total abbrs found."
-    print msg.format(len(ABR))
+    print(msg.format(len(ABR)))
 
     # Merge abbreviations that are similar
-    print "Deduping abbr list."
+    print("Deduping abbr list.")
     ABR = dedupe_abbr(ABR)
-    print "{} abbrs remain after deduping".format(len(ABR))
+    print("{} abbrs remain after deduping".format(len(ABR)))
 
     # Convert abbrs to a list
     data_insert = [(phrase, abbr, count)
@@ -201,8 +201,8 @@ if __name__ == "__main__":
         ["count", "phrase"], ascending=False).set_index("phrase")
 
     # Output top phrase
-    print "Top 5 abbreviations"
-    print df[:5]
+    print("Top 5 abbreviations")
+    print(df[:5])
 
     mkdir(output_dir)
     f_csv = os.path.join(output_dir, config["f_abbreviations"])

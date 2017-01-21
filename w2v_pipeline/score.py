@@ -1,7 +1,6 @@
-import os
-import random
 import itertools
-from utils.os_utils import mkdir, grab_files
+from utils.os_utils import grab_files
+from utils.os_utils import mkdir
 import document_scoring as ds
 import simple_config
 from utils.db_utils import item_iterator
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     col = config['target_column']
 
     for name, func in mapreduce_functions:
-        print "Starting mapreduce {}".format(func.table_name)
+        print("Starting mapreduce {}".format(func.table_name))
         INPUT_ITR = item_iterator(config, text_column=col,
                                   progress_bar=True)
 

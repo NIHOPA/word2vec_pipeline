@@ -57,14 +57,14 @@ def import_directory_csv(d_in, d_out, output_table):
     INPUT_FILES = grab_files("*.csv", d_in)
 
     if not INPUT_FILES:
-        print "No matching CSV files found, exiting"
+        print("No matching CSV files found, exiting")
         exit(2)
 
     for f_csv in INPUT_FILES:
         f_csvx = os.path.join(d_out, os.path.basename(f_csv))
 
         if os.path.exists(f_csvx) and not _FORCE:
-            print "{} already exists, skipping".format(f_csvx)
+            print("{} already exists, skipping".format(f_csvx))
             continue
 
         F_CSV.append(f_csv)
@@ -84,7 +84,7 @@ def import_directory_csv(d_in, d_out, output_table):
             F_CSV_OUT_HANDLE[f_csv].writerow(row)
 
         msg = "Imported {}, {} entries"
-        print msg.format(f_csv, k)
+        print(msg.format(f_csv, k))
 
 
 if __name__ == "__main__":

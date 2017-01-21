@@ -1,8 +1,6 @@
 import numpy as np
-import itertools
-import collections
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 import sklearn.ensemble
 
@@ -47,7 +45,7 @@ def categorical_predict(X, y_org, method_name, config):
 
     use_SMOTE = config["use_SMOTE"]
     if use_SMOTE:
-        print "  Adjusting class balance using SMOTE"
+        print("  Adjusting class balance using SMOTE")
 
     is_PARALLEL = config["_PARALLEL"]
 

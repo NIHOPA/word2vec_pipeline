@@ -5,12 +5,14 @@ edit:
 config:
 	emacs config.ini &
 
-
-fix_errors = "W293,W291,W391,W231,W235,E231,E302,E303,E221,E225,E265,E225,E221,F401,E203,E401,E124,E202,E201,E211"
-
 flake_clean:
-	autopep8 -aa --in-place --recursive --jobs 0  w2v_pipeline/
-#	#--select=$(fix_errors) .
+	autopep8 -aaaa -v --in-place --recursive --jobs 0  w2v_pipeline/
 
 flake:
 	flake8 -j 'auto' w2v_pipeline/
+
+future:
+# Fix print statements
+	2to3 -n -w -j 8 --fix print .
+# Fix unneeded imports and variables
+	find . -name "*.py" | xargs -I {} autoflake {} --in-place --remove-unused-variables

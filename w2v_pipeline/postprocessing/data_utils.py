@@ -1,7 +1,5 @@
 import h5py
-import sqlite3
 import os
-import glob
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -36,7 +34,7 @@ def load_h5_file(f_h5, *args):
 
 
 def load_dispersion_data():
-    print "Loading dispersion data"
+    print("Loading dispersion data")
 
     config_post = simple_config.load("postprocessing")
 
@@ -48,7 +46,7 @@ def load_dispersion_data():
 
 
 def load_ORG_data(extra_columns=None):
-    print "Loading import data"
+    print("Loading import data")
 
     cols = ["_ref", ]
 

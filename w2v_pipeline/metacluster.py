@@ -1,11 +1,9 @@
 import numpy as np
 import h5py
 import os
-import itertools
 import collections
 from tqdm import tqdm
 
-import joblib
 import simple_config
 from sklearn.cluster import SpectralClustering
 
@@ -25,7 +23,7 @@ def subset_iterator(X, m, repeats=1):
     for i in range(repeats):
 
         indices = np.random.permutation(N)
-        sub_array_n = N // m
+        N // m
 
         for idx in np.array_split(indices, N // m):
             yield X[idx][:]
@@ -97,7 +95,7 @@ class cluster_object(object):
 
     def _load_data(self, f_h5, method):
 
-        print "Loading document data from", f_h5
+        print("Loading document data from", f_h5)
 
         with h5py.File(f_h5, 'r') as h5:
             g = h5[method]
@@ -114,7 +112,7 @@ class cluster_object(object):
     def _load_embedding(self):
         f_model = "data_embeddings/w2v.gensim"
 
-        print "Loading embedding", f_model
+        print("Loading embedding", f_model)
         import gensim.models.word2vec as W2V
         self.W = W2V.Word2Vec.load(f_model)
 
@@ -166,7 +164,7 @@ class cluster_object(object):
     def compute_meta_centroid_set(self, **kwargs):
 
         C = self.load_centroid_dataset("subcluster_centroids")
-        print "Intermediate clusters", C.shape
+        print("Intermediate clusters", C.shape)
 
         # By eye, it looks like the top 60%-80% of the
         # remaining clusters are stable...
@@ -194,12 +192,12 @@ class cluster_object(object):
         n_clusters = meta_clusters.shape[0]
 
         msg = "Assigning {} labels over {} documents."
-        print msg.format(n_clusters, self.N)
+        print(msg.format(n_clusters, self.N))
 
         dist = cdist(self.docv, meta_clusters, metric='cosine')
         labels = np.argmin(dist, axis=1)
 
-        print "Label distribution: ", collections.Counter(labels)
+        print("Label distribution: ", collections.Counter(labels))
         return labels
 
     def docv_centroid_spread(self, **kwargs):
@@ -263,7 +261,7 @@ if __name__ == "__main__":
     def compute_func(name, func, dtype=None, **kwargs):
 
         if check_h5_item(h5, name, **args):
-            print "Computing", name
+            print("Computing", name)
             result = func(**kwargs)
 
             if dtype in [str, unicode]:
@@ -283,7 +281,7 @@ if __name__ == "__main__":
     compute_func("docv_centroid_spread", CO.docv_centroid_spread)
     compute_func("describe_clusters", CO.describe_clusters, dtype=str)
 
-    print h5['describe_clusters'][:]
+    print(h5['describe_clusters'][:])
 
 
 #

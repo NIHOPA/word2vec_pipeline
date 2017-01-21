@@ -6,7 +6,7 @@ from pattern.en import tokenize
 def contains_sublist(lst, sublst):
     # Finds all cases of a sublist and lists where it happens
     n = len(sublst)
-    idx = [(sublst == lst[i:i + n]) for i in xrange(len(lst) - n + 1)]
+    idx = [(sublst == lst[i:i + n]) for i in range(len(lst) - n + 1)]
     return idx
 
 

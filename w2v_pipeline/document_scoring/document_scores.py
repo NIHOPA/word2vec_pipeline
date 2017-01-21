@@ -25,7 +25,7 @@ def L2_norm(doc_vec):
     if doc_vec.any():
         assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
     else:
-        print "Warning L2 norm not satisifed (zero-vector returned)"
+        print("Warning L2 norm not satisifed (zero-vector returned)")
         doc_vec = np.zeros(doc_vec.shape)
 
     return doc_vec
@@ -84,7 +84,7 @@ class generic_document_score(corpus_iterator):
         if self.compute_reduced:
             sec = config_score['reduced_representation']
             self.reduced_n_components = sec['n_components']
-            
+
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
         raise KeyError(msg)
@@ -114,7 +114,7 @@ class generic_document_score(corpus_iterator):
 
         if not da["tokens"]:
             msg = "Document has no valid tokens! This is probably a problem."
-            print msg
+            print(msg)
             # raise ValueError(msg)
 
         da["weights"] = self._compute_item_weights(**da)
@@ -131,7 +131,7 @@ class generic_document_score(corpus_iterator):
         # Save each block (table_name, f_sql) as its own
 
         assert(self.method is not None)
-        print "Scoring {}".format(self.method)
+        print("Scoring {}".format(self.method))
 
         ITR = tqdm(itertools.imap(self.score_document, self))
 
@@ -166,8 +166,7 @@ class generic_document_score(corpus_iterator):
         g = h5.require_group(self.method)
 
         # Save the data array
-        print "Saving {} ({})".format(self.method, size_n)
-
+        print("Saving {} ({})".format(self.method, size_n))
 
         g.create_dataset("V", data=self.V, compression='gzip')
         g.create_dataset("_ref", data=self._ref)
@@ -176,14 +175,15 @@ class generic_document_score(corpus_iterator):
         if self.compute_reduced:
             nc = self.reduced_n_components
             clf = IncrementalPCA(n_components=nc)
-            
+
             msg = "Performing PCA on {}, ({})->({})"
-            print msg.format(self.method, self.V.shape[1], nc)
-            
+            print(msg.format(self.method, self.V.shape[1], nc))
+
             VX = clf.fit_transform(self.V)
             g.create_dataset("VX", data=VX, compression='gzip')
 
         h5.close()
+
 
 class score_simple(generic_document_score):
     method = "simple"
@@ -301,14 +301,17 @@ class score_locality_hash(score_unique):
         for key in ['dim', 'projection_count']:
             if key not in params:
                 continue
-            print "Checking if locality_hash({}) {}=={}".format(key, R.params[key], params[key])
+            print(
+                "Checking if locality_hash({}) {}=={}".format(key,
+                                                              R.params[key],
+                                                              params[key]))
             if R.params[key] != params[key]:
                 msg = "\nLocality-hash config value of {} does not match from {} to {}.\nDelete {} to continue."
                 raise ValueError(
                     msg.format(key, R.params[key], params[key], self.f_params))
 
         if 'normals' in params:
-            print "Loading locality hash from {}".format(self.f_params)
+            print("Loading locality hash from {}".format(self.f_params))
             R.load(params)
         else:
             joblib.dump(R.params, self.f_params)

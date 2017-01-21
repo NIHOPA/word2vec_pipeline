@@ -53,7 +53,7 @@ class dedash(object):
                 if test_word not in self.english_words:
                     continue
 
-                print "Merging tokens", tokens[i], tokens[i + 1], word
+                print("Merging tokens", tokens[i], tokens[i + 1], word)
 
                 tokens[i] = word
                 tokens[i + 1] = ''
@@ -67,4 +67,4 @@ if __name__ == "__main__":
     text = '''1.-
 One of the major obstacles to such studies is the lack of safe and effective treat- ment for fever in the critically ill. Ex- and post- ante.'''
     D = dedash()
-    print D(text)
+    print(D(text))

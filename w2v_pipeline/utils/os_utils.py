@@ -16,6 +16,6 @@ def grab_files(pattern, directory="", verbose=True):
 
     if verbose:
         msg = "Found {} files to import in {}."
-        print (msg.format(len(FILES), directory))
+        print((msg.format(len(FILES), directory)))
 
     return sorted(FILES)

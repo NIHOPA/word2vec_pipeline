@@ -84,13 +84,11 @@ class pos_tokenizer(object):
                 try:
                     pos = self.POS_map[tag]
                 except:
-                    print "UNKNOWN POS *{}*".format(tag)
+                    print("UNKNOWN POS *{}*".format(tag))
                     pos = "unknown"
 
                 if pos in self.filtered_POS:
                     continue
-
-                org_word = word
 
                 word = pattern.en.singularize(word, pos)
 

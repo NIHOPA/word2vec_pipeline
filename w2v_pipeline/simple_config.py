@@ -23,7 +23,7 @@ def validate_errors(errors, name_stack=None):
 
         # If item is a known typeError report it
         if isinstance(item, VdtTypeError):
-            print "ConfigError: {} {}".format('/'.join(stack), item)
+            print("ConfigError: {} {}".format('/'.join(stack), item))
             is_error = True
 
         # If item is a dict, recurse into the config stack
