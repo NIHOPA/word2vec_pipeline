@@ -351,7 +351,6 @@ if __name__ == "__main__":
     labeltick = int(len(df)/50)
 
     sns.heatmap(df,cbar=False,xticklabels=labeltick,yticklabels=labeltick)
-    plt.title("heatmap doc:{} clustering:{}".format(C.name_doc,C.name_cluster),fontsize=16)
     plt.tight_layout()
     #plt.savefig("clustering_{}.png".format(n_clusters))
     plt.show()

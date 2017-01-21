@@ -9,7 +9,7 @@ flake_clean:
 	autopep8 -aaaa -v --in-place --recursive --jobs 0  w2v_pipeline/
 
 flake:
-	flake8 -j 'auto' w2v_pipeline/
+	flake8 --ignore F821 -j 'auto' w2v_pipeline/ 
 
 future:
 # Fix print statements

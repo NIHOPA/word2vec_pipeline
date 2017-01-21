@@ -15,7 +15,7 @@ def clf_extratree_predictor(item):
     clf = sklearn.ensemble.ExtraTreesClassifier(**clf_args)
 
     X_train, X_test = X[train_index], X[test_index]
-    y_train, y_test = y[train_index], y[test_index]
+    y_train = y[train_index]
 
     if use_SMOTE:
         sampler = SMOTE(ratio='auto', kind='regular')
@@ -69,8 +69,7 @@ def categorical_predict(X, y_org, method_name, config):
         idx, pred, pred_proba = result
         train_index, test_index = idx
 
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
+        y_test = y[test_index]
 
         errors = y_test != pred
 

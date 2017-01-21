@@ -1,20 +1,21 @@
-import predictions as pred
 import numpy as np
 import pandas as pd
 import h5py
 import os
 import itertools
 import collections
-from utils.os_utils import grab_files
+import simple_config
 
+from utils.os_utils import grab_files
 from predictions import categorical_predict
+
+import seaborn as sns
 
 ERROR_MATRIX = {}
 PREDICTIONS = {}
 
 if __name__ == "__main__":
 
-    import simple_config
     config = simple_config.load("predict")
     score_config = simple_config.load("score")
     import_config = simple_config.load("import_data")
@@ -95,27 +96,27 @@ if __name__ == "__main__":
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
 
+        # Plotting methods here
 
-names = methods
+    names = methods
 
-if use_meta:
-    names += ["meta", ]
+    if use_meta:
+        names += ["meta", ]
 
-df = pd.DataFrame(0, index=names, columns=names)
+    df = pd.DataFrame(0, index=names, columns=names)
 
-max_offdiagonal = 0
-for na, nb in itertools.product(names, repeat=2):
-    if na != nb:
-        idx = (ERROR_MATRIX[na] == 0) * (ERROR_MATRIX[nb] == 1)
-        max_offdiagonal = max(max_offdiagonal, idx.sum())
-    else:
-        idx = ERROR_MATRIX[na] == 0
+    max_offdiagonal = 0
+    for na, nb in itertools.product(names, repeat=2):
+        if na != nb:
+            idx = (ERROR_MATRIX[na] == 0) * (ERROR_MATRIX[nb] == 1)
+            max_offdiagonal = max(max_offdiagonal, idx.sum())
+        else:
+            idx = ERROR_MATRIX[na] == 0
 
-    df[na][nb] = idx.sum()
+        df[na][nb] = idx.sum()
 
-print(df)
+    print(df)
 
-import seaborn as sns
-plt = sns.plt
-sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
-plt.show()
+    plt = sns.plt
+    sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
+    plt.show()

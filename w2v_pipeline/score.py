@@ -1,5 +1,4 @@
 import itertools
-from utils.os_utils import grab_files
 from utils.os_utils import mkdir
 import document_scoring as ds
 import simple_config
@@ -7,7 +6,6 @@ from utils.db_utils import item_iterator
 
 if __name__ == "__main__":
 
-    import simple_config
     config = simple_config.load("score")
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")

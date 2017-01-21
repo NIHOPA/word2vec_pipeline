@@ -14,8 +14,6 @@ from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
 
-from utils.parallel_utils import jobmap
-
 
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
@@ -306,9 +304,10 @@ class score_locality_hash(score_unique):
                                                               R.params[key],
                                                               params[key]))
             if R.params[key] != params[key]:
-                msg = "\nLocality-hash config value of {} does not match from {} to {}.\nDelete {} to continue."
-                raise ValueError(
-                    msg.format(key, R.params[key], params[key], self.f_params))
+                msg = '''\nLocality-hash config value of {} does
+                not match from {} to {}.\nDelete {} to continue.'''
+                raise ValueError(msg.format(key, R.params[key],
+                                            params[key], self.f_params))
 
         if 'normals' in params:
             print("Loading locality hash from {}".format(self.f_params))

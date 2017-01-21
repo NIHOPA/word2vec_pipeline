@@ -1,4 +1,3 @@
-import numpy as np
 from sklearn.decomposition import IncrementalPCA
 
 from utils.mapreduce import corpus_iterator
@@ -35,7 +34,7 @@ class reduced_representation(corpus_iterator):
 
             # Check that the name has been pre-scored before reducing
             if name not in self.h5:
-                msg = "Must compute {} before running the reduced representation"
+                msg = "Must compute {} before reduced representation."
                 raise ValueError(msg.format(name))
 
             print("Reducing {} to dimension {}".format(name, self.nc))

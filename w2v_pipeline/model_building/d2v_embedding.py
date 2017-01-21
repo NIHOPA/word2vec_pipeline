@@ -2,10 +2,11 @@ import os
 from gensim.models.doc2vec import Doc2Vec
 from utils.mapreduce import corpus_iterator
 
+import gensim.models
 import psutil
+
 CPU_CORES = psutil.cpu_count()
 
-import gensim.models
 assert gensim.models.doc2vec.FAST_VERSION > -1
 
 

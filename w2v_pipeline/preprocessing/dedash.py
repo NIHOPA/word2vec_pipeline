@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from tokenizers import sentence_tokenizer
 import os
 
 __internal_wordlist = "dictionaries/english_wordlist.txt"
@@ -65,6 +64,8 @@ class dedash(object):
 
 if __name__ == "__main__":
     text = '''1.-
-One of the major obstacles to such studies is the lack of safe and effective treat- ment for fever in the critically ill. Ex- and post- ante.'''
+One of the major obstacles to such studies is the lack of safe
+and effective treat- ment for fever in the critically ill. Ex- and
+post- ante.'''
     D = dedash()
     print(D(text))

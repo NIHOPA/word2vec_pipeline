@@ -1,11 +1,10 @@
 import os
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
+from tqdm import tqdm
 
 import psutil
 CPU_CORES = psutil.cpu_count()
-
-from tqdm import tqdm
 
 
 class w2v_embedding(corpus_iterator):

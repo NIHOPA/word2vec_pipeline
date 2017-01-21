@@ -4,7 +4,6 @@ import collections
 from utils.os_utils import grab_files, mkdir
 import utils.db_utils as db_utils
 
-import os
 import pandas as pd
 import pyparsing as pypar
 import tqdm

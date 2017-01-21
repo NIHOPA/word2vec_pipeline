@@ -1,5 +1,4 @@
 import collections
-import itertools
 import os
 import ast
 import numpy as np
@@ -13,9 +12,7 @@ from sklearn.cluster import AffinityPropagation as cluster_clf
 from scipy.spatial.distance import cdist
 import tqdm
 
-from scipy import sparse
 from sklearn.decomposition import SparseCoder
-
 from utils.parallel_utils import jobmap
 
 damping = None
@@ -80,7 +77,7 @@ class affinity_mapping(corpus_iterator):
     def __init__(self, *args, **kwargs):
         super(affinity_mapping, self).__init__(*args, **kwargs)
 
-         # Load the model from disk
+        # Load the model from disk
         self.M = Word2Vec.load(kwargs["f_w2v"])
         self.shape = self.M.syn0.shape
 
@@ -150,7 +147,7 @@ class affinity_grouping(corpus_iterator):
         # Set parallel option
         self._PARALLEL = ast.literal_eval(kwargs["_PARALLEL"])
 
-         # Load the model from disk
+        # Load the model from disk
         self.h5 = h5py.File(kwargs["f_affinity"], 'r+')
 
         # Capture the size of the vocabulary

@@ -2,11 +2,6 @@ import h5py
 import os
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
-
-# Required for import from previous path (may fix someday)
-from os import sys, path
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 import simple_config
 from utils.os_utils import grab_files
