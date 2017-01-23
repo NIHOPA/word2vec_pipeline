@@ -62,7 +62,7 @@ if __name__ == "__main__":
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
-        print("  Class balance for catergorical prediction: ", counts)
+        print(" Class balance for catergorical prediction: {}".format(counts))
 
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()

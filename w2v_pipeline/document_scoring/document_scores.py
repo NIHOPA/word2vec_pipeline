@@ -66,8 +66,11 @@ class generic_document_score(corpus_iterator):
         if "negative_weights" in kwargs:
             neg_W = kwargs["negative_weights"]
             self.neg_W = dict((k, float(v)) for k, v in neg_W.items())
+            self.neg_vec = dict((k, self.get_word_vector(k))
+                                for k, v in neg_W.items())
         else:
             self.neg_W = {}
+            self.neg_vec = {}
 
         # Save the target column to compute
         self.target_column = simple_config.load()["target_column"]
@@ -179,12 +182,18 @@ class generic_document_score(corpus_iterator):
 
             VX = clf.fit_transform(self.V)
             g.create_dataset("VX", data=VX, compression='gzip')
-            g.create_dataset("VX_explained_variance_ratio",
+            g.create_dataset("VX_explained_variance_ratio_",
                              data=clf.explained_variance_ratio_)
             g.create_dataset("VX_components_",
                              data=clf.components_)
 
         h5.close()
+
+    def get_word_vector(self, word):
+        return self.M[word]
+
+    def get_negative_word_vector(self, word):
+        return self.neg_vec[word]
 
 
 class score_simple(generic_document_score):
@@ -194,7 +203,7 @@ class score_simple(generic_document_score):
         return dict([(w, local_counts[w]) for w in tokens])
 
     def _compute_embedding_vector(self, tokens, **da):
-        return np.array([self.M[w] for w in tokens])
+        return np.array([self.get_word_vector(w) for w in tokens])
 
     def _compute_doc_vector(self, weights, DV, tokens, **da):
         # Build the weight matrix
@@ -210,7 +219,7 @@ class score_simple(generic_document_score):
         # it "spreads" across and not just applies it to a single word.
 
         for neg_word, neg_weight in self.neg_W.items():
-            neg_vec = self.M[neg_word]
+            neg_vec = self.get_negative_word_vector(neg_word)
             neg_scale = np.exp(-neg_weight * DV.dot(neg_vec))
             # Don't oversample, max out weights to unity
             neg_scale[neg_scale > 1] = 1.0
