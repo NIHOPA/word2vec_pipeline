@@ -150,7 +150,8 @@ class CSV_database_iterator(object):
         # Raise Exception if column is missing in a CSV
         if self.col is not None:
             for f in F_CSV:
-                if self.col not in CSV_list_columns(f):
+                f_cols = CSV_list_columns(f)
+                if self.col not in f_cols:
                     msg = "Missing column {} in {}"
                     raise SyntaxError(msg.format(target_column, f))
 
