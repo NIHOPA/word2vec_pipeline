@@ -1,19 +1,20 @@
 from sklearn.decomposition import IncrementalPCA
+import numpy as np
 
-from utils.mapreduce import corpus_iterator
+from document_scores import score_unique_TF
 import simple_config
 import h5py
 import os
 
 
-class reduced_representation(corpus_iterator):
+class reduced_representation(score_unique_TF):
 
     method = 'reduced_representation'
 
     def __init__(self, *args, **kwargs):
         '''
         The reduced representation takes an incremental PCA decomposition
-        for all specified sets of scores.
+        and [WORK IN PROGRESS]
         '''
 
         super(reduced_representation, self).__init__(*args, **kwargs)
@@ -24,33 +25,34 @@ class reduced_representation(corpus_iterator):
             config["document_scores"]["f_db"]
         )
 
-        self.nc = int(config['reduced_representation']['n_components'])
-        self.names = config['reduced_representation']['scores_to_reduce']
-        self.h5 = h5py.File(f_db, 'r+')
 
-    def compute(self):
+        with h5py.File(f_db, 'r') as h5:
 
-        for name in self.names:
+            # Make sure the the column has a value
+            col = config['reduced_representation']['rescored_command']
+            assert(col in h5)
 
-            # Check that the name has been pre-scored before reducing
-            if name not in self.h5:
-                msg = "Must compute {} before reduced representation."
-                raise ValueError(msg.format(name))
+            # Make sure the VX has been computed
+            assert("VX" in h5[col])
+            c = h5[col]['VX_components_'][:]
 
-            print("Reducing {} to dimension {}".format(name, self.nc))
+        M  = self.M.syn0
+        MX = M.dot(c.T).dot(c)
 
-            clf = IncrementalPCA(n_components=self.nc)
-            V = self.h5[name]['V'][:]
-            VX = clf.fit_transform(V)
-            _ref = self.h5[name]['_ref'][:]
+        self.word_reconstruct = {}
+        
+        for w,i in self.word2index.items():
+            self.word_reconstruct[w] = 1 - M[i].dot(MX[i])
+            if self.word_reconstruct[w] < 0.5:
+                self.word_reconstruct[w] = 0
+                
 
-            save_name = "{}_reduced".format(name)
-            if save_name in self.h5:
-                del self.h5[save_name]
+    def get_RECON(self, word):
+        if word in self.word_reconstruct:
+            return self.word_reconstruct[word]
+        else:
+            return 0.0        
 
-            g = self.h5.require_group(save_name)
-            g.create_dataset("V", data=VX, compression='gzip')
-            g.create_dataset("_ref", data=_ref)
+    def _compute_item_weights(self, tokens, **da):
+        return dict([(w, self.get_IDF(w)*self.get_RECON(w)) for w in tokens])
 
-    def save(self):
-        self.h5.close()

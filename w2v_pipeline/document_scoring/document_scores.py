@@ -179,6 +179,10 @@ class generic_document_score(corpus_iterator):
 
             VX = clf.fit_transform(self.V)
             g.create_dataset("VX", data=VX, compression='gzip')
+            g.create_dataset("VX_explained_variance_ratio",
+                             data=clf.explained_variance_ratio_)
+            g.create_dataset("VX_components_",
+                             data=clf.components_)
 
         h5.close()
 
