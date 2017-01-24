@@ -2,6 +2,7 @@ from document_scores import score_unique_TF
 import simple_config
 import h5py
 import os
+import numpy as np
 
 
 class reduced_representation(score_unique_TF):
@@ -41,11 +42,14 @@ class reduced_representation(score_unique_TF):
 
         self.word_vecs = {}
         for w in self.M.index2word:
-            weight = c.dot(self.M[w])
+            v = self.M[w]
+            weight = c.dot(v)
             weight *= bais
             weight *= ex_var
             adjust_v = (weight.reshape(-1, 1) * c).sum(axis=0)
-            self.word_vecs[w] = self.M[w] - adjust_v
+
+            v -= adjust_v
+            self.word_vecs[w] = v / np.linalg.norm(v)
 
     def get_word_vector(self, word):
         return self.word_vecs[word]
