@@ -44,6 +44,8 @@ if __name__ == "__main__":
 
     ITR = itertools.product(methods, config["categorical_columns"])
 
+    X_META = []
+
     for (method, cat_col) in ITR:
 
         text = "Predicting [{}] [{}:{}]"
@@ -57,8 +59,11 @@ if __name__ == "__main__":
             X = g["VX"][:]
         else:
             X = g["V"][:]
-        _ref = g["_ref"][:]
 
+        if use_meta:
+            X_META.append(X)
+
+        _ref = g["_ref"][:]
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
@@ -79,15 +84,15 @@ if __name__ == "__main__":
 
     if use_meta:
         # Build meta predictor
-        META_X = np.hstack([PREDICTIONS[method] for method
-                            in config["meta_methods"]])
-
+        # META_X = np.hstack([PREDICTIONS[method] for method
+        #                    in config["meta_methods"]])
+        X_META = np.hstack(X_META)
         method = "meta"
 
         text = "Predicting [{}] [{}:{}]"
         print(text.format(method, cat_col, pred_col))
 
-        scores, F1, errors, pred = categorical_predict(META_X, Y,
+        scores, F1, errors, pred = categorical_predict(X_META, Y,
                                                        method, config)
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
