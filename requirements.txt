@@ -2,7 +2,6 @@
 numpy
 scipy
 pandas
-sqlalchemy
 h5py
 
 # NLP core libraries

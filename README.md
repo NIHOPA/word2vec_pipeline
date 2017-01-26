@@ -26,10 +26,10 @@ Documents are scored by several methods, currently you can use `locality_hash`, 
 
 You can predict over other columns in the data using a random forest. A meta-method that uses the inputs from the other classifiers will be built as well.
 
-### `fab cluster`
-
-Standard document clustering using either spectral or hdbscan. This is often too slow in practice, metaclustering is suggested. The final result is a tSNE projection against another item.
-
 ### `fab metacluster`
 
 Similar to batch K-means, clustering is run on subsets and the centroids are clustered at the end. This is often much faster than standard clustering.
+
+### `fab analyze_metaclusters`
+
+Returns a higher level description of the clusters found during the metaclustering. Cluster dispersion, cluster descriptions, and labeling will be found in `results/`.
