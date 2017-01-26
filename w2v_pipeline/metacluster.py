@@ -70,14 +70,14 @@ class cluster_object(object):
 
     def __init__(self):
 
-        config = simple_config.load("metacluster")
+        config = simple_config.load()["metacluster"]
 
         self.subcluster_m = int(config["subcluster_m"])
         self.subcluster_pcut = float(config["subcluster_pcut"])
         self.subcluster_repeats = int(config["subcluster_repeats"])
         self.subcluster_kn = int(config["subcluster_kn"])
 
-        config_score = simple_config.load("score")
+        config_score = simple_config.load()["score"]
 
         self.f_h5_docvecs = os.path.join(
             config_score["output_data_directory"],
@@ -241,7 +241,7 @@ class cluster_object(object):
 
 if __name__ == "__main__":
 
-    config = simple_config.load("metacluster")
+    config = simple_config.load()["metacluster"]
 
     os.system('mkdir -p {}'.format(config['output_data_directory']))
 
