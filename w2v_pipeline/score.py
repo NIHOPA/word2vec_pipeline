@@ -8,7 +8,6 @@ if __name__ == "__main__":
 
     global_config = simple_config.load()
     _PARALLEL = global_config.as_bool("_PARALLEL")
-    _FORCE = global_config.as_bool("_FORCE")
 
     config = global_config["score"]
 

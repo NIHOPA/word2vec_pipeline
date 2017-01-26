@@ -161,7 +161,6 @@ if __name__ == "__main__":
     import simple_config
     config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
-    _FORCE = config.as_bool("_FORCE")
     output_dir = config["phrase_identification"]["output_data_directory"]
 
     target_column = config["target_column"]

@@ -37,7 +37,6 @@ if __name__ == "__main__":
     import simple_config
     config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
-    _FORCE = config.as_bool("_FORCE")
 
     import_config = config["import_data"]
     parse_config = config["parse"]

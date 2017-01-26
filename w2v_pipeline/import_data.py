@@ -63,7 +63,7 @@ def import_directory_csv(d_in, d_out, output_table):
     for f_csv in INPUT_FILES:
         f_csvx = os.path.join(d_out, os.path.basename(f_csv))
 
-        if os.path.exists(f_csvx) and not _FORCE:
+        if os.path.exists(f_csvx):
             print("{} already exists, skipping".format(f_csvx))
             continue
 
@@ -92,7 +92,6 @@ if __name__ == "__main__":
     import simple_config
     config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
-    _FORCE = config.as_bool("_FORCE")
 
     data_out = config["import_data"]["output_data_directory"]
     mkdir(data_out)
