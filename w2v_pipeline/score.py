@@ -6,9 +6,11 @@ from utils.db_utils import item_iterator
 
 if __name__ == "__main__":
 
-    config = simple_config.load("score")
-    _PARALLEL = config.as_bool("_PARALLEL")
-    _FORCE = config.as_bool("_FORCE")
+    global_config = simple_config.load()
+    _PARALLEL = global_config.as_bool("_PARALLEL")
+    _FORCE = global_config.as_bool("_FORCE")
+
+    config = global_config["score"]
 
     n_jobs = -1 if _PARALLEL else 1
     mkdir(config["output_data_directory"])
@@ -27,13 +29,13 @@ if __name__ == "__main__":
             kwargs = config[name]
 
         # Add in the embedding configuration options
-        kwargs["embedding"] = simple_config.load("embedding")
-        kwargs["score"] = simple_config.load("score")
+        kwargs["embedding"] = global_config["embedding"]
+        kwargs["score"] = global_config["score"]
 
         val = name, obj(**kwargs)
         mapreduce_functions.append(val)
 
-    col = config['target_column']
+    col = global_config['target_column']
 
     for name, func in mapreduce_functions:
         print("Starting mapreduce {}".format(func.table_name))

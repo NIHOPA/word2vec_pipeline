@@ -45,7 +45,7 @@ class generic_document_score(corpus_iterator):
     def __init__(self, *args, **kwargs):
         super(generic_document_score, self).__init__(*args, **kwargs)
 
-        config_embed = simple_config.load("embedding")
+        config_embed = simple_config.load()["embedding"]
         f_w2v = os.path.join(
             config_embed["output_data_directory"],
             config_embed["w2v_embedding"]["f_db"],
@@ -60,7 +60,7 @@ class generic_document_score(corpus_iterator):
         self.word2index = dict(zip(self.M.index2word, range(vocab_n)))
 
         # Set parallel option (currently does nothing)
-        self._PARALLEL = kwargs["_PARALLEL"]
+        # self._PARALLEL = kwargs["_PARALLEL"]
 
         # Load the negative weights
         if "negative_weights" in kwargs:
@@ -152,7 +152,7 @@ class generic_document_score(corpus_iterator):
         size_n, dim_V = self.V.shape
 
         # print "Saving the scored documents"
-        config_score = simple_config.load("score")
+        config_score = simple_config.load()["score"]
         f_db = os.path.join(
             config_score["output_data_directory"],
             config_score["document_scores"]["f_db"]
@@ -252,7 +252,7 @@ class score_simple_TF(score_simple):
             msg = "{} not computed yet, needed for TF methods!"
             raise ValueError(msg.format(f_db))
 
-        score_config = simple_config.load("score")
+        score_config = simple_config.load()["score"]
         f_csv = os.path.join(
             score_config["output_data_directory"],
             score_config["term_document_frequency"]["f_db"],
