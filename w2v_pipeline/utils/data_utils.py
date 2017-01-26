@@ -5,7 +5,7 @@ import numpy as np
 import gensim.models.word2vec as W2V
 
 import simple_config
-from utils.os_utils import grab_files
+from os_utils import grab_files
 
 
 def load_h5_file(f_h5, *args):
