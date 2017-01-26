@@ -16,35 +16,36 @@ PREDICTIONS = {}
 
 if __name__ == "__main__":
 
-    config = simple_config.load("predict")
-    score_config = simple_config.load("score")
-    import_config = simple_config.load("import_data")
-    use_meta = config['use_meta']
-    use_reduced = config['use_reduced']
+    config = simple_config.load()
+    use_meta = config["predict"]['use_meta']
+    use_reduced = config["predict"]['use_reduced']
 
     # For now, we can only deal with one column using meta!
-    assert(len(config["categorical_columns"]) == 1)
+    assert(len(config["predict"]["categorical_columns"]) == 1)
 
     f_h5 = os.path.join(
-        score_config["output_data_directory"],
-        score_config["document_scores"]["f_db"],
+        config["score"]["output_data_directory"],
+        config["score"]["document_scores"]["f_db"],
     )
 
     h5 = h5py.File(f_h5, 'r')
 
     methods = h5.keys()
-    pred_dir = import_config["output_data_directory"]
+    pred_dir = config["import_data"]["output_data_directory"]
     pred_files = grab_files('*.csv', pred_dir)
     pred_col = config["target_column"]
 
     # Load the categorical columns
-    cols = ['_ref', ] + config["categorical_columns"]
+    cols = ['_ref', ] + config["predict"]["categorical_columns"]
     ITR = (pd.read_csv(x, usecols=cols).set_index('_ref') for x in pred_files)
     df = pd.concat(list(ITR))
 
-    ITR = itertools.product(methods, config["categorical_columns"])
+    ITR = itertools.product(methods, config["predict"]["categorical_columns"])
 
     X_META = []
+
+    cfg = config["predict"]
+    cfg["_PARALLEL"] = config["_PARALLEL"]
 
     for (method, cat_col) in ITR:
 
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores, F1, errors, pred = categorical_predict(X, Y, method, config)
+        scores, F1, errors, pred = categorical_predict(X, Y, method,cfg)
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         print(text.format(scores.mean(), F1.mean(), baseline_score))
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     if use_meta:
         # Build meta predictor
         # META_X = np.hstack([PREDICTIONS[method] for method
-        #                    in config["meta_methods"]])
+        #                    in config["predict"]["meta_methods"]])
         X_META = np.hstack(X_META)
         method = "meta"
 
@@ -93,7 +94,8 @@ if __name__ == "__main__":
         print(text.format(method, cat_col, pred_col))
 
         scores, F1, errors, pred = categorical_predict(X_META, Y,
-                                                       method, config)
+                                                       method,
+                                                       config["predict"])
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         print(text.format(scores.mean(), F1.mean(), baseline_score))
