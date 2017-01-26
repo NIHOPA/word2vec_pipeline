@@ -7,7 +7,7 @@ Everything is run by the file [config.ini](config.ini), the defaults should help
 
 ### `fab import_data`
 
-All CSV files in `input_data_directories` are read and stored into a SQLite database.
+All CSV files in `input_data_directories` are read, passed through [unidecode](https://pypi.python.org/pypi/Unidecode) and given a reference number.
 
 ### `fab parse`
 
