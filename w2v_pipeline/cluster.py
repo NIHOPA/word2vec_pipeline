@@ -95,7 +95,7 @@ def close_words(W, X, labels, top_n=6):
 
 def load_document_vectors(target_column):
 
-    config_score = simple_config.load("score")
+    config_score = simple_config.load()["score"]
 
     f_h5 = os.path.join(
         config_score["output_data_directory"],
@@ -116,20 +116,15 @@ if __name__ == "__main__":
 
     import simple_config
 
-    config = simple_config.load("cluster")
+    global_config = simple_config.load()
+    config = simple_config.load()["cluster"]
     output_dir = config["output_data_directory"]
     mkdir(output_dir)
 
     method = config['score_method']
-    target_column = config['score_column']
+    target_column = global_config['target_column']
 
     f_sim = os.path.join(output_dir, config["f_cluster"])
-
-    if config.as_bool("_FORCE"):
-        try:
-            os.remove(f_sim)
-        except:
-            pass
 
     if not os.path.exists(f_sim):
         h5_sim = h5py.File(f_sim, 'w')

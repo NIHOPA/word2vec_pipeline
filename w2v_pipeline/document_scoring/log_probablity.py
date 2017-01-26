@@ -10,6 +10,7 @@ import scipy.stats
 import simple_config
 from utils.data_utils import load_w2vec
 
+
 def compute_partition_stats(UE):
 
     # Remove the largest element (the energy of self interaction)

@@ -1,8 +1,7 @@
 from scipy.spatial.distance import cdist
 import numpy as np
-import simple_config
-import os
 from utils.data_utils import load_w2vec
+
 
 def spectral_clustering(S, X, config):
     '''

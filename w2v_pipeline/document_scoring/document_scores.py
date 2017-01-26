@@ -45,8 +45,6 @@ class generic_document_score(corpus_iterator):
     def __init__(self, *args, **kwargs):
         super(generic_document_score, self).__init__(*args, **kwargs)
 
-        config_embed = simple_config.load()["embedding"]
-
         # Load the model from disk
         self.M = load_w2vec()
         self.shape = self.M.syn0.shape
