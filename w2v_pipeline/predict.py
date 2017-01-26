@@ -75,7 +75,7 @@ if __name__ == "__main__":
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores, F1, errors, pred = categorical_predict(X, Y, method,cfg)
+        scores, F1, errors, pred = categorical_predict(X, Y, method, cfg)
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         print(text.format(scores.mean(), F1.mean(), baseline_score))

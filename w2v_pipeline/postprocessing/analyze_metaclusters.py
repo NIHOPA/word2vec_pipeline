@@ -8,8 +8,8 @@ import h5py
 from scipy.spatial.distance import cdist, pdist
 from scipy.cluster import hierarchy
 
-from data_utils import load_metacluster_data, load_document_vectors
-from data_utils import load_ORG_data
+from utils.data_utils import load_metacluster_data, load_document_vectors
+from utils.data_utils import load_ORG_data
 
 
 def _compute_centroid_dist(X, cx):

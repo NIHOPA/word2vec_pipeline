@@ -2,6 +2,7 @@ import h5py
 import os
 import pandas as pd
 import numpy as np
+import gensim.models.word2vec as W2V
 
 import simple_config
 from utils.os_utils import grab_files
@@ -31,7 +32,7 @@ def load_h5_file(f_h5, *args):
 def load_dispersion_data():
     print("Loading dispersion data")
 
-    config_post = simple_config.load("postprocessing")
+    config_post = simple_config().load["postprocessing"]
 
     f_h5 = os.path.join(
         config_post["output_data_directory"],
@@ -69,7 +70,7 @@ def load_ORG_data(extra_columns=None):
 
 def load_metacluster_data(*args):
 
-    config_metacluster = simple_config.load("metacluster")
+    config_metacluster = simple_config.load()["metacluster"]
 
     f_h5 = os.path.join(
         config_metacluster["output_data_directory"],
@@ -79,8 +80,8 @@ def load_metacluster_data(*args):
 
 
 def load_document_vectors():
-    config_score = simple_config.load("score")
-    config_MC = simple_config.load("metacluster")
+    config_score = simple_config.load()["score"]
+    config_MC = simple_config.load()["metacluster"]
 
     score_method = config_MC['score_method']
 
@@ -106,3 +107,17 @@ def load_document_vectors():
             "docv": docv,
             "_refs": _refs
         }
+
+
+def load_w2vec(config=None):
+    if config is None:
+        config = simple_config.load()
+
+    config_embed = config["embedding"]
+
+    f_w2v = os.path.join(
+        config_embed["output_data_directory"],
+        config_embed["w2v_embedding"]["f_db"],
+    )
+
+    return W2V.Word2Vec.load(f_w2v)

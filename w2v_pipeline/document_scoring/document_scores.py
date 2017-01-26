@@ -9,10 +9,10 @@ import pandas as pd
 
 from tqdm import tqdm
 
-from gensim.models.word2vec import Word2Vec
-from utils.mapreduce import corpus_iterator
 from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
+from utils.mapreduce import corpus_iterator
+from utils.data_utils import load_w2vec
 
 
 def L2_norm(doc_vec):
@@ -46,13 +46,9 @@ class generic_document_score(corpus_iterator):
         super(generic_document_score, self).__init__(*args, **kwargs)
 
         config_embed = simple_config.load()["embedding"]
-        f_w2v = os.path.join(
-            config_embed["output_data_directory"],
-            config_embed["w2v_embedding"]["f_db"],
-        )
 
         # Load the model from disk
-        self.M = Word2Vec.load(f_w2v)
+        self.M = load_w2vec()
         self.shape = self.M.syn0.shape
 
         # Build the dictionary

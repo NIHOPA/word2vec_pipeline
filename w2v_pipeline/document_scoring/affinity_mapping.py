@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import h5py
 
-from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 
 from sklearn.cluster import AffinityPropagation as cluster_clf
@@ -14,6 +13,7 @@ import tqdm
 
 from sklearn.decomposition import SparseCoder
 from utils.parallel_utils import jobmap
+from utils.data_utils import load_w2vec
 
 damping = None
 M = None
@@ -78,7 +78,7 @@ class affinity_mapping(corpus_iterator):
         super(affinity_mapping, self).__init__(*args, **kwargs)
 
         # Load the model from disk
-        self.M = Word2Vec.load(kwargs["f_w2v"])
+        self.M = load_w2vec()
         self.shape = self.M.syn0.shape
 
         # Set parallel option

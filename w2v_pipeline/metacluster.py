@@ -9,6 +9,7 @@ from sklearn.cluster import SpectralClustering
 
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import cosine_similarity
+from utils.data_utils import load_w2vec
 
 
 def subset_iterator(X, m, repeats=1):
@@ -108,15 +109,6 @@ class cluster_object(object):
             raise ValueError(msg)
 
         self.N, self.dim = self.docv.shape
-
-    def _load_embedding(self):
-        f_model = "data_embeddings/w2v.gensim"
-
-        print("Loading embedding", f_model)
-        import gensim.models.word2vec as W2V
-        self.W = W2V.Word2Vec.load(f_model)
-
-        return self.W
 
     def compute_centroid_set(self, **kwargs):
 
@@ -219,7 +211,7 @@ class cluster_object(object):
 
     def describe_clusters(self, **kwargs):
 
-        W = self._load_embedding()
+        W = load_w2vec()
 
         meta_clusters = self.load_centroid_dataset("meta_centroids")
         n_clusters = meta_clusters.shape[0]

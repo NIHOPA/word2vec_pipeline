@@ -1,4 +1,3 @@
-from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 import numpy as np
 import os
@@ -9,7 +8,7 @@ import h5py
 import scipy.stats
 
 import simple_config
-
+from utils.data_utils import load_w2vec
 
 def compute_partition_stats(UE):
 
@@ -66,7 +65,7 @@ class document_log_probability(corpus_iterator):
         val = cfg_score["document_log_probability"]["intra_document_cutoff"]
         self.intra_document_cutoff = float(val)
 
-        self.model = Word2Vec.load(f_w2v)
+        self.model = load_w2vec()
 
     def energy(self, a, b):
         return a.dot(b)
@@ -75,7 +74,7 @@ class document_log_probability(corpus_iterator):
         print("Building the partition function")
 
         # Load the model from disk
-        M = Word2Vec.load(f_w2v)
+        M = load_w2vec()
 
         words = M.index2word
         ZT = []

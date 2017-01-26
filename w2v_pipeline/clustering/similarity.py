@@ -2,7 +2,7 @@ from scipy.spatial.distance import cdist
 import numpy as np
 import simple_config
 import os
-
+from utils.data_utils import load_w2vec
 
 def spectral_clustering(S, X, config):
     '''
@@ -32,16 +32,7 @@ def load_embeddings():
     '''
     Loads the gensim word embedding model.
     '''
-    config = simple_config.load("embedding")
-
-    from gensim.models.word2vec import Word2Vec
-
-    f_w2v = os.path.join(
-        config["output_data_directory"],
-        config["w2v_embedding"]["f_db"],
-    )
-
-    return Word2Vec.load(f_w2v)
+    return load_w2vec()
 
 
 def compute_document_similarity(X):
