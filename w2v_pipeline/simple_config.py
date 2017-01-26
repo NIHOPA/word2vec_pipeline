@@ -1,5 +1,5 @@
 import os
-from configobj import ConfigObj, Section
+from configobj import ConfigObj
 from validate import Validator, VdtTypeError
 
 
@@ -33,7 +33,7 @@ def validate_errors(errors, name_stack=None):
     return is_error
 
 
-def load(subset=None, f_config="config.ini"):
+def load(f_config="config.ini"):
 
     # Raise Error if configfile not found
     if not os.path.exists(f_config):
@@ -52,9 +52,10 @@ def load(subset=None, f_config="config.ini"):
         msg = "{} failed to parse.".format(f_config)
         raise SyntaxError(msg)
 
-    if subset is None:
-        return config
+    return config
 
+    # Loading a subset is depreciated since type checking isn't done.
+    '''
     # Load all the global keys
     output = ConfigObj()
 
@@ -66,3 +67,4 @@ def load(subset=None, f_config="config.ini"):
     output.update(config[subset])
 
     return output
+    '''

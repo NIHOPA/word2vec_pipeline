@@ -159,14 +159,14 @@ def dedupe_abbr(ABR):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("phrase_identification")
+    config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
-    output_dir = config["output_data_directory"]
+    output_dir = config["phrase_identification"]["output_data_directory"]
 
     target_column = config["target_column"]
 
-    import_config = simple_config.load("import_data")
+    import_config = config["import_data"]
     input_data_dir = import_config["output_data_directory"]
 
     F_CSV = grab_files("*.csv", input_data_dir)
@@ -204,5 +204,6 @@ if __name__ == "__main__":
     print(df[:5])
 
     mkdir(output_dir)
-    f_csv = os.path.join(output_dir, config["f_abbreviations"])
+    f_csv = os.path.join(output_dir,
+                         config["phrase_identification"]["f_abbreviations"])
     df.to_csv(f_csv)

@@ -90,16 +90,17 @@ def import_directory_csv(d_in, d_out, output_table):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("import_data")
+    config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
-    data_out = config["output_data_directory"]
+    data_out = config["import_data"]["output_data_directory"]
     mkdir(data_out)
-    output_table = config["output_table"]
+
+    output_table = config["import_data"]["output_table"]
 
     # Require `input_data_directories` to be a list
-    data_in_list = config["input_data_directories"]
+    data_in_list = config["import_data"]["input_data_directories"]
     assert(isinstance(data_in_list, list))
 
     for d_in in data_in_list:

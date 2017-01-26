@@ -37,8 +37,7 @@ class w2v_embedding(corpus_iterator):
             min_count=int(kwargs["min_count"]),
         )
 
-    def compute(self, config):
-
+    def compute(self, **config):
         print("Learning the vocabulary")
 
         ITR = self.sentence_iterator(config["target_column"])

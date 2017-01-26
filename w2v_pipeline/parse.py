@@ -35,27 +35,29 @@ def dispatcher(row, target_column):
 if __name__ == "__main__":
 
     import simple_config
-    config = simple_config.load("parse")
+    config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
     _FORCE = config.as_bool("_FORCE")
 
-    import_config = simple_config.load("import_data")
-    input_data_dir = import_config["output_data_directory"]
-    output_dir = config["output_data_directory"]
+    import_config = config["import_data"]
+    parse_config = config["parse"]
 
-    import_column = import_config["output_table"]
+    input_data_dir = import_config["output_data_directory"]
+    output_dir = parse_config["output_data_directory"]
+
+    import_column = parse_config["output_table"]
 
     mkdir(output_dir)
 
     # Fill the pipeline with function objects
     parser_functions = []
-    for name in config["pipeline"]:
+    for name in parse_config["pipeline"]:
         obj = getattr(pre, name)
 
         # Load any kwargs in the config file
         kwargs = {}
-        if name in config:
-            kwargs = config[name]
+        if name in parse_config:
+            kwargs = parse_config[name]
 
         parser_functions.append(obj(**kwargs))
 

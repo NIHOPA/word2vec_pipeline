@@ -4,6 +4,7 @@ import simple_config
 import csv
 import os
 from os_utils import grab_files
+import gensim.models.word2vec as W2V
 
 
 def pretty_counter(C, min_count=1):
@@ -97,7 +98,7 @@ class CSV_database_iterator(object):
 
 
 def item_iterator(
-        config,
+        config=None,
         randomize_file_order=False,
         whitelist=[],
         section='parse',
@@ -108,8 +109,11 @@ def item_iterator(
     Iterates over the parsed corpus items and respects a given whitelist.
     '''
 
-    parse_config = simple_config.load(section)
-    input_data_dir = parse_config["output_data_directory"]
+    if config is None:
+        config = simple_config.load()
+
+    config = simple_config.load()
+    input_data_dir = config['parse']["output_data_directory"]
     F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
 
     if whitelist:
@@ -136,3 +140,17 @@ def item_iterator(
         if text_column is not None:
             row['text'] = row[text_column]
         yield row
+
+
+def load_w2vec(config=None):
+    if config is None:
+        config = simple_config.load()
+
+    config_embed = config["embedding"]
+
+    f_w2v = os.path.join(
+        config_embed["output_data_directory"],
+        config_embed["w2v_embedding"]["f_db"],
+    )
+
+    return W2V.Word2Vec.load(f_w2v)
