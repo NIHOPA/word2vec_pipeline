@@ -19,6 +19,9 @@ configobj
 # For reporting and status bars
 tqdm
 
+# For plotting
+seaborn
+
 # Replaces pythons multiprocessing
 joblib==0.9.4
 
