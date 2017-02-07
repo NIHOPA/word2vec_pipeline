@@ -68,7 +68,7 @@ if __name__ == "__main__":
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
-        print(" Class balance for catergorical prediction: {}".format(counts))
+        #print(" Class balance for catergorical prediction: {}".format(counts))
 
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()
@@ -126,4 +126,7 @@ if __name__ == "__main__":
 
     plt = sns.plt
     sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
+    plt.yticks(rotation=0)
+    plt.xticks(rotation=45)
+    
     plt.show()
