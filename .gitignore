@@ -4,6 +4,7 @@ data_parsed/*
 data_clustering/*
 data_document_scores/*
 data_import/*
+data_predict/*
 datasets
 results
 

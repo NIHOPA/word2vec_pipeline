@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
@@ -65,6 +67,10 @@ def categorical_predict(X, y_org, method_name, config):
     error_counts = np.zeros(y.size, dtype=float)
     predict_scores = np.zeros([y.size, label_n], dtype=float)
 
+    df = pd.DataFrame(index=range(y.shape[0]))
+    df['y_truth'] = y
+    df[method_name] = -1
+
     for result in ITR:
         idx, pred, pred_proba = result
         train_index, test_index = idx
@@ -79,8 +85,19 @@ def categorical_predict(X, y_org, method_name, config):
         F1_scores.append(f1_score(y_test, pred))
         predict_scores[test_index] = pred_proba
 
+        train_index, test_index = idx
+
+        df.ix[test_index, method_name] = pred
+
+    # Make sure all items have been scored
+    assert (~(df[method_name] == -1).any())
+
     # For StratifiedKFold, each test set is hit only once
     # so normalization is simple
     error_counts /= 1.0
 
-    return np.array(scores), np.array(F1_scores), error_counts, predict_scores
+    return (np.array(scores),
+            np.array(F1_scores),
+            error_counts,
+            predict_scores,
+            df)
