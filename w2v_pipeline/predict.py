@@ -118,7 +118,6 @@ if __name__ == "__main__":
         df_scores[method] = dfs[method]
 
     # Save the predictions
-    extra_cols = ["title", ]
     if extra_cols:
         df_ORG = load_ORG_data(extra_columns=extra_cols)
         for col in extra_cols:
