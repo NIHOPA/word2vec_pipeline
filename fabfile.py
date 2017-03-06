@@ -1,5 +1,14 @@
 from fabric.api import local
 
+def deploy():
+    #local("nosetests -vs")
+    local("flake8 --ignore=E501,F821 w2v_pipeline")
+    local("aspell check README.md")
+    local("check-manifest")
+    #local("python miniprez tutorial.md")
+
+def pep():
+    local("autopep8 w2v_pipeline/*.py -a --in-place --jobs=0")
 
 def import_data():
     local("python w2v_pipeline/import_data.py")
@@ -51,4 +60,4 @@ def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
     local(
-        "rm -rf data_import data_parsed data_document_scores data_clustering data_embeddings results")
+        "rm -rf data_import data_parsed data_document_scores data_clustering data_embeddings data_predict results")
