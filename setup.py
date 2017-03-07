@@ -73,9 +73,11 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'sample=sample:main',
+            'word2vec_pipeline=word2vec_pipeline.__main__:main',
         ],
     },
+
+    test_suite="tests",
 
     # Fill this in when ready...
     download_url='',

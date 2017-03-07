@@ -14,7 +14,7 @@ Usage: w2v INPUT [-o OUTPUT|-t] [--condense] [--nocopy] [--verbose] [--watch=<kn
 import os
 import time
 from docopt import docopt
-from miniprez import build
+
 
 def main():
     args = docopt(__doc__)
