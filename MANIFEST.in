@@ -5,7 +5,18 @@ include *.txt
 include LICENSE
 include Makefile
 include config.ini
-recursive-include word2vec_pipeline *.csv
-recursive-include word2vec_pipeline *.ini
+include tox.ini
+
+# Main files
+include word2vec_pipeline/preprocessing/dictionaries/MeSH_two_word_lexicon.csv
+include word2vec_pipeline/preprocessing/dictionaries/english_wordlist.txt
 recursive-include word2vec_pipeline *.py
+recursive-include word2vec_pipeline *.ini
 recursive-include word2vec_pipeline *.txt
+
+# Testing files
+recursive-include tests *.csv
+recursive-include tests *.md
+recursive-include tests *.py
+
+
