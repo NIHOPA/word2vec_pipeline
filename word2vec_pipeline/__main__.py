@@ -16,7 +16,6 @@ import time
 from docopt import docopt
 from miniprez import build
 
-
 def main():
     args = docopt(__doc__)
     f_md = args["INPUT"]

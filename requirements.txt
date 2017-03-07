@@ -30,3 +30,6 @@ nearpy
 
 # For SMOTE
 imbalanced-learn
+
+# For CLI interface
+docopt
