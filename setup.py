@@ -12,7 +12,7 @@ with open(f_desc, encoding='utf-8') as FIN:
     long_description = FIN.read()
 
 setup(
-    name='word2vec_pipeline',
+    name='w2v',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -27,7 +27,7 @@ setup(
 
     # Author details
     author="Travis Hoppe",
-    author_email="travis.hoppe+w2v@gmail.com",
+    author_email="travis.hoppe+w2vec_pipeline@gmail.com",
 
     # Choose your license
     license='MIT',
@@ -58,10 +58,10 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=['word2vec_pipeline'],
-    #packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
     # Include package data...
-    #include_package_data=True,
+    include_package_data=True,
+    
     #entry_points={
     #    'console_scripts': [
     #        'miniprez=miniprez.__main__:main',

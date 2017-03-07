@@ -1,5 +1,7 @@
 from fabric.api import local
 
+package_dir = "word2vec_pipeline"
+
 def deploy():
     #local("nosetests -vs")
     local("flake8 --ignore=E501,F821 w2v_pipeline")
@@ -8,39 +10,40 @@ def deploy():
     #local("python miniprez tutorial.md")
 
 def pep():
-    local("autopep8 w2v_pipeline/*.py -a --in-place --jobs=0")
+    local("autopep8 {}/*.py -a --in-place --jobs=0".format(package_dir))
 
 def import_data():
-    local("python w2v_pipeline/import_data.py")
-    local("python w2v_pipeline/phrases_from_abbrs.py")
+    local("python {}/import_data.py".format(package_dir))
+    local("python {}/phrases_from_abbrs.py".format(package_dir))
 
 
 def parse():
-    local("python w2v_pipeline/parse.py")
+    local("python {}/parse.py".format(package_dir))
 
 
 def embed():
-    local("python w2v_pipeline/embed.py")
+    local("python {}/embed.py".format(package_dir))
 
 
 def score():
-    local("python w2v_pipeline/score.py")
+    local("python {}/score.py".format(package_dir))
 
 
 def predict():
-    local("python w2v_pipeline/predict.py")
+    local("python {}/predict.py".format(package_dir))
 
 
 def cluster():
-    local("python w2v_pipeline/cluster.py")
+    local("python {}/cluster.py".format(package_dir))
 
 
 def metacluster():
-    local("python w2v_pipeline/metacluster.py")
+    local("python {}/metacluster.py".format(package_dir))
 
 
 def analyze_metaclusters():
-    local("python w2v_pipeline/postprocessing/analyze_metaclusters.py")
+    cmd = "python {}/postprocessing/analyze_metaclusters.py"
+    local(cmd.format(package_dir))
 
 
 def test():
@@ -59,5 +62,6 @@ def test():
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
+    local('rm -rvf w2v.egg-info')
     local(
         "rm -rf data_import data_parsed data_document_scores data_clustering data_embeddings data_predict results")
