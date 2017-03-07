@@ -1,6 +1,5 @@
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
+import setuptools
 from codecs import open
 import os
 
@@ -11,7 +10,7 @@ f_desc = os.path.join(__local__, 'DESCRIPTION.rst')
 with open(f_desc, encoding='utf-8') as FIN:
     long_description = FIN.read()
 
-setup(
+setuptools.setup(
     name='w2v',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
@@ -54,15 +53,15 @@ setup(
 
     # What does your project relate to?
     keywords="NLP modeling pipeline",
-    
+
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=['word2vec_pipeline'],
 
     # Include package data...
     include_package_data=True,
-    
-    #entry_points={
+
+    # entry_points={
     #    'console_scripts': [
     #        'miniprez=miniprez.__main__:main',
     #    ]
@@ -93,6 +92,6 @@ setup(
     license = "MIT License",
     keywords = ["NLP", "modeling", "pipeline", ],
     url="https://github.com/NIHOPA/word2vec_pipeline",
-    test_suite="tests",    
+    test_suite="tests",
 )
 '''

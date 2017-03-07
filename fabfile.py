@@ -2,15 +2,18 @@ from fabric.api import local
 
 package_dir = "word2vec_pipeline"
 
+
 def deploy():
-    #local("nosetests -vs")
-    local("flake8 --ignore=E501,F821 w2v_pipeline")
+    # local("nosetests -vs")
+    local("flake8 --ignore=E501,F821 word2vec_pipeline tests")
     local("aspell check README.md")
     local("check-manifest")
-    #local("python miniprez tutorial.md")
+    # local("python miniprez tutorial.md")
+
 
 def pep():
-    local("autopep8 {}/*.py -a --in-place --jobs=0".format(package_dir))
+    local("autopep8 *.py -a -a -a --in-place --jobs=0".format(package_dir))
+
 
 def import_data():
     local("python {}/import_data.py".format(package_dir))

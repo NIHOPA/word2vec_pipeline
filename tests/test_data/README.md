@@ -1,0 +1,1 @@
+This is a minimial subset (10 items each) of PLoS Bio. and PLoS Comp. Bio. to be used for testing in the word2vec_pipeline package. Due to the lack of text, the embeddings will be very poor.

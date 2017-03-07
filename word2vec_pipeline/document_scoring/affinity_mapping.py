@@ -142,6 +142,8 @@ class affinity_mapping(corpus_iterator):
 class affinity_grouping(corpus_iterator):
 
     def __init__(self, *args, **kwargs):
+        raise NotImplementedError
+
         super(affinity_grouping, self).__init__(*args, **kwargs)
 
         # Set parallel option
@@ -159,7 +161,7 @@ class affinity_grouping(corpus_iterator):
         global damping
         damping = float(kwargs["damping"])
 
-        self.M = Word2Vec.load(kwargs["f_w2v"])
+        # self.M = Word2Vec.load(kwargs["f_w2v"])
 
     def _iterator_mean_cluster_vectors(self):
 
