@@ -33,6 +33,7 @@ def _compute_dispersion_matrix(X, labels):
 
     return dist
 
+
 if __name__ == "__main__" and __package__ is None:
 
     import simple_config

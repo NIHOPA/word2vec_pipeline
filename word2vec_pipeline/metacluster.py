@@ -231,6 +231,7 @@ class cluster_object(object):
 
         return np.array(all_words)
 
+
 if __name__ == "__main__":
 
     config = simple_config.load()["metacluster"]
