@@ -1,0 +1,11 @@
+include *.md
+include *.py
+include *.rst
+include *.txt
+include LICENSE
+include Makefile
+include config.ini
+recursive-include word2vec_pipeline *.csv
+recursive-include word2vec_pipeline *.ini
+recursive-include word2vec_pipeline *.py
+recursive-include word2vec_pipeline *.txt
