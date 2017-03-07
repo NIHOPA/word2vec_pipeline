@@ -1,14 +1,14 @@
 # Always prefer setuptools over distutils
 import setuptools
-from codecs import open
 import os
 
 __local__ = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file
-f_desc = os.path.join(__local__, 'DESCRIPTION.rst')
-with open(f_desc, encoding='utf-8') as FIN:
-    long_description = FIN.read()
+long_description = '''word2vec_pipeline
+=================================
+
+This is a research and exploration pipeline designed to analyze grants, publication abstracts, and other biomedical corpora. While not designed for production, it is used internally within the Office of Portfolio Analysis at the National Institutes of Health.'''
 
 setuptools.setup(
     name='w2v',
