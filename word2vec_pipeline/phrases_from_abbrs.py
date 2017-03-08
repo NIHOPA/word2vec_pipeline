@@ -84,12 +84,14 @@ def check_matching(word, k, tokens):
 
 
 def evaluate_document(row, col):
-    doc = row[target_column]
+    doc = row[col]
 
     doc = unicode(doc)
     doc = doc.replace('-', ' ')
     doc = doc.replace("'", '')
     doc = doc.replace('"', '')
+
+    P = parenthesis_nester()
     tokens = P(doc)
 
     results = collections.Counter()
@@ -107,8 +109,7 @@ def evaluate_document(row, col):
     return results
 
 
-def dedupe_item(item):
-    global ABR
+def dedupe_item(item, ABR):
 
     (phrase, abbr), count = item
     p1 = ' '.join(phrase)
@@ -136,7 +137,13 @@ def dedupe_item(item):
 def dedupe_abbr(ABR):
     data = {}
 
-    ITR = jobmap(dedupe_item, tqdm.tqdm(ABR.items()), True)
+    # BUG: Not working in parallel????
+    ITR = jobmap(dedupe_item,
+                 tqdm.tqdm(ABR.items()),
+                 FLAG_PARALLEL=True,
+                 ABR=ABR,
+    )
+    
     for result in ITR:
 
         # Only add the most common result
@@ -156,10 +163,8 @@ def dedupe_abbr(ABR):
     return ABR
 
 
-if __name__ == "__main__":
+def phrases_from_config(config):
 
-    import simple_config
-    config = simple_config.load()
     _PARALLEL = config.as_bool("_PARALLEL")
     output_dir = config["phrase_identification"]["output_data_directory"]
 
@@ -171,7 +176,6 @@ if __name__ == "__main__":
     F_CSV = grab_files("*.csv", input_data_dir)
 
     ABR = collections.Counter()
-    P = parenthesis_nester()
 
     dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, target_column, progress_bar=True)
@@ -206,3 +210,10 @@ if __name__ == "__main__":
     f_csv = os.path.join(output_dir,
                          config["phrase_identification"]["f_abbreviations"])
     df.to_csv(f_csv)
+
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    phrases_from_config(config)

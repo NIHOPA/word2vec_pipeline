@@ -9,11 +9,22 @@ import os
 import time
 from docopt import docopt
 
+import simple_config
+
+from import_data import import_data_from_config
+from phrases_from_abbrs import phrases_from_config
 
 def main():
     args = docopt(__doc__)
+    config = simple_config.load()
 
-    # Check config.ini is found here ...
+
+    if args["import_data"]:
+        import_data_from_config(config)
+        phrases_from_config(config)
+
+    
+
     print args
 
 

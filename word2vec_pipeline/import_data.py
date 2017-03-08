@@ -87,10 +87,7 @@ def import_directory_csv(d_in, d_out, output_table):
         print(msg.format(f_csv, k))
 
 
-if __name__ == "__main__":
-
-    import simple_config
-    config = simple_config.load()
+def import_data_from_config(config):
     _PARALLEL = config.as_bool("_PARALLEL")
 
     data_out = config["import_data"]["output_data_directory"]
@@ -103,4 +100,10 @@ if __name__ == "__main__":
     assert(isinstance(data_in_list, list))
 
     for d_in in data_in_list:
-        import_directory_csv(d_in, data_out, output_table)
+        import_directory_csv(d_in, data_out, output_table) 
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    import_data_from_config(config)
