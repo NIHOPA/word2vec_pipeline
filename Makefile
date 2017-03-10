@@ -1,4 +1,4 @@
-name = w2v_pipeline/parse.py
+name = word2vec_pipeline/parse.py
 
 edit:
 	emacs $(name) &
@@ -6,10 +6,10 @@ config:
 	emacs config.ini &
 
 flake_clean:
-	autopep8 -aaaa -v --in-place --recursive --jobs 0  w2v_pipeline/
+	autopep8 -aaaa -v --in-place --recursive --jobs 0  word2vec_pipeline
 
 flake:
-	flake8 --ignore F821 -j 'auto' w2v_pipeline/ 
+	flake8 --ignore F821 -j 'auto' word2vec_pipeline/ 
 
 future:
 # Fix print statements

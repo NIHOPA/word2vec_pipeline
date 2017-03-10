@@ -11,12 +11,13 @@ _global_batch_size = 500
 # This must be global for parallel to work properly
 parser_functions = []
 
+
 def dispatcher(row, target_column):
     text = row[target_column] if target_column in row else None
-    
+
     for f in parser_functions:
         text = unicode(f(text))
-    
+
     row[target_column] = text
     return row
 
@@ -43,8 +44,6 @@ def parse_from_config(config):
 
     input_data_dir = import_config["output_data_directory"]
     output_dir = parse_config["output_data_directory"]
-
-    import_column = parse_config["output_table"]
 
     mkdir(output_dir)
 
@@ -88,7 +87,6 @@ def parse_from_config(config):
     # Close the open files
     for F in F_CSV_OUT.values():
         F.close()
-
 
 
 if __name__ == "__main__":

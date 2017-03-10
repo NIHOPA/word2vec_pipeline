@@ -276,10 +276,8 @@ def metacluster_from_config(config):
     print(h5['describe_clusters'][:])
 
 
-
 if __name__ == "__main__":
 
-    import simple_config
     config = simple_config.load()
     metacluster_from_config(config)
 

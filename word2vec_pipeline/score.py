@@ -3,13 +3,11 @@ from utils.os_utils import mkdir
 import document_scoring as ds
 from utils.db_utils import item_iterator
 
-def score_from_config(global_config):
 
-    _PARALLEL = global_config.as_bool("_PARALLEL")
+def score_from_config(global_config):
 
     config = global_config["score"]
 
-    n_jobs = -1 if _PARALLEL else 1
     mkdir(config["output_data_directory"])
 
     #
@@ -63,10 +61,8 @@ def score_from_config(global_config):
         func.save()
 
 
-
 if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load()
     score_from_config(config)
-

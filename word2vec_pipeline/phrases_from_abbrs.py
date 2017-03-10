@@ -6,7 +6,6 @@ import utils.db_utils as db_utils
 
 import pandas as pd
 import pyparsing as pypar
-import tqdm
 
 from utils.parallel_utils import jobmap
 
@@ -123,8 +122,8 @@ def dedupe_abbr(ABR):
 
     data = []
     for phrase, dfx in df.groupby('reduced_phrase'):
-        top = dfx.sort_values("count",ascending=False).iloc[0]
-        
+        top = dfx.sort_values("count", ascending=False).iloc[0]
+
         item = {}
         item["count"] = dfx["count"].sum()
         item["phrase"] = top["phrase"]
@@ -132,7 +131,7 @@ def dedupe_abbr(ABR):
         data.append(item)
 
     df = pd.DataFrame(data).set_index("phrase")
-    return df.sort_values("count",ascending=False)
+    return df.sort_values("count", ascending=False)
 
 
 def phrases_from_config(config):

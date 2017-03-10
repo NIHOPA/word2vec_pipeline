@@ -11,8 +11,6 @@ Usage:
 
 """
 
-import os
-import time
 from docopt import docopt
 
 import simple_config
@@ -26,10 +24,10 @@ from predict import predict_from_config
 from metacluster import metacluster_from_config
 from postprocessing.analyze_metaclusters import analyze_metacluster_from_config
 
+
 def main():
     args = docopt(__doc__)
     config = simple_config.load()
-
 
     if args["import_data"]:
         import_data_from_config(config)
@@ -43,7 +41,7 @@ def main():
 
     if args["score"]:
         score_from_config(config)
-        
+
     if args["predict"]:
         predict_from_config(config)
 

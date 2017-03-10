@@ -11,6 +11,7 @@ from predictions import categorical_predict
 
 import seaborn as sns
 
+
 def predict_from_config(config):
 
     ERROR_MATRIX = {}
@@ -69,7 +70,6 @@ def predict_from_config(config):
         if use_meta:
             X_META.append(X)
 
-        _ref = g["_ref"][:]
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
@@ -159,4 +159,3 @@ if __name__ == "__main__":
     import simple_config
     config = simple_config.load()
     predict_from_config(config)
-

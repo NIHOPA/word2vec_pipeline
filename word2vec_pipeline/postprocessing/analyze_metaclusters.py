@@ -1,5 +1,4 @@
 import os
-import collections
 import itertools
 import pandas as pd
 import numpy as np
@@ -35,7 +34,7 @@ def _compute_dispersion_matrix(X, labels):
 
 
 def analyze_metacluster_from_config(config):
-    
+
     config = config["postprocessing"]
 
     save_dest = config['output_data_directory']
@@ -45,7 +44,6 @@ def analyze_metacluster_from_config(config):
 
     MC = load_metacluster_data()
     C = MC["meta_centroids"]
-    counts = collections.Counter(MC["meta_labels"])
 
     DV = load_document_vectors()
 
@@ -127,4 +125,3 @@ if __name__ == "__main__" and __package__ is None:
     import simple_config
     config = simple_config.load()
     analyze_metacluster_from_config(config)
-

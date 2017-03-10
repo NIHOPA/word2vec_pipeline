@@ -2,6 +2,7 @@ from utils.os_utils import mkdir
 import model_building as mb
 from utils.db_utils import item_iterator
 
+
 def embed_from_config(config):
 
     mkdir(config["embedding"]["output_data_directory"])
@@ -32,11 +33,9 @@ def embed_from_config(config):
                                    section="parse")
         func.compute(**kwargs)
 
-        
 
 if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load()
     embed_from_config(config)
-
