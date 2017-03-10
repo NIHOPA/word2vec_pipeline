@@ -16,37 +16,28 @@ def pep():
 
 
 def import_data():
-    local("python {}/import_data.py".format(package_dir))
-    local("python {}/phrases_from_abbrs.py".format(package_dir))
-
+    local("python word2vec_pipeline import_data")
 
 def parse():
-    local("python {}/parse.py".format(package_dir))
-
+    local("python word2vec_pipeline parse")
 
 def embed():
-    local("python {}/embed.py".format(package_dir))
-
+    local("python word2vec_pipeline embed")
 
 def score():
-    local("python {}/score.py".format(package_dir))
-
+    local("python word2vec_pipeline score")
 
 def predict():
-    local("python {}/predict.py".format(package_dir))
-
+    local("python word2vec_pipeline predict")
 
 def cluster():
-    local("python {}/cluster.py".format(package_dir))
-
+    local("python word2vec_pipeline cluster")
 
 def metacluster():
-    local("python {}/metacluster.py".format(package_dir))
-
+    local("python word2vec_pipeline metacluster")
 
 def analyze_metaclusters():
-    cmd = "python {}/postprocessing/analyze_metaclusters.py"
-    local(cmd.format(package_dir))
+    local("python word2vec_pipeline analyze metacluster")
 
 
 def test():
