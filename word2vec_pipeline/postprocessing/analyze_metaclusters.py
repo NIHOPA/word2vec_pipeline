@@ -34,10 +34,9 @@ def _compute_dispersion_matrix(X, labels):
     return dist
 
 
-if __name__ == "__main__" and __package__ is None:
-
-    import simple_config
-    config = simple_config.load()["postprocessing"]
+def analyze_metacluster_from_config(config):
+    
+    config = config["postprocessing"]
 
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
@@ -121,3 +120,11 @@ if __name__ == "__main__" and __package__ is None:
         h5_save["counts"] = df.counts
         h5_save["dendrogram_order"] = df.dendrogram_order
         h5_save["linkage"] = linkage
+
+
+if __name__ == "__main__" and __package__ is None:
+
+    import simple_config
+    config = simple_config.load()
+    analyze_metacluster_from_config(config)
+

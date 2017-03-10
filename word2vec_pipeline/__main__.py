@@ -7,6 +7,8 @@ Usage:
   word2vec_pipeline score
   word2vec_pipeline predict
   word2vec_pipeline metacluster
+  word2vec_pipeline analyze (<target_function>)
+
 """
 
 import os
@@ -22,6 +24,7 @@ from embed import embed_from_config
 from score import score_from_config
 from predict import predict_from_config
 from metacluster import metacluster_from_config
+from postprocessing.analyze_metaclusters import analyze_metacluster_from_config
 
 def main():
     args = docopt(__doc__)
@@ -47,6 +50,12 @@ def main():
     if args["metacluster"]:
         metacluster_from_config(config)
 
+    if args["analyze"]:
+        func = args["<target_function>"]
+        if func == 'metacluster':
+            analyze_metacluster_from_config(config)
+        else:
+            raise KeyError("Analyze Function {} not known".format(func))
 
 if __name__ == "__main__":
     main()
