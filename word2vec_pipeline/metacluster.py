@@ -232,10 +232,9 @@ class cluster_object(object):
         return np.array(all_words)
 
 
-if __name__ == "__main__":
+def metacluster_from_config(config):
 
-    config = simple_config.load()["metacluster"]
-
+    config = config['metacluster']
     os.system('mkdir -p {}'.format(config['output_data_directory']))
 
     CO = cluster_object()
@@ -275,6 +274,14 @@ if __name__ == "__main__":
     compute_func("describe_clusters", CO.describe_clusters, dtype=str)
 
     print(h5['describe_clusters'][:])
+
+
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    metacluster_from_config(config)
 
 
 #

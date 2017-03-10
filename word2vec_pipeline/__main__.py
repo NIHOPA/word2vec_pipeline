@@ -6,6 +6,7 @@ Usage:
   word2vec_pipeline embed
   word2vec_pipeline score
   word2vec_pipeline predict
+  word2vec_pipeline metacluster
 """
 
 import os
@@ -20,6 +21,7 @@ from parse import parse_from_config
 from embed import embed_from_config
 from score import score_from_config
 from predict import predict_from_config
+from metacluster import metacluster_from_config
 
 def main():
     args = docopt(__doc__)
@@ -41,6 +43,9 @@ def main():
         
     if args["predict"]:
         predict_from_config(config)
+
+    if args["metacluster"]:
+        metacluster_from_config(config)
 
 
 if __name__ == "__main__":
