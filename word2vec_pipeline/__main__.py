@@ -3,6 +3,7 @@
 Usage:
   word2vec_pipeline import_data
   word2vec_pipeline parse
+  word2vec_pipeline embed
 """
 
 import os
@@ -13,6 +14,8 @@ import simple_config
 
 from import_data import import_data_from_config
 from phrases_from_abbrs import phrases_from_config
+from parse import parse_from_config
+from embed import embed_from_config
 
 def main():
     args = docopt(__doc__)
@@ -20,8 +23,14 @@ def main():
 
 
     if args["import_data"]:
-        #import_data_from_config(config)
+        import_data_from_config(config)
         phrases_from_config(config)
+
+    if args["parse"]:
+        parse_from_config(config)
+
+    if args["embed"]:
+        embed_from_config(config)
 
     print args
 

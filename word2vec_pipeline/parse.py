@@ -8,12 +8,17 @@ from utils.parallel_utils import jobmap
 
 _global_batch_size = 500
 
+# This must be global for parallel to work properly
+parser_functions = []
 
 def dispatcher(row, target_column):
     text = row[target_column] if target_column in row else None
-
+    
     for f in parser_functions:
         text = unicode(f(text))
+    
+    row[target_column] = text
+    return row
 
     '''
     meta = {}
@@ -27,9 +32,6 @@ def dispatcher(row, target_column):
     # Convert the meta information into a unicode string for serialization
     #meta = unicode(meta)
     '''
-
-    row[col] = text
-    return row
 
 
 def parse_from_config(config):
@@ -47,7 +49,6 @@ def parse_from_config(config):
     mkdir(output_dir)
 
     # Fill the pipeline with function objects
-    parser_functions = []
     for name in parse_config["pipeline"]:
         obj = getattr(pre, name)
 
@@ -65,7 +66,7 @@ def parse_from_config(config):
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  batch_size=_global_batch_size,
-                 target_column=col)
+                 target_column=col,)
 
     F_CSV_OUT = {}
     F_WRITERS = {}

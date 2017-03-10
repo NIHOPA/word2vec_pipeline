@@ -1,11 +1,9 @@
 from utils.os_utils import mkdir
 import model_building as mb
-import simple_config
 from utils.db_utils import item_iterator
 
-if __name__ == "__main__":
+def embed_from_config(config):
 
-    config = simple_config.load()
     mkdir(config["embedding"]["output_data_directory"])
 
     # If there is a whitelist only keep the matching filename
@@ -33,3 +31,12 @@ if __name__ == "__main__":
                                    whitelist,
                                    section="parse")
         func.compute(**kwargs)
+
+        
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    embed_from_config(config)
+
