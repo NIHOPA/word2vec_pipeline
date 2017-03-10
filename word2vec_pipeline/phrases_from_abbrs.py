@@ -109,58 +109,30 @@ def evaluate_document(row, col):
     return results
 
 
-def dedupe_item(item, ABR):
-
-    (phrase, abbr), count = item
-    p1 = ' '.join(phrase)
-    match_keys = []
-
-    for key2 in ABR.keys():
-        phrase2, abbr2 = key2
-        p2 = ' '.join(phrase2)
-
-        # Only merge when abbreviations match
-        if abbr != abbr2:
-            continue
-
-        # If lower cased phrases match merge them
-        if p1.lower() == p2.lower():
-            match_keys.append(key2)
-
-        # If phrase without trailing 's' matches, merge
-        elif p1.rstrip('s') == p2.rstrip('s'):
-            match_keys.append(key2)
-
-    return match_keys
-
-
 def dedupe_abbr(ABR):
-    data = {}
 
-    # BUG: Not working in parallel????
-    ITR = jobmap(dedupe_item,
-                 tqdm.tqdm(ABR.items()),
-                 FLAG_PARALLEL=True,
-                 ABR=ABR,
-    )
-    
-    for result in ITR:
+    df = pd.DataFrame()
+    df['phrase'] = [' '.join(x[0]) for x in ABR.keys()]
+    df['abbr'] = [x[1] for x in ABR.keys()]
+    df['count'] = ABR.values()
 
-        # Only add the most common result
-        max_val, max_item = 0, None
-        total_counts = 0
-        for item in result:
-            current_val = ABR[item]
-            total_counts += current_val
-            if current_val > max_val:
-                max_val = current_val
-                max_item = item
+    # Match phrases on lowercase and remove trailing 's'
+    df['reduced_phrase'] = df.phrase.str.strip()
+    df['reduced_phrase'] = df.reduced_phrase.str.lower()
+    df['reduced_phrase'] = df.reduced_phrase.str.rstrip('s')
 
-        data[(' '.join(max_item[0]), max_item[1])] = total_counts
+    data = []
+    for phrase, dfx in df.groupby('reduced_phrase'):
+        top = dfx.sort_values("count",ascending=False).iloc[0]
+        
+        item = {}
+        item["count"] = dfx["count"].sum()
+        item["phrase"] = top["phrase"]
+        item["abbr"] = top["abbr"]
+        data.append(item)
 
-    ABR = collections.Counter(data)
-
-    return ABR
+    df = pd.DataFrame(data).set_index("phrase")
+    return df.sort_values("count",ascending=False)
 
 
 def phrases_from_config(config):
@@ -189,18 +161,8 @@ def phrases_from_config(config):
 
     # Merge abbreviations that are similar
     print("Deduping abbr list.")
-    ABR = dedupe_abbr(ABR)
-    print("{} abbrs remain after deduping".format(len(ABR)))
-
-    # Convert abbrs to a list
-    data_insert = [(phrase, abbr, count)
-                   for (phrase, abbr), count in ABR.most_common()]
-
-    # Convert the list to a dataframe and sort
-    df = pd.DataFrame(data_insert,
-                      columns=("phrase", "abbr", "count"))
-    df = df.sort_values(
-        ["count", "phrase"], ascending=False).set_index("phrase")
+    df = dedupe_abbr(ABR)
+    print("{} abbrs remain after deduping".format(len(df)))
 
     # Output top phrase
     print("Top 5 abbreviations")

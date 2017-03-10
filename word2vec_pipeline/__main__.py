@@ -20,10 +20,8 @@ def main():
 
 
     if args["import_data"]:
-        import_data_from_config(config)
+        #import_data_from_config(config)
         phrases_from_config(config)
-
-    
 
     print args
 
