@@ -101,6 +101,7 @@ def import_data_from_config(config):
     for d_in in data_in_list:
         import_directory_csv(d_in, data_out, output_table)
 
+
 if __name__ == "__main__":
 
     import simple_config

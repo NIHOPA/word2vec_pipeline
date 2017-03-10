@@ -154,6 +154,7 @@ def predict_from_config(config):
 
     plt.show()
 
+
 if __name__ == "__main__":
 
     import simple_config

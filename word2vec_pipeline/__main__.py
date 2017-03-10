@@ -55,5 +55,6 @@ def main():
         else:
             raise KeyError("Analyze Function {} not known".format(func))
 
+
 if __name__ == "__main__":
     main()
