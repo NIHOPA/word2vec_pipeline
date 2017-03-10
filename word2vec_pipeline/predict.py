@@ -4,7 +4,6 @@ import h5py
 import os
 import itertools
 import collections
-import simple_config
 
 from utils.os_utils import grab_files, mkdir
 from utils.data_utils import load_ORG_data
@@ -12,12 +11,11 @@ from predictions import categorical_predict
 
 import seaborn as sns
 
-ERROR_MATRIX = {}
-PREDICTIONS = {}
+def predict_from_config(config):
 
-if __name__ == "__main__":
+    ERROR_MATRIX = {}
+    PREDICTIONS = {}
 
-    config = simple_config.load()
     use_meta = config["predict"]['use_meta']
     use_reduced = config["predict"]['use_reduced']
 
@@ -155,3 +153,10 @@ if __name__ == "__main__":
     plt.xticks(rotation=45)
 
     plt.show()
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    predict_from_config(config)
+
