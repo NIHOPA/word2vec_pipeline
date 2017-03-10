@@ -1,12 +1,10 @@
 import itertools
 from utils.os_utils import mkdir
 import document_scoring as ds
-import simple_config
 from utils.db_utils import item_iterator
 
-if __name__ == "__main__":
+def score_from_config(global_config):
 
-    global_config = simple_config.load()
     _PARALLEL = global_config.as_bool("_PARALLEL")
 
     config = global_config["score"]
@@ -63,3 +61,12 @@ if __name__ == "__main__":
         func.set_iterator_function(item_iterator, config)
         func.compute()
         func.save()
+
+
+
+if __name__ == "__main__":
+
+    import simple_config
+    config = simple_config.load()
+    score_from_config(config)
+
