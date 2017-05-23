@@ -3,10 +3,11 @@ import itertools
 from utils.os_utils import mkdir, grab_files
 from utils.parallel_utils import jobmap
 
-from unidecode import unidecode
+from nlpre import unidecoder
 import csv
 
 from tqdm import tqdm
+
 
 # Create a global reference ID for each item
 _ref_counter = itertools.count()
@@ -18,12 +19,14 @@ def map_to_unicode(s):
     return s.decode('utf-8', errors='replace')
 
 
+parser_unicode = unidecoder()
+
 def clean_row(row):
     '''
     Maps all keys through a unicode and unidecode fixer.
     '''
     for key, val in row.iteritems():
-        row[key] = unidecode(map_to_unicode(val))
+        row[key] = parser_unicode(map_to_unicode(val))
     return row
 
 
