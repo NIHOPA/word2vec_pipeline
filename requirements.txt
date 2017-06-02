@@ -5,10 +5,8 @@ pandas
 h5py
 
 # NLP core libraries
-unidecode
-pyparsing
-pattern
 gensim
+nlpre
 
 # Figures out how many cores on machine (for parallel)
 psutil

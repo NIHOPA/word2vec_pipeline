@@ -1,8 +1,8 @@
 import os
 from utils.os_utils import mkdir, grab_files
 import utils.db_utils as db_utils
-import preprocessing as pre
 import csv
+import nlpre
 
 from utils.parallel_utils import jobmap
 
@@ -11,6 +11,8 @@ _global_batch_size = 500
 # This must be global for parallel to work properly
 parser_functions = []
 
+#import logging
+#nlpre.logger.setLevel(logging.INFO)
 
 def dispatcher(row, target_column):
     text = row[target_column] if target_column in row else None
@@ -34,6 +36,17 @@ def dispatcher(row, target_column):
     #meta = unicode(meta)
     '''
 
+def load_phrase_database(f_abbreviations):
+
+    P = {}
+    with open(f_abbreviations,'r') as FIN:
+        CSV = csv.DictReader(FIN)
+        for row in CSV:
+            key = (tuple(row['phrase'].split()), row['abbr'])
+            val = int(row['count'])
+            P[key] = val
+    return P
+
 
 def parse_from_config(config):
 
@@ -47,22 +60,32 @@ def parse_from_config(config):
 
     mkdir(output_dir)
 
-    # Fill the pipeline with function objects
     for name in parse_config["pipeline"]:
-        obj = getattr(pre, name)
-
+        obj = getattr(nlpre, name)
+        
         # Load any kwargs in the config file
         kwargs = {}
         if name in parse_config:
-            kwargs = parse_config[name]
+            kwargs = dict(parse_config[name])
+
+        # Handle the special case of the precomputed acronyms
+        if name == "replace_acronyms":
+            f_abbr = os.path.join(
+                config["phrase_identification"]["output_data_directory"],
+                config["phrase_identification"]["f_abbreviations"]
+            )
+            ABBR = load_phrase_database(f_abbr)
+            kwargs["counter"] = ABBR
 
         parser_functions.append(obj(**kwargs))
+
 
     col = config["target_column"]
     F_CSV = grab_files("*.csv", input_data_dir)
 
-    dfunc = db_utils.CSV_database_iterator
+    dfunc = db_utils.CSV_database_iterator        
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
+    
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  batch_size=_global_batch_size,
                  target_column=col,)

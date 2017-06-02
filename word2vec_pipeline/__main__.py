@@ -15,8 +15,7 @@ from docopt import docopt
 
 import simple_config
 
-from import_data import import_data_from_config
-from phrases_from_abbrs import phrases_from_config
+from import_data import import_data_from_config, phrases_from_config
 from parse import parse_from_config
 from embed import embed_from_config
 from score import score_from_config
