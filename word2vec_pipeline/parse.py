@@ -11,8 +11,8 @@ _global_batch_size = 500
 # This must be global for parallel to work properly
 parser_functions = []
 
-import logging
-nlpre.logger.setLevel(logging.INFO)
+#import logging
+#nlpre.logger.setLevel(logging.INFO)
 
 def dispatcher(row, target_column):
     text = row[target_column] if target_column in row else None
@@ -78,13 +78,14 @@ def parse_from_config(config):
             kwargs["counter"] = ABBR
 
         parser_functions.append(obj(**kwargs))
-        
+
 
     col = config["target_column"]
     F_CSV = grab_files("*.csv", input_data_dir)
 
-    dfunc = db_utils.CSV_database_iterator
+    dfunc = db_utils.CSV_database_iterator        
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
+    
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  batch_size=_global_batch_size,
                  target_column=col,)
