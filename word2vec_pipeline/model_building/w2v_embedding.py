@@ -49,7 +49,11 @@ class w2v_embedding(corpus_iterator):
         for n in tqdm(range(self.epoch_n)):
             # print " - Epoch {}".format(n)
             ITR = self.sentence_iterator(config["target_column"])
-            self.clf.train(ITR)
+            self.clf.train(
+                ITR,
+                total_examples=self.clf.corpus_count,
+                epochs=self.clf.iter,
+            )
 
         print("Reducing the features")
         self.clf.init_sims(replace=True)
