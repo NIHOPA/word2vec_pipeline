@@ -79,7 +79,7 @@ class affinity_mapping(corpus_iterator):
 
         # Load the model from disk
         self.M = load_w2vec()
-        self.shape = self.M.syn0.shape
+        self.shape = self.M.wv.syn0.shape
 
         # Set parallel option
         self._PARALLEL = ast.literal_eval(kwargs["_PARALLEL"])
@@ -97,10 +97,10 @@ class affinity_mapping(corpus_iterator):
         damping = self.damping
         M = self.M
 
-        self.vocab_n = len(M.index2word)
+        self.vocab_n = len(M.wv.index2word)
 
         M.word2index = dict([(w, i) for w, i in
-                             zip(M.index2word, range(self.vocab_n))])
+                             zip(M.wv.index2word, range(self.vocab_n))])
 
         # Increment this as we find more clusters
         self.cluster_n = 0
@@ -175,7 +175,7 @@ class affinity_grouping(corpus_iterator):
             for i in np.unique(y_labels):
                 idx = i == y_labels
 
-                words = [self.M.index2word[word_idx]
+                words = [self.M.wv.index2word[word_idx]
                          for word_idx in token_idx[idx]]
                 vec = np.array([self.M[w] for w in words])
                 vec = vec.mean(axis=0)
@@ -271,7 +271,7 @@ def compute_document_affinity(item):
     for i in np.unique(y_labels):
         idx = i == y_labels
 
-        words = [M.index2word[word_idx]
+        words = [M.wv.index2word[word_idx]
                  for word_idx in token_clf_index[idx]]
         vec = np.array([M[w] for w in words])
         vec = vec.mean(axis=0)

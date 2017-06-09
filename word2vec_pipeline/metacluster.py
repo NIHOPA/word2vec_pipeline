@@ -222,10 +222,10 @@ class cluster_object(object):
         for i in range(n_clusters):
             v = meta_clusters[i]
 
-            dist = W.syn0.dot(v)
+            dist = W.wv.syn0.dot(v)
             idx = np.argsort(dist)[::-1][:10]
 
-            words = [W.index2word[i].replace('PHRASE_', '') for i in idx]
+            words = [W.wv.index2word[i].replace('PHRASE_', '') for i in idx]
 
             all_words.append(u' '.join(words))
 
