@@ -77,13 +77,13 @@ class document_log_probability(corpus_iterator):
         # Load the model from disk
         M = load_w2vec()
 
-        words = M.index2word
+        words = M.wv.index2word
         ZT = []
         INPUT_ITR = tqdm.tqdm(words)
 
         # Compute the partition function for each word
         for w in INPUT_ITR:
-            UE = self.energy(M.syn0, M[w])
+            UE = self.energy(M.wv.syn0, M[w])
             z = compute_partition_stats(UE)
             ZT.append(z)
 

@@ -40,7 +40,7 @@ class reduced_representation(score_unique_TF):
         bais = config['reduced_representation']['bais_strength']
 
         self.word_vecs = {}
-        for w in self.M.index2word:
+        for w in self.M.wv.index2word:
             weight = c.dot(self.M[w])
             weight *= bais
             weight *= ex_var

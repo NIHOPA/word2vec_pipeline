@@ -47,11 +47,11 @@ class generic_document_score(corpus_iterator):
 
         # Load the model from disk
         self.M = load_w2vec()
-        self.shape = self.M.syn0.shape
+        self.shape = self.M.wv.syn0.shape
 
         # Build the dictionary
         vocab_n = self.shape[0]
-        self.word2index = dict(zip(self.M.index2word, range(vocab_n)))
+        self.word2index = dict(zip(self.M.wv.index2word, range(vocab_n)))
 
         # Set parallel option (currently does nothing)
         # self._PARALLEL = kwargs["_PARALLEL"]
@@ -205,7 +205,7 @@ class score_simple(generic_document_score):
 
         # Empty document vector with no tokens, return zero
         if not W.shape[0]:
-            dim = self.M.syn0.shape[1]
+            dim = self.M.wv.syn0.shape[1]
             return np.zeros((dim,))
 
         # Apply the negative weights
@@ -294,7 +294,7 @@ class score_locality_hash(score_unique):
         params = self.load_params(**kwargs)
 
         # Build the hash function lookup
-        dim = self.M.syn0.shape[1]
+        dim = self.M.wv.syn0.shape[1]
         n_bits = int(kwargs['locality_n_bits'])
         alpha = float(kwargs['locality_alpha'])
 
@@ -324,7 +324,7 @@ class score_locality_hash(score_unique):
 
         self.RBP_hash = R
         self.WORD_HASH = {}
-        for w, v in zip(self.M.index2word, self.M.syn0):
+        for w, v in zip(self.M.wv.index2word, self.M.wv.syn0):
             self.WORD_HASH[w] = self.RBP_hash(v)
 
     def load_params(self, **kwargs):

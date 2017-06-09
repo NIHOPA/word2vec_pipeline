@@ -43,13 +43,17 @@ class w2v_embedding(corpus_iterator):
         ITR = self.sentence_iterator(config["target_column"])
         self.clf.build_vocab(ITR)
 
-        print("{} words in vocabulary".format(len(self.clf.index2word)))
+        print("{} words in vocabulary".format(len(self.clf.wv.index2word)))
 
         print("Training the features")
         for n in tqdm(range(self.epoch_n)):
             # print " - Epoch {}".format(n)
             ITR = self.sentence_iterator(config["target_column"])
-            self.clf.train(ITR)
+            self.clf.train(
+                ITR,
+                total_examples=self.clf.corpus_count,
+                epochs=self.clf.iter,
+            )
 
         print("Reducing the features")
         self.clf.init_sims(replace=True)

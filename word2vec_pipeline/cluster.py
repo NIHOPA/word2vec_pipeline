@@ -79,9 +79,9 @@ def close_words(W, X, labels, top_n=6):
         label_idx = labels == label
         mu = X[label_idx].mean(axis=0)
 
-        dist = W.syn0.dot(mu)
+        dist = W.wv.syn0.dot(mu)
         idx = np.argsort(dist)[::-1][:top_n]
-        words = [W.index2word[i] for i in idx]
+        words = [W.wv.index2word[i] for i in idx]
         L.append(' '.join(words))
 
     # Map unicode to simple ASCII
