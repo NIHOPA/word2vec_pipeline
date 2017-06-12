@@ -30,7 +30,7 @@ class corpus_iterator(simple_mapreduce):
         for x in self.iter_func(*self.iter_args, **self.iter_kwargs):
             yield x
 
-    def sentence_iterator(self, target_column):
+    def sentence_iterator(self, target_column=None):
         for row in self:
             text = row[target_column]
             yield unicode(text).split()
