@@ -84,7 +84,7 @@ def parse_from_config(config):
     F_CSV = grab_files("*.csv", input_data_dir)
 
     dfunc = db_utils.CSV_database_iterator        
-    INPUT_ITR = dfunc(F_CSV, col, include_filename=True)
+    INPUT_ITR = dfunc(F_CSV, col, include_filename=True, progress_bar=False)
     
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  batch_size=_global_batch_size,
