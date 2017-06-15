@@ -1,4 +1,5 @@
 import os
+import sys
 import csv
 import itertools
 import collections
@@ -11,6 +12,9 @@ from utils.parallel_utils import jobmap
 import utils.db_utils as db_utils
 
 from tqdm import tqdm
+
+# Fix for pathological csv files
+csv.field_size_limit(sys.maxsize)
 
 # Create a global reference ID for each item
 _ref_counter = itertools.count()
