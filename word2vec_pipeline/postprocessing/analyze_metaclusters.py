@@ -47,6 +47,14 @@ def analyze_metacluster_from_config(config):
 
     DV = load_document_vectors()
 
+    # Fix any zero vectors with random ones
+    dim = DV["docv"].shape[1]
+    idx = np.where(np.linalg.norm(DV["docv"],axis=1)==0)[0]
+    for i in idx:
+        vec = np.random.uniform(size=(dim,))
+        vec /= np.linalg.norm(vec)
+        DV["docv"][i] = vec
+
     # Build the results for the metaclusters
     labels = np.unique(MC["meta_labels"])
 
