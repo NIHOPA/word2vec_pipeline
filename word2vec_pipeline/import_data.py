@@ -39,7 +39,7 @@ def clean_row(row):
     return row
 
 
-def csv_iterator(f_csv, clean=True, _PARALLEL=False):
+def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
     '''
     Creates and iterator over a CSV file, optionally cleans it.
     '''
@@ -55,7 +55,7 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
             yield row
 
 
-def import_directory_csv(d_in, d_out, output_table):
+def import_directory_csv(d_in, d_out, target_column, merge_columns):
     '''
     Takes a input_directory and output_directory and builds
     and cleaned (free of encoding errors) CSV for all input
@@ -83,10 +83,35 @@ def import_directory_csv(d_in, d_out, output_table):
         F_CSV_OUT[f_csv] = open(f_csvx, 'w')
         F_CSV_OUT_HANDLE[f_csv] = None
 
+    has_checked_keys = False
+
     for f_csv in F_CSV:
 
         for k, row in tqdm(enumerate(csv_iterator(f_csv))):
             row["_ref"] = _ref_counter.next()
+
+            if not has_checked_keys:
+                for key in merge_columns:
+                    if key not in row.keys():
+                        msg = "column {} not in csv file {}"
+                        raise KeyError(msg.format(key, f_csv))
+                has_checked_keys = True
+
+            if merge_columns:
+                if target_column in row.keys():
+                    msg = "generated column {} already in csv file {}"
+                    raise KeyError(msg.format(target_column, f_csv))
+
+            text = []
+            for key in merge_columns:
+                val = row[key].strip()
+                if not val:
+                    continue
+                if val[-1] not in ".?!,":
+                    val += '.'
+                text.append(val)
+                
+            row[target_column] = '\n'.join(text).strip()
 
             if F_CSV_OUT_HANDLE[f_csv] is None:
                 F_CSV_OUT_HANDLE[f_csv] = csv.DictWriter(F_CSV_OUT[f_csv],
@@ -101,6 +126,13 @@ def import_directory_csv(d_in, d_out, output_table):
 
 def import_data_from_config(config):
 
+    merge_columns = (config["import_data"]["merge_columns"]
+                     if "merge_columns" in config["import_data"] else [])
+
+    if (type(merge_columns) != list):
+        msg = "merge_columns (if used) must be a list"
+        raise ValueError(msg)
+
     data_out = config["import_data"]["output_data_directory"]
     mkdir(data_out)
 
@@ -108,10 +140,14 @@ def import_data_from_config(config):
 
     # Require `input_data_directories` to be a list
     data_in_list = config["import_data"]["input_data_directories"]
-    assert(isinstance(data_in_list, list))
+    if (type(data_in_list) != list):
+        msg = "input_data_directories must be a list"
+        raise ValueError(msg)
+
+    target_column = config["target_column"]
 
     for d_in in data_in_list:
-        import_directory_csv(d_in, data_out, output_table)
+        import_directory_csv(d_in, data_out, target_column, merge_columns)
 
 
 def dedupe_abbr(ABR):
