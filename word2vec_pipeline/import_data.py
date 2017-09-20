@@ -51,17 +51,21 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         elif clean and not _PARALLEL:
             CSV = itertools.imap(clean_row, CSV)
 
-        for row in CSV:
-            yield row
+        try:
+            for row in CSV:
+                yield row
+        except:
+            pass
 
-def import_csv(f_csv, f_csv_out, target_column, merge_columns):
-
+def import_csv(item):
+    (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
-    with open(f_csv_out, 'w') as FOUT:
+    with open(f_csv_out, 'w') as FOUT:        
         CSV_HANDLE = None
+        total_rows = 0
 
-        for k, row in tqdm(enumerate(csv_iterator(f_csv))):
+        for row in tqdm(csv_iterator(f_csv)):
             row["_ref"] = _ref_counter.next()
 
             if not has_checked_keys:
@@ -92,8 +96,9 @@ def import_csv(f_csv, f_csv_out, target_column, merge_columns):
                 CSV_HANDLE.writeheader()
 
             CSV_HANDLE.writerow(row)
+            total_rows += 1
 
-        print("Imported {}, {} entries".format(f_csv, k))
+        print("Imported {}, {} entries".format(f_csv, total_rows))
 
 def import_directory_csv(d_in, d_out, target_column, merge_columns):
     '''
@@ -107,17 +112,21 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
     if not INPUT_FILES:
         print("No matching CSV files found, exiting")
         exit(2)
-    
-    for f_csv in INPUT_FILES:
-        
-        f_csv_out = os.path.join(d_out, os.path.basename(f_csv))
-        
+
+    REMAINING_INPUT_FILES = []
+    for f in INPUT_FILES:
+        f_csv_out = os.path.join(d_out, os.path.basename(f))
         if os.path.exists(f_csv_out):
-            print("{} already exists, skipping".format(f_csv_out))
+            print("{} already processed, skipping".format(f))
             continue
+        REMAINING_INPUT_FILES.append((f,f_csv_out,target_column,merge_columns))
 
-        import_csv(f_csv, f_csv_out, target_column, merge_columns)
-
+    #jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
+    #map(import_csv, REMAINING_INPUT_FILES)
+    import joblib
+    with joblib.Parallel(-1) as MP:
+        MP(joblib.delayed(import_csv)(x) for x in REMAINING_INPUT_FILES)
+        
 
 def import_data_from_config(config):
 
@@ -154,7 +163,7 @@ def dedupe_abbr(ABR):
 
     # Match phrases on lowercase and remove trailing 's'
     df['reduced_phrase'] = df.phrase.str.strip()
-    df['reducedphrase'] = df.reduced_phrase.str.lower()
+    df['reduced_phrase'] = df.reduced_phrase.str.lower()
     df['reduced_phrase'] = df.reduced_phrase.str.rstrip('s')
 
     data = []
