@@ -108,8 +108,8 @@ class generic_document_score(corpus_iterator):
         da["tokens"] = list(set(valid_tokens))
 
         if not da["tokens"]:
-            msg = "Document has no valid tokens! This is probably a problem."
-            print(msg)
+            msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
+            print(msg.format(row["_ref"], len(text)))
             # raise ValueError(msg)
 
         da["weights"] = self._compute_item_weights(**da)

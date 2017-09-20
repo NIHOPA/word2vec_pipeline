@@ -54,38 +54,12 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         for row in CSV:
             yield row
 
-
-def import_directory_csv(d_in, d_out, target_column, merge_columns):
-    '''
-    Takes a input_directory and output_directory and builds
-    and cleaned (free of encoding errors) CSV for all input
-    and attaches unique _ref numbers to each entry.
-    '''
-
-    F_CSV = []
-    F_CSV_OUT = {}
-    F_CSV_OUT_HANDLE = {}
-
-    INPUT_FILES = grab_files("*.csv", d_in)
-
-    if not INPUT_FILES:
-        print("No matching CSV files found, exiting")
-        exit(2)
-
-    for f_csv in INPUT_FILES:
-        f_csvx = os.path.join(d_out, os.path.basename(f_csv))
-
-        if os.path.exists(f_csvx):
-            print("{} already exists, skipping".format(f_csvx))
-            continue
-
-        F_CSV.append(f_csv)
-        F_CSV_OUT[f_csv] = open(f_csvx, 'w')
-        F_CSV_OUT_HANDLE[f_csv] = None
+def import_csv(f_csv, f_csv_out, target_column, merge_columns):
 
     has_checked_keys = False
 
-    for f_csv in F_CSV:
+    with open(f_csv_out, 'w') as FOUT:
+        CSV_HANDLE = None
 
         for k, row in tqdm(enumerate(csv_iterator(f_csv))):
             row["_ref"] = _ref_counter.next()
@@ -110,18 +84,39 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
                 if val[-1] not in ".?!,":
                     val += '.'
                 text.append(val)
-                
+
             row[target_column] = '\n'.join(text).strip()
 
-            if F_CSV_OUT_HANDLE[f_csv] is None:
-                F_CSV_OUT_HANDLE[f_csv] = csv.DictWriter(F_CSV_OUT[f_csv],
-                                                         sorted(row.keys()))
-                F_CSV_OUT_HANDLE[f_csv].writeheader()
+            if CSV_HANDLE is None:
+                CSV_HANDLE = csv.DictWriter(FOUT, sorted(row.keys()))
+                CSV_HANDLE.writeheader()
 
-            F_CSV_OUT_HANDLE[f_csv].writerow(row)
+            CSV_HANDLE.writerow(row)
 
-        msg = "Imported {}, {} entries"
-        print(msg.format(f_csv, k))
+        print("Imported {}, {} entries".format(f_csv, k))
+
+def import_directory_csv(d_in, d_out, target_column, merge_columns):
+    '''
+    Takes a input_directory and output_directory and builds
+    and cleaned (free of encoding errors) CSV for all input
+    and attaches unique _ref numbers to each entry.
+    '''
+
+    INPUT_FILES = grab_files("*.csv", d_in)
+
+    if not INPUT_FILES:
+        print("No matching CSV files found, exiting")
+        exit(2)
+    
+    for f_csv in INPUT_FILES:
+        
+        f_csv_out = os.path.join(d_out, os.path.basename(f_csv))
+        
+        if os.path.exists(f_csv_out):
+            print("{} already exists, skipping".format(f_csv_out))
+            continue
+
+        import_csv(f_csv, f_csv_out, target_column, merge_columns)
 
 
 def import_data_from_config(config):
