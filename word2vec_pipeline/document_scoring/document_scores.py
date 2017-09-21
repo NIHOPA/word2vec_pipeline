@@ -94,6 +94,8 @@ class generic_document_score(corpus_iterator):
 
     def score_document(self, row):
 
+        print row["_ref"]
+
         text = row[self.target_column]
         text = unicode(text)
         tokens = text.split()

@@ -16,8 +16,24 @@ from tqdm import tqdm
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
 
+
+# Thread-safe lock https://stackoverflow.com/a/35088457/249341
+from multiprocessing import Process, RawValue, Lock
+class SafeCounter(object):
+
+    def __init__(self, value=0):
+        # RawValue because we don't need it to create a Lock:
+        self.val = RawValue('i', value)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+            # Return the prior value
+            return self.val.value - 1
+
 # Create a global reference ID for each item
-_ref_counter = itertools.count()
+_ref_counter = SafeCounter()
 
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
 def func_parenthetical(data,**kwargs):
@@ -57,7 +73,7 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         except:
             pass
 
-def import_csv(item):
+def import_csv(item, _counter):
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
@@ -66,7 +82,7 @@ def import_csv(item):
         total_rows = 0
 
         for row in tqdm(csv_iterator(f_csv)):
-            row["_ref"] = _ref_counter.next()
+            row["_ref"] = _counter.increment()
 
             if not has_checked_keys:
                 for key in merge_columns:
@@ -121,11 +137,21 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
             continue
         REMAINING_INPUT_FILES.append((f,f_csv_out,target_column,merge_columns))
 
+    procs = [Process(target=import_csv,
+                     args=(x, _ref_counter))
+             for x in REMAINING_INPUT_FILES]
+
+    for p in procs: p.start()
+    for p in procs: p.join()
+
     #jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
     #map(import_csv, REMAINING_INPUT_FILES)
-    import joblib
-    with joblib.Parallel(-1) as MP:
-        MP(joblib.delayed(import_csv)(x) for x in REMAINING_INPUT_FILES)
+
+    #import joblib
+    #with joblib.Parallel(-1) as MP:
+    #    func = joblib.delayed(import_csv)
+    #    MP(func(x, _ref_counter) for x in REMAINING_INPUT_FILES)
+
         
 
 def import_data_from_config(config):
