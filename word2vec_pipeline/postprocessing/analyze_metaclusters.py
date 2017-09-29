@@ -57,58 +57,71 @@ def analyze_metacluster_from_config(config):
 
     # Build the results for the metaclusters
     labels = np.unique(MC["meta_labels"])
-
-    print("Computing intra-document dispersion.")
-    dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
-
-    # Compute the linkage and the order
-    linkage = hierarchy.linkage(dist, method='average')
-    d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
-
-    #
-
     V = DV["docv"]
+
+    if config["compute_dispersion"]:
+        print("Computing intra-document dispersion.")
+        dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
+
+        # Compute the linkage and the order
+        linkage = hierarchy.linkage(dist, method='average')
+        d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
+
     data = []
     for cx, cluster_id in zip(C, labels):
         idx = MC["meta_labels"] == cluster_id
 
         item = {}
         item["counts"] = idx.sum()
-        item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
+
+        if config["compute_dispersion"]:
+            item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
+
         data.append(item)
 
     df = pd.DataFrame(data, index=labels)
 
     df.index.name = "cluster_id"
     df["word2vec_description"] = MC["describe_clusters"]
-    df["dendrogram_order"] = d_idx
 
-    cols = ["dendrogram_order",
+    if config["compute_dispersion"]:
+        df["dendrogram_order"] = d_idx
+
+        cols = [
+            "dendrogram_order",
             "counts",
             "avg_centroid_distance",
             "intra_document_dispersion",
-            "word2vec_description"]
-
-    df = df[cols].sort_values("dendrogram_order")
+            "word2vec_description"
+        ]
+        df = df[cols].sort_values("dendrogram_order")
+    else:
+        cols = [
+            "counts",
+            "avg_centroid_distance",
+            "word2vec_description"
+        ]
+        df = df[cols].sort_values("counts")
 
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
 
-    #
-
     print("Computing master-label spreadsheets.")
-    cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
     ORG["cluster_id"] = MC["meta_labels"]
-    ORG["dendrogram_order"] = -1
+    special_cols = ["_ref", "cluster_id",]
 
-    for i, j in cluster_lookup.items():
-        idx = ORG["cluster_id"] == i
-        ORG.loc[idx, "dendrogram_order"] = j
+    if config["compute_dispersion"]:
+        cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
+        ORG["dendrogram_order"] = -1
 
-    special_cols = ["_ref", "cluster_id", "dendrogram_order"]
+        for i, j in cluster_lookup.items():
+            idx = ORG["cluster_id"] == i
+            ORG.loc[idx, "dendrogram_order"] = j
+
+        special_cols += ["dendrogram_order"]
+
     cols = [x for x in ORG.columns if x not in special_cols]
-
     ORG = ORG[special_cols + cols]
 
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
@@ -119,13 +132,15 @@ def analyze_metacluster_from_config(config):
     df["cluster_id"] = df.index
     df = df.sort_values("cluster_id")
     print(df)
-    f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
-    with h5py.File(f_h5_save, 'w') as h5_save:
-        h5_save["dispersion"] = dist
-        h5_save["cluster_id"] = df.cluster_id
-        h5_save["counts"] = df.counts
-        h5_save["dendrogram_order"] = df.dendrogram_order
-        h5_save["linkage"] = linkage
+
+    if config["compute_dispersion"]:
+        f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
+        with h5py.File(f_h5_save, 'w') as h5_save:
+            h5_save["dispersion"] = dist
+            h5_save["cluster_id"] = df.cluster_id
+            h5_save["counts"] = df.counts
+            h5_save["dendrogram_order"] = df.dendrogram_order
+            h5_save["linkage"] = linkage
 
 
 if __name__ == "__main__" and __package__ is None:
