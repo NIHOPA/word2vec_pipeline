@@ -24,7 +24,6 @@ def subset_iterator(X, m, repeats=1):
     for i in range(repeats):
 
         indices = np.random.permutation(N)
-        N // m
 
         for idx in np.array_split(indices, N // m):
             yield X[idx][:]
@@ -132,6 +131,9 @@ class cluster_object(object):
 
             X = X[~bad_row_idx]
             A = cosine_affinity(X)
+
+            # "Force" symmetry due to rounding errors
+            A = np.maximum( A, A.transpose() )
 
             labels = clf.fit_predict(A)
 
