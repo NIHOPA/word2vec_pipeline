@@ -6,7 +6,7 @@ import collections
 import pylab as plt
 
 from utils.os_utils import grab_files, mkdir
-from utils.data_utils import load_ORG_data, load_document_vectors, get_score_methods
+import utils.data_utils as uds
 from predictions import categorical_predict
 
 import seaborn as sns
@@ -23,7 +23,7 @@ def predict_from_config(config):
     # For now, we can only deal with one column using meta!
     assert(len(config["predict"]["categorical_columns"]) == 1)
     
-    methods = get_score_methods()
+    methods = uds.get_score_methods()
     
     pred_dir = config["import_data"]["output_data_directory"]
     pred_files = grab_files('*.csv', pred_dir)
@@ -34,7 +34,7 @@ def predict_from_config(config):
     mkdir(pred_output_dir)
 
     # Load the categorical columns
-    df = load_ORG_data(config["predict"]["categorical_columns"])
+    df = uds.load_ORG_data(config["predict"]["categorical_columns"])
     ITR = itertools.product(methods, config["predict"]["categorical_columns"])
 
     X_META = []
@@ -48,7 +48,7 @@ def predict_from_config(config):
         text = "Predicting [{}] [{}:{}]"
         print(text.format(method, cat_col, pred_col))
 
-        DV = load_document_vectors(method)
+        DV = uds.load_document_vectors(method)
         X = DV["docv"]
         
         if use_meta:
@@ -102,7 +102,7 @@ def predict_from_config(config):
 
     # Save the predictions
     if extra_cols:
-        df_ORG = load_ORG_data(extra_columns=extra_cols)
+        df_ORG = uds.load_ORG_data(extra_columns=extra_cols)
         for col in extra_cols:
             df_scores[col] = df_ORG[col]
 
