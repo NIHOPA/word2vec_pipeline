@@ -12,7 +12,7 @@ from tqdm import tqdm
 from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
 from utils.mapreduce import corpus_iterator
-from utils.data_utils import load_w2vec
+from utils.data_utils import load_w2vec, touch_h5
 
 
 def L2_norm(doc_vec):
@@ -27,15 +27,6 @@ def L2_norm(doc_vec):
         doc_vec = np.zeros(doc_vec.shape)
 
     return doc_vec
-
-
-def touch_h5(f_db):
-    # Create the h5 file if it doesn't exist
-    if not os.path.exists(f_db):
-        h5 = h5py.File(f_db, 'w')
-    else:
-        h5 = h5py.File(f_db, 'r+')
-    return h5
 
 class generic_document_score(corpus_iterator):
 

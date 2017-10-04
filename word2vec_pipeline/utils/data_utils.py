@@ -29,6 +29,15 @@ def load_h5_file(f_h5, *args):
     return data
 
 
+def touch_h5(f_db):
+    # Create the h5 file if it doesn't exist
+    if not os.path.exists(f_db):
+        h5 = h5py.File(f_db, 'w')
+    else:
+        h5 = h5py.File(f_db, 'r+')
+    return h5
+
+
 def load_dispersion_data():
     print("Loading dispersion data")
 

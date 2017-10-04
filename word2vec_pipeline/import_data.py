@@ -16,7 +16,7 @@ from tqdm import tqdm
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
 
-
+'''
 # Thread-safe lock https://stackoverflow.com/a/35088457/249341
 from multiprocessing import Process, RawValue, Lock
 class SafeCounter(object):
@@ -34,6 +34,8 @@ class SafeCounter(object):
 
 # Create a global reference ID for each item
 _ref_counter = SafeCounter()
+'''
+_ref_counter = itertools.count()
 
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
 def func_parenthetical(data,**kwargs):
@@ -73,7 +75,7 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         except:
             pass
 
-def import_csv(item, _counter):
+def import_csv(item):
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
@@ -82,7 +84,7 @@ def import_csv(item, _counter):
         total_rows = 0
 
         for row in tqdm(csv_iterator(f_csv)):
-            row["_ref"] = _counter.increment()
+            row["_ref"] = _ref_counter.next()
 
             if not has_checked_keys:
                 for key in merge_columns:
@@ -129,6 +131,12 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
         print("No matching CSV files found, exiting")
         exit(2)
 
+    for f_csv in INPUT_FILES:
+        f_csv_out = os.path.join(d_out, os.path.basename(f_csv))
+        vals = (f_csv, f_csv_out, target_column, merge_columns)
+        import_csv(vals)
+
+    '''
     REMAINING_INPUT_FILES = []
     for f in INPUT_FILES:
         f_csv_out = os.path.join(d_out, os.path.basename(f))
@@ -143,7 +151,8 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
 
     for p in procs: p.start()
     for p in procs: p.join()
-
+    '''
+    
     #jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
     #map(import_csv, REMAINING_INPUT_FILES)
 

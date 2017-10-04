@@ -47,7 +47,7 @@ def cosine_affinity(X):
 
     return S
 
-
+'''
 def check_h5_item(h5, name, **check_args):
     # Returns True if we need to compute h5[name] and h5[name].attr[key] != val
 
@@ -62,7 +62,7 @@ def check_h5_item(h5, name, **check_args):
             return True
 
     return False
-
+'''
 
 class cluster_object(object):
 
@@ -90,6 +90,7 @@ class cluster_object(object):
         DV = uds.load_document_vectors(score_method)
         self._ref = DV["_refs"]
         self.docv = DV["docv"]
+        
         self.N, self.dim = self.docv.shape
 
     def compute_centroid_set(self, **kwargs):
@@ -222,11 +223,11 @@ def metacluster_from_config(config):
     CO = cluster_object()
     f_h5 = CO.f_h5_centroids
 
-    if not os.path.exists(f_h5):
-        h5 = h5py.File(f_h5, 'w')
-        h5.close()
-
-    h5 = h5py.File(f_h5, 'r+')
+    # Remove the file if it exists and start fresh
+    if os.path.exists(f_h5):
+        os.remove(f_h5)
+    
+    h5 = uds.touch_h5(f_h5)
 
     keys = ["subcluster_kn", "subcluster_pcut",
             "subcluster_m", "subcluster_repeats"]
@@ -234,20 +235,20 @@ def metacluster_from_config(config):
 
     def compute_func(name, func, dtype=None, **kwargs):
 
-        if check_h5_item(h5, name, **args):
-            print("Computing", name)
-            result = func(**kwargs)
+        #if check_h5_item(h5, name, **args):
+        print("Computing", name)
+        result = func(**kwargs)
 
-            if dtype in [str, unicode]:
-                dt = h5py.special_dtype(vlen=unicode)
-                h5.require_dataset(name, shape=result.shape, dtype=dt)
-                for i, x in enumerate(result):
-                    h5[name][i] = x
-            else:
-                h5[name] = result
+        if dtype in [str, unicode]:
+            dt = h5py.special_dtype(vlen=unicode)
+            h5.require_dataset(name, shape=result.shape, dtype=dt)
+            for i, x in enumerate(result):
+                h5[name][i] = x
+        else:
+            h5[name] = result
 
-            for k in args:
-                h5[name].attrs.create(k, args[k])
+        for k in args:
+            h5[name].attrs.create(k, args[k])
 
     compute_func("subcluster_centroids", CO.compute_centroid_set)
     compute_func("meta_centroids", CO.compute_meta_centroid_set)
@@ -257,6 +258,7 @@ def metacluster_from_config(config):
 
     print(h5['describe_clusters'][:])
 
+    h5.close()
 
 if __name__ == "__main__":
 
