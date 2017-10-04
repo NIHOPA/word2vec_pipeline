@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
-import h5py
 import os
 import itertools
 import collections
+import pylab as plt
 
 from utils.os_utils import grab_files, mkdir
-from utils.data_utils import load_ORG_data
+from utils.data_utils import load_ORG_data, load_document_vectors, get_score_methods
 from predictions import categorical_predict
 
 import seaborn as sns
@@ -22,15 +22,9 @@ def predict_from_config(config):
 
     # For now, we can only deal with one column using meta!
     assert(len(config["predict"]["categorical_columns"]) == 1)
-
-    f_h5 = os.path.join(
-        config["score"]["output_data_directory"],
-        config["score"]["document_scores"]["f_db"],
-    )
-
-    h5 = h5py.File(f_h5, 'r')
-
-    methods = h5.keys()
+    
+    methods = get_score_methods()
+    
     pred_dir = config["import_data"]["output_data_directory"]
     pred_files = grab_files('*.csv', pred_dir)
     pred_col = config["target_column"]
@@ -40,17 +34,13 @@ def predict_from_config(config):
     mkdir(pred_output_dir)
 
     # Load the categorical columns
-    cols = ['_ref', ] + config["predict"]["categorical_columns"]
-    ITR = (pd.read_csv(x, usecols=cols).set_index('_ref') for x in pred_files)
-    df = pd.concat(list(ITR))
-
+    df = load_ORG_data(config["predict"]["categorical_columns"])
     ITR = itertools.product(methods, config["predict"]["categorical_columns"])
 
     X_META = []
 
     cfg = config["predict"]
     cfg["_PARALLEL"] = config["_PARALLEL"]
-
     df_scores = None
 
     for (method, cat_col) in ITR:
@@ -58,30 +48,16 @@ def predict_from_config(config):
         text = "Predicting [{}] [{}:{}]"
         print(text.format(method, cat_col, pred_col))
 
-        assert(method in h5)
-        g = h5[method]
-
-        # Load document score data
-        _refs = np.hstack([g[k]["_ref"][:] for k in g.keys()])
-
-        vector_key = "VX" if use_reduced else "V"
-
-        X = np.vstack([g[k][vector_key][:] for k in g.keys()])
-
-        assert(X.shape[0] == _refs.shape[0])
-
-        # Sort to the proper order
-        sort_idx = np.argsort(_refs)
-        _refs = _refs[sort_idx]
-        X = np.vstack(X)[sort_idx]
+        DV = load_document_vectors(method)
+        X = DV["docv"]
         
-
         if use_meta:
             X_META.append(X)
 
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
+        
         # print(" Class balance for catergorical prediction:
         # {}".format(counts))
 
@@ -156,7 +132,6 @@ def predict_from_config(config):
 
     print(df)
 
-    plt = sns.plt
     sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
     plt.yticks(rotation=0)
     plt.xticks(rotation=45)
