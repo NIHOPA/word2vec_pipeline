@@ -88,7 +88,7 @@ class CSV_database_iterator(object):
                         row = {k: row[k] for k in ('_ref', self.col)}
 
                     if self.include_filename:
-                        row["_filename"] = f
+                        row["_filename"] = os.path.basename(f)
 
                     yield row
 
@@ -103,6 +103,7 @@ def item_iterator(
         section='parse',
         progress_bar=False,
         text_column=None,
+        include_filename=False,
 ):
     '''
     Iterates over the parsed corpus items and respects a given whitelist.
@@ -133,6 +134,49 @@ def item_iterator(
         F_CSV,
         config["target_column"],
         progress_bar=progress_bar,
+        include_filename=include_filename,
+    )
+
+    for row in INPUT_ITR:
+        if text_column is not None:
+            row['text'] = row[text_column]
+        yield row
+
+
+
+def get_section_filenames(section):
+    config = simple_config.load()
+    input_data_dir = config['parse']["output_data_directory"]
+    return grab_files("*.csv", input_data_dir, verbose=False)
+
+def single_file_item_iterator(
+        f_csv,
+        config=None,
+        section='parse',
+        progress_bar=False,
+        text_column=None,
+        include_filename=True,
+):
+    '''
+    Iterates over a single file
+    '''
+    
+
+    if config is None:
+        config = simple_config.load()
+
+    config = simple_config.load()
+    input_data_dir = config[section]["output_data_directory"]
+
+    # Make sure the file we requested exists
+    assert(f_csv in get_section_filenames(section))
+    
+
+    INPUT_ITR = CSV_database_iterator(
+        [f_csv],
+        config["target_column"],
+        progress_bar=progress_bar,
+        include_filename=include_filename,
     )
 
     for row in INPUT_ITR:

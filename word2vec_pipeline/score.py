@@ -1,7 +1,7 @@
 import itertools
 from utils.os_utils import mkdir
 import document_scoring as ds
-from utils.db_utils import item_iterator
+import utils.db_utils as db
 
 
 def score_from_config(global_config):
@@ -34,8 +34,12 @@ def score_from_config(global_config):
 
     for name, func in mapreduce_functions:
         print("Starting mapreduce {}".format(func.table_name))
-        INPUT_ITR = item_iterator(config, text_column=col,
-                                  progress_bar=True)
+        INPUT_ITR = db.item_iterator(
+            config,
+            text_column=col,
+            progress_bar=True,
+            include_filename=True,
+        )
 
         ITR = itertools.imap(func, INPUT_ITR)
         map(func.reduce, ITR)
@@ -54,9 +58,30 @@ def score_from_config(global_config):
             kwargs.update(config[name])
 
         # Add in the embedding configuration options
-
         func = obj(**kwargs)
-        func.set_iterator_function(item_iterator, config)
+
+        F_CSV = db.get_section_filenames("parse")
+
+        '''
+        for f_csv in F_CSV:
+            for x in db.single_file_item_iterator(f_csv):
+                print x
+        exit()
+        '''
+        for f_csv in F_CSV:
+            ITR = db.single_file_item_iterator(f_csv)
+            func.compute_single(ITR)
+            func.save_single()
+            
+        func.compute_reduced_representation()
+        exit()
+
+        func.set_iterator_function(
+            db.item_iterator,
+            config,
+            include_filename=True
+        )
+        
         func.compute()
         func.save()
 

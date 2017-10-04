@@ -120,24 +120,102 @@ class generic_document_score(corpus_iterator):
         assert(not np.isnan(da['doc_vec']).any())
 
         row['doc_vec'] = da['doc_vec']
+
         return row
 
-    def compute(self):
-        # Save each block (table_name, f_sql) as its own
+    def compute_single(self, INPUT_ITR):
 
         assert(self.method is not None)
         print("Scoring {}".format(self.method))
 
-        ITR = tqdm(itertools.imap(self.score_document, self))
+        self._ref = []
+        self.V = []
+        self.current_filename = None
+        ITR = itertools.imap(self.score_document, tqdm(INPUT_ITR))
 
+        for row in ITR:
+
+            # Require that filenames don't change in compute_single
+            assert (self.current_filename in [None, row["_filename"]])
+            self.current_filename = row["_filename"]
+
+            self.V.append(row["doc_vec"])
+            self._ref.append(int(row["_ref"]))
+            
+        self.V = np.array(self.V)
+        self._ref = np.array(self._ref)
+
+    def save_single(self):
+
+        assert(self.V is not None)
+        assert(self._ref is not None)
+
+        # Set the size explictly as a sanity check
+        size_n, dim_V = self.V.shape
+
+        config_score = simple_config.load()["score"]
+        f_db = os.path.join(
+            config_score["output_data_directory"],
+            config_score["document_scores"]["f_db"]
+        )
+
+        h5 = touch_h5(f_db)
+        g  = h5.require_group(self.method)
+        gx = g.require_group(self.current_filename)
+
+        # Save the data array
+        msg = "Saving {} {} ({})"
+        print(msg.format(self.method, self.current_filename, size_n))
+
+        for col in ["V", "_ref", "VX",
+                    "VX_explained_variance_ratio_",
+                    "VX_components_"]:
+            if col in gx:
+                print "  Clearing", self.method, self.current_filename, col
+                del gx[col]
+
+        gx.create_dataset("V", data=self.V, compression='gzip')
+        gx.create_dataset("_ref", data=self._ref)
+
+    def compute_reduced_representation(self):
+
+        if not self.compute_reduced:
+            return None
+
+        config_score = simple_config.load()["score"]
+        f_db = os.path.join(
+            config_score["output_data_directory"],
+            config_score["document_scores"]["f_db"]
+        )
+
+        h5 = touch_h5(f_db)
+        g = h5[self.method]
         
+        keys = g.keys()
+        V     = np.vstack([g[x]["V"][:] for x in keys])
+        sizes = [g[x]["_ref"].shape[0] for x in keys]
 
-        data = {}
-        for k, row in enumerate(ITR):
-            data[int(row['_ref'])] = row['doc_vec']
+        nc = self.reduced_n_components
+        clf = IncrementalPCA(n_components=nc)
 
-        self._ref = sorted(data.keys())
-        self.V = np.vstack([data[k] for k in self._ref])
+        msg = "Performing PCA on {}, ({})->({})"
+        print(msg.format(self.method, self.V.shape[1], nc))
+
+        VX = clf.fit_transform(self.V)
+        EVR = clf.explained_variance_ratio_
+        COMPONENTS = clf.components_
+    
+        for key, size in zip(keys, sizes):
+            vx, VX = VX[:size,:], VX[size:, :]
+            evr, EVR = EVR[:size], EVR[size:]
+            com, COMPONENTS = COMPONENTS[:size,:], COMPONENTS[size:, :]
+
+            g[key].create_dataset("VX", data=vx, compression='gzip')
+            g[key].create_dataset("VX_explained_variance_ratio_", data=evr)
+            g[key].create_dataset("VX_components_", data=com)
+
+        h5.close()
+        
 
     def save(self):
 
@@ -184,6 +262,23 @@ class generic_document_score(corpus_iterator):
                              data=clf.components_)
 
         h5.close()
+        
+    def compute(self):
+        # Save each block (table_name, f_sql) as its own
+
+        assert(self.method is not None)
+        print("Scoring {}".format(self.method))
+
+        ITR = tqdm(itertools.imap(self.score_document, self))        
+
+        data = {}
+        for k, row in enumerate(ITR):
+            data[int(row['_ref'])] = row['doc_vec']
+
+        self._ref = sorted(data.keys())
+        self.V = np.vstack([data[k] for k in self._ref])
+
+
 
     def get_word_vector(self, word):
         return self.M[word]
