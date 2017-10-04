@@ -37,9 +37,6 @@ def touch_h5(f_db):
         h5 = h5py.File(f_db, 'r+')
     return h5
 
-#
-
-
 class generic_document_score(corpus_iterator):
 
     def __init__(self, *args, **kwargs):
@@ -79,6 +76,8 @@ class generic_document_score(corpus_iterator):
         if self.compute_reduced:
             sec = config_score['reduced_representation']
             self.reduced_n_components = sec['n_components']
+
+        self.h5py_args = {"compression":"gzip"}
 
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
@@ -174,8 +173,8 @@ class generic_document_score(corpus_iterator):
                 print "  Clearing", self.method, self.current_filename, col
                 del gx[col]
 
-        gx.create_dataset("V", data=self.V, compression='gzip')
-        gx.create_dataset("_ref", data=self._ref)
+        gx.create_dataset("V", data=self.V, **self.h5py_args)
+        gx.create_dataset("_ref", data=self._ref, **self.h5py_args)
 
     def compute_reduced_representation(self):
 
@@ -212,7 +211,7 @@ class generic_document_score(corpus_iterator):
             evr, EVR = EVR[:size], EVR[size:]
             com, COMPONENTS = COMPONENTS[:size,:], COMPONENTS[size:, :]
 
-            g[key].create_dataset("VX", data=vx, compression='gzip')
+            g[key].create_dataset("VX", data=vx, **self.h5py_args)
             g[key].create_dataset("VX_explained_variance_ratio_", data=evr)
             g[key].create_dataset("VX_components_", data=com)
 
