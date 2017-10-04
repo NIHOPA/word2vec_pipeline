@@ -7,13 +7,10 @@ import h5py
 from scipy.spatial.distance import cdist, pdist
 from scipy.cluster import hierarchy
 
-from utils.data_utils import load_metacluster_data, load_document_vectors
-from utils.data_utils import load_ORG_data
-
+import utils.data_utils as uds
 
 def _compute_centroid_dist(X, cx):
     return cdist(X, [cx, ], metric='cosine').mean()
-
 
 def _compute_dispersion_matrix(X, labels):
     n = len(np.unique(labels))
@@ -35,17 +32,18 @@ def _compute_dispersion_matrix(X, labels):
 
 def analyze_metacluster_from_config(config):
 
+    score_method = config["metacluster"]["score_method"]
     config = config["postprocessing"]
 
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
 
-    ORG = load_ORG_data(config["master_columns"])
+    ORG = uds.load_ORG_data(config["master_columns"])
 
-    MC = load_metacluster_data()
+    MC = uds.load_metacluster_data()
     C = MC["meta_centroids"]
 
-    DV = load_document_vectors()
+    DV = uds.load_document_vectors(score_method)
 
     # Fix any zero vectors with random ones
     dim = DV["docv"].shape[1]
@@ -120,6 +118,7 @@ def analyze_metacluster_from_config(config):
     df = df.sort_values("cluster_id")
     print(df)
     f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
+    
     with h5py.File(f_h5_save, 'w') as h5_save:
         h5_save["dispersion"] = dist
         h5_save["cluster_id"] = df.cluster_id

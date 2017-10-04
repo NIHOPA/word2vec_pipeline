@@ -54,10 +54,18 @@ def load_ORG_data(extra_columns=None):
     # Load the input columns
     F_CSV = grab_files("*.csv", config_import["output_data_directory"])
 
-    ITR = (pd.read_csv(f, usecols=cols) for f in F_CSV)
+    data = []
+    for f in F_CSV:
+        try:
+            dfx = pd.read_csv(f, usecols=cols)
+            data.append(dfx)
+        except ValueError:
+            csv_cols = pd.read_csv(f, nrows=0).columns
+            msg = "Columns requested {}, do not match columns in input csv {}"
+            raise ValueError(msg.format(cols, csv_cols))
 
     # Require the _refs to be in order
-    df = pd.concat(list(ITR)).sort_values('_ref').set_index('_ref')
+    df = pd.concat(data).sort_values('_ref').set_index('_ref')
 
     # Use _ref as an index, but keep it as a row
     df['_ref'] = df.index

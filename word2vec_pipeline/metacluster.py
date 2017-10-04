@@ -9,7 +9,8 @@ from sklearn.cluster import SpectralClustering
 
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import cosine_similarity
-from utils.data_utils import load_w2vec
+
+import utils.data_utils as uds
 
 
 def subset_iterator(X, m, repeats=1):
@@ -80,34 +81,15 @@ class cluster_object(object):
 
         config_score = simple_config.load()["score"]
 
-        self.f_h5_docvecs = os.path.join(
-            config_score["output_data_directory"],
-            config_score['document_scores']["f_db"],
-        )
-
         self.f_h5_centroids = os.path.join(
             config["output_data_directory"],
             config["f_centroids"],
         )
 
         score_method = config['score_method']
-
-        self._load_data(self.f_h5_docvecs, score_method)
-
-    def _load_data(self, f_h5, method):
-
-        print("Loading document data from", f_h5)
-
-        with h5py.File(f_h5, 'r') as h5:
-            g = h5[method]
-            self._ref = g["_ref"][:]
-            self.docv = g["V"][:]
-
-        # Require the _refs to be in order as a sanity check
-        if not (np.sort(self._ref) == self._ref).all():
-            msg = "WARNING, data out of sort order from _refs"
-            raise ValueError(msg)
-
+        DV = uds.load_document_vectors(score_method)
+        self._ref = DV["_refs"]
+        self.docv = DV["docv"]
         self.N, self.dim = self.docv.shape
 
     def compute_centroid_set(self, **kwargs):
@@ -211,7 +193,7 @@ class cluster_object(object):
 
     def describe_clusters(self, **kwargs):
 
-        W = load_w2vec()
+        W = uds.load_w2vec()
 
         meta_clusters = self.load_centroid_dataset("meta_centroids")
         n_clusters = meta_clusters.shape[0]
