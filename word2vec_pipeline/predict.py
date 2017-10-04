@@ -62,10 +62,19 @@ def predict_from_config(config):
         g = h5[method]
 
         # Load document score data
-        if use_reduced:
-            X = g["VX"][:]
-        else:
-            X = g["V"][:]
+        _refs = np.hstack([g[k]["_ref"][:] for k in g.keys()])
+
+        vector_key = "VX" if use_reduced else "V"
+
+        X = np.vstack([g[k][vector_key][:] for k in g.keys()])
+
+        assert(X.shape[0] == _refs.shape[0])
+
+        # Sort to the proper order
+        sort_idx = np.argsort(_refs)
+        _refs = _refs[sort_idx]
+        X = np.vstack(X)[sort_idx]
+        
 
         if use_meta:
             X_META.append(X)

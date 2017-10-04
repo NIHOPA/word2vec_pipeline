@@ -140,9 +140,10 @@ class generic_document_score(corpus_iterator):
 
             self.V.append(row["doc_vec"])
             self._ref.append(int(row["_ref"]))
-            
+
         self.V = np.array(self.V)
         self._ref = np.array(self._ref)
+
 
     def save_single(self):
 
@@ -189,7 +190,7 @@ class generic_document_score(corpus_iterator):
 
         h5 = touch_h5(f_db)
         g = h5[self.method]
-        
+
         keys = g.keys()
         V     = np.vstack([g[x]["V"][:] for x in keys])
         sizes = [g[x]["_ref"].shape[0] for x in keys]
@@ -198,12 +199,12 @@ class generic_document_score(corpus_iterator):
         clf = IncrementalPCA(n_components=nc)
 
         msg = "Performing PCA on {}, ({})->({})"
-        print(msg.format(self.method, self.V.shape[1], nc))
+        print(msg.format(self.method, V.shape[1], nc))
 
-        VX = clf.fit_transform(self.V)
+        VX = clf.fit_transform(V)
         EVR = clf.explained_variance_ratio_
         COMPONENTS = clf.components_
-    
+
         for key, size in zip(keys, sizes):
 
             # Take slices equal to the size
