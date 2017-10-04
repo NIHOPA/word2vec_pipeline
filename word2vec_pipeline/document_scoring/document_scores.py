@@ -94,8 +94,6 @@ class generic_document_score(corpus_iterator):
 
     def score_document(self, row):
 
-        print row["_ref"]
-
         text = row[self.target_column]
         text = unicode(text)
         tokens = text.split()
@@ -131,6 +129,8 @@ class generic_document_score(corpus_iterator):
         print("Scoring {}".format(self.method))
 
         ITR = tqdm(itertools.imap(self.score_document, self))
+
+        
 
         data = {}
         for k, row in enumerate(ITR):
