@@ -32,6 +32,8 @@ def score_from_config(global_config):
 
     col = global_config['target_column']
 
+    # Run the functions that can act like mapreduce (eg. TF counts)
+
     for name, func in mapreduce_functions:
         print("Starting mapreduce {}".format(func.table_name))
         INPUT_ITR = db.item_iterator(
@@ -46,7 +48,7 @@ def score_from_config(global_config):
 
         func.save(config)
 
-    #
+
     # Run the functions that act globally on the data
 
     for name in config["globaldata_commands"]:
@@ -62,28 +64,12 @@ def score_from_config(global_config):
 
         F_CSV = db.get_section_filenames("parse")
 
-        '''
-        for f_csv in F_CSV:
-            for x in db.single_file_item_iterator(f_csv):
-                print x
-        exit()
-        '''
         for f_csv in F_CSV:
             ITR = db.single_file_item_iterator(f_csv)
             func.compute_single(ITR)
             func.save_single()
             
         func.compute_reduced_representation()
-        exit()
-
-        func.set_iterator_function(
-            db.item_iterator,
-            config,
-            include_filename=True
-        )
-        
-        func.compute()
-        func.save()
 
 
 if __name__ == "__main__":

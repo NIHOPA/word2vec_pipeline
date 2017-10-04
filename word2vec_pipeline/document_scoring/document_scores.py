@@ -194,7 +194,7 @@ class generic_document_score(corpus_iterator):
         keys = g.keys()
         V     = np.vstack([g[x]["V"][:] for x in keys])
         sizes = [g[x]["_ref"].shape[0] for x in keys]
-
+        
         nc = self.reduced_n_components
         clf = IncrementalPCA(n_components=nc)
 
@@ -206,6 +206,8 @@ class generic_document_score(corpus_iterator):
         COMPONENTS = clf.components_
     
         for key, size in zip(keys, sizes):
+
+            # Take slices equal to the size
             vx, VX = VX[:size,:], VX[size:, :]
             evr, EVR = EVR[:size], EVR[size:]
             com, COMPONENTS = COMPONENTS[:size,:], COMPONENTS[size:, :]
@@ -215,70 +217,6 @@ class generic_document_score(corpus_iterator):
             g[key].create_dataset("VX_components_", data=com)
 
         h5.close()
-        
-
-    def save(self):
-
-        assert(self.V is not None)
-        assert(self._ref is not None)
-
-        # Set the size explictly as a sanity check
-        size_n, dim_V = self.V.shape
-
-        # print "Saving the scored documents"
-        config_score = simple_config.load()["score"]
-        f_db = os.path.join(
-            config_score["output_data_directory"],
-            config_score["document_scores"]["f_db"]
-        )
-
-        h5 = touch_h5(f_db)
-
-        # Clear the dataset if it already exists
-        if self.method in h5:
-            del h5[self.method]
-
-        g = h5.require_group(self.method)
-
-        # Save the data array
-        print("Saving {} ({})".format(self.method, size_n))
-
-        g.create_dataset("V", data=self.V, compression='gzip')
-        g.create_dataset("_ref", data=self._ref)
-
-        # Compute the reduced representation if required
-        if self.compute_reduced:
-            nc = self.reduced_n_components
-            clf = IncrementalPCA(n_components=nc)
-
-            msg = "Performing PCA on {}, ({})->({})"
-            print(msg.format(self.method, self.V.shape[1], nc))
-
-            VX = clf.fit_transform(self.V)
-            g.create_dataset("VX", data=VX, compression='gzip')
-            g.create_dataset("VX_explained_variance_ratio_",
-                             data=clf.explained_variance_ratio_)
-            g.create_dataset("VX_components_",
-                             data=clf.components_)
-
-        h5.close()
-        
-    def compute(self):
-        # Save each block (table_name, f_sql) as its own
-
-        assert(self.method is not None)
-        print("Scoring {}".format(self.method))
-
-        ITR = tqdm(itertools.imap(self.score_document, self))        
-
-        data = {}
-        for k, row in enumerate(ITR):
-            data[int(row['_ref'])] = row['doc_vec']
-
-        self._ref = sorted(data.keys())
-        self.V = np.vstack([data[k] for k in self._ref])
-
-
 
     def get_word_vector(self, word):
         return self.M[word]
