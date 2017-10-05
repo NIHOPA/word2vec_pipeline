@@ -85,17 +85,17 @@ def analyze_metacluster_from_config(config):
     df = pd.DataFrame(data, index=labels)
 
     df.index.name = "cluster_id"
-    df["dendrogram_order"] = d_idx
+    df["dispersion_order"] = d_idx
 
     cols = [
-        "dendrogram_order",
+        "dispersion_order",
         "counts",
         "avg_centroid_distance",
         "intra_document_dispersion",
         "word2vec_description"
     ]
 
-    df = df[cols].sort_values("dendrogram_order")
+    df = df[cols]
 
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
@@ -103,15 +103,15 @@ def analyze_metacluster_from_config(config):
     #
 
     print("Computing master-label spreadsheets.")
-    cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
+    cluster_lookup = dict(zip(df.index, df.dispersion_order.values))
     ORG["cluster_id"] = MC["meta_labels"]
-    ORG["dendrogram_order"] = -1
+    ORG["dispersion_order"] = -1
 
     for i, j in cluster_lookup.items():
         idx = ORG["cluster_id"] == i
-        ORG.loc[idx, "dendrogram_order"] = j
+        ORG.loc[idx, "dispersion_order"] = j
 
-    special_cols = ["_ref", "cluster_id", "dendrogram_order"]
+    special_cols = ["_ref", "cluster_id", "dispersion_order"]
     cols = [x for x in ORG.columns if x not in special_cols]
 
     ORG = ORG[special_cols + cols]
@@ -119,20 +119,20 @@ def analyze_metacluster_from_config(config):
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
     ORG.to_csv(f_csv, index=False)
 
-    #
-
-    df["cluster_id"] = df.index
-    df = df.sort_values("cluster_id")
+    #df = df.sort_values("cluster_id")
     print(df)
+
+    '''
+    # We don't need to save the values anymore
     f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
     
     with h5py.File(f_h5_save, 'w') as h5_save:
         h5_save["dispersion"] = dist
         h5_save["cluster_id"] = df.cluster_id
         h5_save["counts"] = df.counts
-        h5_save["dendrogram_order"] = df.dendrogram_order
+        h5_save["dispersion_order"] = df.dispersion_order
         h5_save["linkage"] = linkage
-
+    '''
 
 if __name__ == "__main__" and __package__ is None:
 
