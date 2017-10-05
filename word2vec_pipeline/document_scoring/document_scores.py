@@ -97,6 +97,7 @@ class generic_document_score(corpus_iterator):
         da["local_counts"] = collections.Counter(valid_tokens)
         da["tokens"] = list(set(valid_tokens))
 
+
         if not da["tokens"]:
             msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
             print(msg.format(row["_ref"], len(text)))
@@ -238,12 +239,13 @@ class score_simple(generic_document_score):
         # This needs to be multipled across the unit sphere so
         # it "spreads" across and not just applies it to a single word.
 
+        
         for neg_word, neg_weight in self.neg_W.items():
             neg_vec = self.get_negative_word_vector(neg_word)
             neg_scale = np.exp(-neg_weight * DV.dot(neg_vec))
             # Don't oversample, max out weights to unity
             neg_scale[neg_scale > 1] = 1.0
-            W = W * neg_scale.reshape(-1, 1)
+            W = W * neg_scale.reshape(-1, 1)        
 
         doc_vec = (W * DV).sum(axis=0)
         return L2_norm(doc_vec)

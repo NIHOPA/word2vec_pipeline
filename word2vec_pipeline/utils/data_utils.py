@@ -2,7 +2,6 @@ import h5py
 import os
 import pandas as pd
 import numpy as np
-import gensim.models.word2vec as W2V
 
 import simple_config
 from os_utils import grab_files
@@ -136,6 +135,8 @@ def load_document_vectors(score_method, use_reduced=False):
 
 
 def load_w2vec(config=None):
+    import gensim.models.word2vec as W2V
+
     if config is None:
         config = simple_config.load()
 
