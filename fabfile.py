@@ -47,11 +47,12 @@ def test():
     parse()
     embed()
     score()
-    predict()
-    # cluster()
+
     metacluster()
     analyze_metaclusters()
+    predict()
 
+    # cluster()
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')

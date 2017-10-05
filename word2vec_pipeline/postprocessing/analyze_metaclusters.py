@@ -57,12 +57,18 @@ def analyze_metacluster_from_config(config):
     # Build the results for the metaclusters
     labels = np.unique(MC["meta_labels"])
 
-    print("Computing intra-document dispersion.")
-    dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
+    if config["compute_dispersion"]:
+        print("Computing intra-document dispersion.")
+        dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
 
-    # Compute the linkage and the order
-    linkage = hierarchy.linkage(dist, method='average')
-    d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
+        # Compute the linkage and the order
+        linkage = hierarchy.linkage(dist, method='average')
+        d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
+
+    else:
+        # If dispersion is not calculated set d_idx to be the cluster index
+        d_idx = np.sort(labels)
+
 
     #
 
@@ -73,8 +79,13 @@ def analyze_metacluster_from_config(config):
 
         item = {}
         item["counts"] = idx.sum()
-        item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
+
+        if config["compute_dispersion"]:
+            item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
+        else:
+            item["intra_document_dispersion"] = -1
+
 
         # Compute closest words to the centroid
         desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
