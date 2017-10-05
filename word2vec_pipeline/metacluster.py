@@ -9,7 +9,9 @@ from sklearn.cluster import SpectralClustering
 
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import cosine_similarity
-from utils.data_utils import load_w2vec
+from scipy.cluster import hierarchy
+
+import utils.data_utils as uds
 
 
 def subset_iterator(X, m, repeats=1):
@@ -46,20 +48,14 @@ def cosine_affinity(X):
     return S
 
 
-def check_h5_item(h5, name, **check_args):
-    # Returns True if we need to compute h5[name] and h5[name].attr[key] != val
+def docv_centroid_order_idx(meta_clusters):
+    dist = cdist(meta_clusters, meta_clusters, metric='cosine')
 
-    if name not in h5:
-        return True
+    # Compute the linkage and the order
+    linkage = hierarchy.linkage(dist, method='average')
+    d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
-    attrs = h5[name].attrs
-
-    for key, val in check_args.items():
-        if (key not in attrs) or (attrs.get(key) != val):
-            del h5[name]
-            return True
-
-    return False
+    return d_idx
 
 
 class cluster_object(object):
@@ -77,39 +73,19 @@ class cluster_object(object):
         self.subcluster_repeats = int(config["subcluster_repeats"])
         self.subcluster_kn = int(config["subcluster_kn"])
 
-        config_score = simple_config.load()["score"]
-
-        self.f_h5_docvecs = os.path.join(
-            config_score["output_data_directory"],
-            config_score['document_scores']["f_db"],
-        )
-
         self.f_h5_centroids = os.path.join(
             config["output_data_directory"],
             config["f_centroids"],
         )
 
         score_method = config['score_method']
-
-        self._load_data(self.f_h5_docvecs, score_method)
-
-    def _load_data(self, f_h5, method):
-
-        print("Loading document data from", f_h5)
-
-        with h5py.File(f_h5, 'r') as h5:
-            g = h5[method]
-            self._ref = g["_ref"][:]
-            self.docv = g["V"][:]
-
-        # Require the _refs to be in order as a sanity check
-        if not (np.sort(self._ref) == self._ref).all():
-            msg = "WARNING, data out of sort order from _refs"
-            raise ValueError(msg)
+        DV = uds.load_document_vectors(score_method)
+        self._ref = DV["_refs"]
+        self.docv = DV["docv"]
 
         self.N, self.dim = self.docv.shape
 
-    def compute_centroid_set(self, **kwargs):
+    def compute_centroid_set(self):
 
         INPUT_ITR = subset_iterator(
             X=self.docv,
@@ -155,9 +131,7 @@ class cluster_object(object):
         with h5py.File(self.f_h5_centroids, 'r') as h5:
             return h5[name][:]
 
-    def compute_meta_centroid_set(self, **kwargs):
-
-        C = self.load_centroid_dataset("subcluster_centroids")
+    def compute_meta_centroid_set(self, C):
         print("Intermediate clusters", C.shape)
 
         # By eye, it looks like the top 60%-80% of the
@@ -178,11 +152,10 @@ class cluster_object(object):
             meta_clusters.append(mu)
             meta_cluster_size.append(idx.sum())
 
-        return meta_clusters
+        return np.array(meta_clusters)
 
-    def compute_meta_labels(self, **kwargs):
+    def compute_meta_labels(self, meta_clusters):
 
-        meta_clusters = self.load_centroid_dataset("meta_centroids")
         n_clusters = meta_clusters.shape[0]
 
         msg = "Assigning {} labels over {} documents."
@@ -194,7 +167,7 @@ class cluster_object(object):
         print("Label distribution: ", collections.Counter(labels))
         return labels
 
-    def docv_centroid_spread(self, **kwargs):
+    def docv_centroid_spread(self):
         meta_clusters = self.load_centroid_dataset("meta_centroids")
         meta_labels = self.load_centroid_dataset("meta_labels")
         n_clusters = meta_clusters.shape[0]
@@ -211,28 +184,6 @@ class cluster_object(object):
         stats = np.array([mu, std, min])
         return stats
 
-    def describe_clusters(self, **kwargs):
-
-        W = load_w2vec()
-
-        meta_clusters = self.load_centroid_dataset("meta_centroids")
-        n_clusters = meta_clusters.shape[0]
-
-        # Find the closest items to each centroid
-        all_words = []
-
-        for i in range(n_clusters):
-            v = meta_clusters[i]
-
-            dist = W.wv.syn0.dot(v)
-            idx = np.argsort(dist)[::-1][:10]
-
-            words = [W.wv.index2word[i].replace('PHRASE_', '') for i in idx]
-
-            all_words.append(u' '.join(words))
-
-        return np.array(all_words)
-
 
 def metacluster_from_config(config):
 
@@ -242,41 +193,26 @@ def metacluster_from_config(config):
     CO = cluster_object()
     f_h5 = CO.f_h5_centroids
 
-    if not os.path.exists(f_h5):
-        h5 = h5py.File(f_h5, 'w')
-        h5.close()
+    # Remove the file if it exists and start fresh
+    if os.path.exists(f_h5):
+        os.remove(f_h5)
 
-    h5 = h5py.File(f_h5, 'r+')
+    h5 = uds.touch_h5(f_h5)
 
-    keys = ["subcluster_kn", "subcluster_pcut",
-            "subcluster_m", "subcluster_repeats"]
-    args = dict([(k, config[k]) for k in keys])
+    # First compute the centroids
+    C = CO.compute_centroid_set()
 
-    def compute_func(name, func, dtype=None, **kwargs):
+    # Now the meta centroids
+    metaC = CO.compute_meta_centroid_set(C)
 
-        if check_h5_item(h5, name, **args):
-            print("Computing", name)
-            result = func(**kwargs)
+    # Find a better ordering for the centroids and reorder
+    metaC = metaC[docv_centroid_order_idx(metaC)]
 
-            if dtype in [str, unicode]:
-                dt = h5py.special_dtype(vlen=unicode)
-                h5.require_dataset(name, shape=result.shape, dtype=dt)
-                for i, x in enumerate(result):
-                    h5[name][i] = x
-            else:
-                h5[name] = result
+    h5["meta_centroids"] = metaC
+    h5["meta_labels"] = CO.compute_meta_labels(metaC)
+    h5["docv_centroid_spread"] = CO.docv_centroid_spread()
 
-            for k in args:
-                h5[name].attrs.create(k, args[k])
-
-    compute_func("subcluster_centroids", CO.compute_centroid_set)
-    compute_func("meta_centroids", CO.compute_meta_centroid_set)
-    compute_func("meta_labels", CO.compute_meta_labels)
-    compute_func("docv_centroid_spread", CO.docv_centroid_spread)
-    compute_func("describe_clusters", CO.describe_clusters, dtype=str)
-
-    print(h5['describe_clusters'][:])
-
+    h5.close()
 
 if __name__ == "__main__":
 
@@ -354,4 +290,14 @@ if __name__ == "__main__":
     plt.tight_layout()
     #plt.savefig("clustering_{}.png".format(n_clusters))
     plt.show()
+'''
+
+'''
+# Example of how to save strings in h5py
+
+        if dtype in [str, unicode]:
+            dt = h5py.special_dtype(vlen=unicode)
+            h5.require_dataset(name, shape=result.shape, dtype=dt)
+            for i, x in enumerate(result):
+                h5[name][i] = x
 '''

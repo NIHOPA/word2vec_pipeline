@@ -16,19 +16,42 @@ from tqdm import tqdm
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
 
+'''
+# Thread-safe lock https://stackoverflow.com/a/35088457/249341
+from multiprocessing import Process, RawValue, Lock
+class SafeCounter(object):
+
+    def __init__(self, value=0):
+        # RawValue because we don't need it to create a Lock:
+        self.val = RawValue('i', value)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+            # Return the prior value
+            return self.val.value - 1
+
 # Create a global reference ID for each item
+_ref_counter = SafeCounter()
+'''
 _ref_counter = itertools.count()
 
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
-def func_parenthetical(data,**kwargs):
+
+
+def func_parenthetical(data, **kwargs):
     text = data[kwargs["col"]]
     return parser_parenthetical(text)
 
 parser_unicode = nlpre.unidecoder()
+
+
 def map_to_unicode(s):
     # Helper function to fix input format
     s = str(s)
     return s.decode('utf-8', errors='replace')
+
 
 def clean_row(row):
     '''
@@ -57,11 +80,12 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         except:
             pass
 
+
 def import_csv(item):
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
-    with open(f_csv_out, 'w') as FOUT:        
+    with open(f_csv_out, 'w') as FOUT:
         CSV_HANDLE = None
         total_rows = 0
 
@@ -100,6 +124,7 @@ def import_csv(item):
 
         print("Imported {}, {} entries".format(f_csv, total_rows))
 
+
 def import_directory_csv(d_in, d_out, target_column, merge_columns):
     '''
     Takes a input_directory and output_directory and builds
@@ -113,6 +138,12 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
         print("No matching CSV files found, exiting")
         exit(2)
 
+    for f_csv in INPUT_FILES:
+        f_csv_out = os.path.join(d_out, os.path.basename(f_csv))
+        vals = (f_csv, f_csv_out, target_column, merge_columns)
+        import_csv(vals)
+
+    '''
     REMAINING_INPUT_FILES = []
     for f in INPUT_FILES:
         f_csv_out = os.path.join(d_out, os.path.basename(f))
@@ -121,30 +152,38 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
             continue
         REMAINING_INPUT_FILES.append((f,f_csv_out,target_column,merge_columns))
 
-    #jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
-    #map(import_csv, REMAINING_INPUT_FILES)
-    import joblib
-    with joblib.Parallel(-1) as MP:
-        MP(joblib.delayed(import_csv)(x) for x in REMAINING_INPUT_FILES)
-        
+    procs = [Process(target=import_csv,
+                     args=(x, _ref_counter))
+             for x in REMAINING_INPUT_FILES]
+
+    for p in procs: p.start()
+    for p in procs: p.join()
+    '''
+
+    # jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
+    # map(import_csv, REMAINING_INPUT_FILES)
+
+    # import joblib
+    # with joblib.Parallel(-1) as MP:
+    #    func = joblib.delayed(import_csv)
+    #    MP(func(x, _ref_counter) for x in REMAINING_INPUT_FILES)
+
 
 def import_data_from_config(config):
 
     merge_columns = (config["import_data"]["merge_columns"]
                      if "merge_columns" in config["import_data"] else [])
 
-    if (type(merge_columns) != list):
+    if (not isinstance(merge_columns, list)):
         msg = "merge_columns (if used) must be a list"
         raise ValueError(msg)
 
     data_out = config["import_data"]["output_data_directory"]
     mkdir(data_out)
 
-    output_table = config["import_data"]["output_table"]
-
     # Require `input_data_directories` to be a list
     data_in_list = config["import_data"]["input_data_directories"]
-    if (type(data_in_list) != list):
+    if (not isinstance(data_in_list, list)):
         msg = "input_data_directories must be a list"
         raise ValueError(msg)
 
@@ -178,7 +217,6 @@ def dedupe_abbr(ABR):
 
     df = pd.DataFrame(data).set_index("phrase")
     return df.sort_values("count", ascending=False)
-
 
 
 def phrases_from_config(config):
@@ -219,11 +257,10 @@ def phrases_from_config(config):
     df.to_csv(f_csv)
 
 
-
 if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load()
-    
-    #import_data_from_config(config)
+
+    # import_data_from_config(config)
     phrases_from_config(config)

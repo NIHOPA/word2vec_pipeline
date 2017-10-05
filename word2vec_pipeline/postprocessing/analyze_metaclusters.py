@@ -3,17 +3,13 @@ import itertools
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-import h5py
 from scipy.spatial.distance import cdist, pdist
 from scipy.cluster import hierarchy
 
-from utils.data_utils import load_metacluster_data, load_document_vectors
-from utils.data_utils import load_ORG_data
-
+import utils.data_utils as uds
 
 def _compute_centroid_dist(X, cx):
     return cdist(X, [cx, ], metric='cosine').mean()
-
 
 def _compute_dispersion_matrix(X, labels):
     n = len(np.unique(labels))
@@ -35,17 +31,19 @@ def _compute_dispersion_matrix(X, labels):
 
 def analyze_metacluster_from_config(config):
 
+    score_method = config["metacluster"]["score_method"]
     config = config["postprocessing"]
 
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
 
-    ORG = load_ORG_data(config["master_columns"])
+    model = uds.load_w2vec()
+    ORG = uds.load_ORG_data(config["master_columns"])
 
-    MC = load_metacluster_data()
+    MC = uds.load_metacluster_data()
     C = MC["meta_centroids"]
 
-    DV = load_document_vectors()
+    DV = uds.load_document_vectors(score_method)
 
     # Fix any zero vectors with random ones
     dim = DV["docv"].shape[1]
@@ -57,7 +55,6 @@ def analyze_metacluster_from_config(config):
 
     # Build the results for the metaclusters
     labels = np.unique(MC["meta_labels"])
-    V = DV["docv"]
 
     if config["compute_dispersion"]:
         print("Computing intra-document dispersion.")
@@ -67,81 +64,83 @@ def analyze_metacluster_from_config(config):
         linkage = hierarchy.linkage(dist, method='average')
         d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
+    else:
+        # If dispersion is not calculated set d_idx to be the cluster index
+        d_idx = np.sort(labels)
+
+
+    #
+
+    V = DV["docv"]
     data = []
     for cx, cluster_id in zip(C, labels):
         idx = MC["meta_labels"] == cluster_id
 
         item = {}
-        item["counts"] = idx.sum()
+        item["counts"] = idx.sum()       
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
 
         if config["compute_dispersion"]:
             item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
+        else:
+            item["intra_document_dispersion"] = -1
 
+
+        # Compute closest words to the centroid
+        desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
+        item["word2vec_description"] = desc
+    
         data.append(item)
 
     df = pd.DataFrame(data, index=labels)
 
     df.index.name = "cluster_id"
-    df["word2vec_description"] = MC["describe_clusters"]
+    df["dispersion_order"] = d_idx
 
-    if config["compute_dispersion"]:
-        df["dendrogram_order"] = d_idx
+    cols = [
+        "dispersion_order",
+        "counts",
+        "avg_centroid_distance",
+        "intra_document_dispersion",
+        "word2vec_description"
+    ]
 
-        cols = [
-            "dendrogram_order",
-            "counts",
-            "avg_centroid_distance",
-            "intra_document_dispersion",
-            "word2vec_description"
-        ]
-        df = df[cols].sort_values("dendrogram_order")
-    else:
-        cols = [
-            "counts",
-            "avg_centroid_distance",
-            "word2vec_description"
-        ]
-        df = df[cols].sort_values("counts")
+    df = df[cols]
 
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
 
     print("Computing master-label spreadsheets.")
+    cluster_lookup = dict(zip(df.index, df.dispersion_order.values))
     ORG["cluster_id"] = MC["meta_labels"]
-    special_cols = ["_ref", "cluster_id",]
+    ORG["dispersion_order"] = -1
 
-    if config["compute_dispersion"]:
-        cluster_lookup = dict(zip(df.index, df.dendrogram_order.values))
-        ORG["dendrogram_order"] = -1
+    for i, j in cluster_lookup.items():
+        idx = ORG["cluster_id"] == i
+        ORG.loc[idx, "dispersion_order"] = j
 
-        for i, j in cluster_lookup.items():
-            idx = ORG["cluster_id"] == i
-            ORG.loc[idx, "dendrogram_order"] = j
-
-        special_cols += ["dendrogram_order"]
-
+    special_cols = ["_ref", "cluster_id", "dispersion_order"]
     cols = [x for x in ORG.columns if x not in special_cols]
+
     ORG = ORG[special_cols + cols]
 
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
     ORG.to_csv(f_csv, index=False)
 
-    #
-
-    df["cluster_id"] = df.index
-    df = df.sort_values("cluster_id")
+    #df = df.sort_values("cluster_id")
     print(df)
 
-    if config["compute_dispersion"]:
-        f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
-        with h5py.File(f_h5_save, 'w') as h5_save:
-            h5_save["dispersion"] = dist
-            h5_save["cluster_id"] = df.cluster_id
-            h5_save["counts"] = df.counts
-            h5_save["dendrogram_order"] = df.dendrogram_order
-            h5_save["linkage"] = linkage
-
+    '''
+    # We don't need to save the values anymore
+    f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
+    
+    with h5py.File(f_h5_save, 'w') as h5_save:
+        h5_save["dispersion"] = dist
+        h5_save["cluster_id"] = df.cluster_id
+        h5_save["counts"] = df.counts
+        h5_save["dispersion_order"] = df.dispersion_order
+        h5_save["linkage"] = linkage
+    '''
 
 if __name__ == "__main__" and __package__ is None:
 

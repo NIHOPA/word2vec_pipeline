@@ -10,7 +10,7 @@ results
 
 # Temp UNIX files
 *~
-\#*\#
+*\#*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

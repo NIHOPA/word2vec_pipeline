@@ -11,8 +11,9 @@ _global_batch_size = 500
 # This must be global for parallel to work properly
 parser_functions = []
 
-#import logging
-#nlpre.logger.setLevel(logging.INFO)
+# import logging
+# nlpre.logger.setLevel(logging.INFO)
+
 
 def dispatcher(row, target_column):
     text = row[target_column] if target_column in row else None
@@ -36,10 +37,11 @@ def dispatcher(row, target_column):
     #meta = unicode(meta)
     '''
 
+
 def load_phrase_database(f_abbreviations):
 
     P = {}
-    with open(f_abbreviations,'r') as FIN:
+    with open(f_abbreviations, 'r') as FIN:
         CSV = csv.DictReader(FIN)
         for row in CSV:
             key = (tuple(row['phrase'].split()), row['abbr'])
@@ -62,7 +64,7 @@ def parse_from_config(config):
 
     for name in parse_config["pipeline"]:
         obj = getattr(nlpre, name)
-        
+
         # Load any kwargs in the config file
         kwargs = {}
         if name in parse_config:
@@ -79,13 +81,12 @@ def parse_from_config(config):
 
         parser_functions.append(obj(**kwargs))
 
-
     col = config["target_column"]
     F_CSV = grab_files("*.csv", input_data_dir)
 
-    dfunc = db_utils.CSV_database_iterator        
+    dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True, progress_bar=False)
-    
+
     ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
                  batch_size=_global_batch_size,
                  target_column=col,)

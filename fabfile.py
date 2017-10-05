@@ -18,23 +18,30 @@ def pep():
 def import_data():
     local("python word2vec_pipeline import_data")
 
+
 def parse():
     local("python word2vec_pipeline parse")
+
 
 def embed():
     local("python word2vec_pipeline embed")
 
+
 def score():
     local("python word2vec_pipeline score")
+
 
 def predict():
     local("python word2vec_pipeline predict")
 
+
 def cluster():
     local("python word2vec_pipeline cluster")
 
+
 def metacluster():
     local("python word2vec_pipeline metacluster")
+
 
 def analyze_metaclusters():
     local("python word2vec_pipeline analyze metacluster")
@@ -47,10 +54,12 @@ def test():
     parse()
     embed()
     score()
-    predict()
-    # cluster()
+
     metacluster()
     analyze_metaclusters()
+    predict()
+
+    # cluster()
 
 
 def clean():

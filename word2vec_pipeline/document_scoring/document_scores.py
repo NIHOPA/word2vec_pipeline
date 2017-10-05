@@ -4,7 +4,6 @@ import os
 import joblib
 import simple_config
 import numpy as np
-import h5py
 import pandas as pd
 
 from tqdm import tqdm
@@ -12,7 +11,7 @@ from tqdm import tqdm
 from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
 from utils.mapreduce import corpus_iterator
-from utils.data_utils import load_w2vec
+from utils.data_utils import load_w2vec, touch_h5
 
 
 def L2_norm(doc_vec):
@@ -27,18 +26,6 @@ def L2_norm(doc_vec):
         doc_vec = np.zeros(doc_vec.shape)
 
     return doc_vec
-
-
-def touch_h5(f_db):
-    # Create the h5 file if it doesn't exist
-    if not os.path.exists(f_db):
-        h5 = h5py.File(f_db, 'w')
-    else:
-        h5 = h5py.File(f_db, 'r+')
-    return h5
-
-#
-
 
 class generic_document_score(corpus_iterator):
 
@@ -56,15 +43,21 @@ class generic_document_score(corpus_iterator):
         # Set parallel option (currently does nothing)
         # self._PARALLEL = kwargs["_PARALLEL"]
 
-        # Load the negative weights
         if "negative_weights" in kwargs:
-            neg_W = kwargs["negative_weights"]
-            self.neg_W = dict((k, float(v)) for k, v in neg_W.items())
-            self.neg_vec = dict((k, self.get_word_vector(k))
-                                for k, v in neg_W.items())
+            NV = []
+            for word,weight in kwargs["negative_weights"].items():
+                vec = self.get_word_vector(word)
+                scale = np.exp(-float(weight) * self.M.wv.syn0.dot(vec))
+
+                # Don't oversample, max out weights to unity
+                scale[scale > 1] = 1.0
+                NV.append(scale)
+
+
+            self.negative_weights = np.array(NV).T.sum(axis=1)
+            
         else:
-            self.neg_W = {}
-            self.neg_vec = {}
+            self.negative_weights = np.ones(vocab_n, dtype=float)
 
         # Save the target column to compute
         self.target_column = simple_config.load()["target_column"]
@@ -79,6 +72,8 @@ class generic_document_score(corpus_iterator):
         if self.compute_reduced:
             sec = config_score['reduced_representation']
             self.reduced_n_components = sec['n_components']
+
+        self.h5py_args = {"compression":"gzip"}
 
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
@@ -107,6 +102,7 @@ class generic_document_score(corpus_iterator):
         da["local_counts"] = collections.Counter(valid_tokens)
         da["tokens"] = list(set(valid_tokens))
 
+
         if not da["tokens"]:
             msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
             print(msg.format(row["_ref"], len(text)))
@@ -120,24 +116,33 @@ class generic_document_score(corpus_iterator):
         assert(not np.isnan(da['doc_vec']).any())
 
         row['doc_vec'] = da['doc_vec']
+
         return row
 
-    def compute(self):
-        # Save each block (table_name, f_sql) as its own
+    def compute_single(self, INPUT_ITR):
 
         assert(self.method is not None)
         print("Scoring {}".format(self.method))
 
-        ITR = tqdm(itertools.imap(self.score_document, self))
+        self._ref = []
+        self.V = []
+        self.current_filename = None
+        ITR = itertools.imap(self.score_document, tqdm(INPUT_ITR))
 
-        data = {}
-        for k, row in enumerate(ITR):
-            data[int(row['_ref'])] = row['doc_vec']
+        for row in ITR:
 
-        self._ref = sorted(data.keys())
-        self.V = np.vstack([data[k] for k in self._ref])
+            # Require that filenames don't change in compute_single
+            assert (self.current_filename in [None, row["_filename"]])
+            self.current_filename = row["_filename"]
 
-    def save(self):
+            self.V.append(row["doc_vec"])
+            self._ref.append(int(row["_ref"]))
+
+        self.V = np.array(self.V)
+        self._ref = np.array(self._ref)
+
+
+    def save_single(self):
 
         assert(self.V is not None)
         assert(self._ref is not None)
@@ -145,7 +150,6 @@ class generic_document_score(corpus_iterator):
         # Set the size explictly as a sanity check
         size_n, dim_V = self.V.shape
 
-        # print "Saving the scored documents"
         config_score = simple_config.load()["score"]
         f_db = os.path.join(
             config_score["output_data_directory"],
@@ -153,41 +157,69 @@ class generic_document_score(corpus_iterator):
         )
 
         h5 = touch_h5(f_db)
-
-        # Clear the dataset if it already exists
-        if self.method in h5:
-            del h5[self.method]
-
-        g = h5.require_group(self.method)
+        g  = h5.require_group(self.method)
+        gx = g.require_group(self.current_filename)
 
         # Save the data array
-        print("Saving {} ({})".format(self.method, size_n))
+        msg = "Saving {} {} ({})"
+        print(msg.format(self.method, self.current_filename, size_n))
 
-        g.create_dataset("V", data=self.V, compression='gzip')
-        g.create_dataset("_ref", data=self._ref)
+        for col in ["V", "_ref", "VX",
+                    "VX_explained_variance_ratio_",
+                    "VX_components_"]:
+            if col in gx:
+                #print "  Clearing", self.method, self.current_filename, col
+                del gx[col]
 
-        # Compute the reduced representation if required
-        if self.compute_reduced:
-            nc = self.reduced_n_components
-            clf = IncrementalPCA(n_components=nc)
+        gx.create_dataset("V", data=self.V, **self.h5py_args)
+        gx.create_dataset("_ref", data=self._ref, **self.h5py_args)
 
-            msg = "Performing PCA on {}, ({})->({})"
-            print(msg.format(self.method, self.V.shape[1], nc))
+    def compute_reduced_representation(self):
 
-            VX = clf.fit_transform(self.V)
-            g.create_dataset("VX", data=VX, compression='gzip')
-            g.create_dataset("VX_explained_variance_ratio_",
-                             data=clf.explained_variance_ratio_)
-            g.create_dataset("VX_components_",
-                             data=clf.components_)
+        if not self.compute_reduced:
+            return None
+
+        config_score = simple_config.load()["score"]
+        f_db = os.path.join(
+            config_score["output_data_directory"],
+            config_score["document_scores"]["f_db"]
+        )
+
+        h5 = touch_h5(f_db)
+        g = h5[self.method]
+
+        keys = g.keys()
+        V     = np.vstack([g[x]["V"][:] for x in keys])
+        sizes = [g[x]["_ref"].shape[0] for x in keys]
+        
+        nc = self.reduced_n_components
+        clf = IncrementalPCA(n_components=nc)
+
+        msg = "Performing PCA on {}, ({})->({})"
+        print(msg.format(self.method, V.shape[1], nc))
+
+        VX = clf.fit_transform(V)
+        EVR = clf.explained_variance_ratio_
+        COMPONENTS = clf.components_
+
+        for key, size in zip(keys, sizes):
+
+            # Take slices equal to the size
+            vx, VX = VX[:size,:], VX[size:, :]
+            evr, EVR = EVR[:size], EVR[size:]
+            com, COMPONENTS = COMPONENTS[:size,:], COMPONENTS[size:, :]
+
+            g[key].create_dataset("VX", data=vx, **self.h5py_args)
+            g[key].create_dataset("VX_explained_variance_ratio_", data=evr)
+            g[key].create_dataset("VX_components_", data=com)
 
         h5.close()
 
     def get_word_vector(self, word):
-        return self.M[word]
-
-    def get_negative_word_vector(self, word):
-        return self.neg_vec[word]
+        return self.M[word].astype(np.float64)
+    
+    def get_negative_word_weight(self, word):
+        return self.negative_weights[self.word2index[word]]
 
 
 class score_simple(generic_document_score):
@@ -201,23 +233,17 @@ class score_simple(generic_document_score):
 
     def _compute_doc_vector(self, weights, DV, tokens, **da):
         # Build the weight matrix
-        W = np.array([weights[w] for w in tokens]).reshape(-1, 1)
+        W = np.array([weights[w] for w in tokens], dtype=np.float64)
+        W = W.reshape(-1, 1)
 
         # Empty document vector with no tokens, return zero
         if not W.shape[0]:
             dim = self.M.wv.syn0.shape[1]
-            return np.zeros((dim,))
-
+            return np.zeros((dim,), dtype=np.float64)
+        
         # Apply the negative weights
-        # This needs to be multipled across the unit sphere so
-        # it "spreads" across and not just applies it to a single word.
-
-        for neg_word, neg_weight in self.neg_W.items():
-            neg_vec = self.get_negative_word_vector(neg_word)
-            neg_scale = np.exp(-neg_weight * DV.dot(neg_vec))
-            # Don't oversample, max out weights to unity
-            neg_scale[neg_scale > 1] = 1.0
-            W = W * neg_scale.reshape(-1, 1)
+        NV = np.array([self.get_negative_word_weight(w) for w in tokens])
+        W *= NV.reshape(-1,1)
 
         doc_vec = (W * DV).sum(axis=0)
         return L2_norm(doc_vec)
