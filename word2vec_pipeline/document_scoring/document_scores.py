@@ -44,15 +44,21 @@ class generic_document_score(corpus_iterator):
         # Set parallel option (currently does nothing)
         # self._PARALLEL = kwargs["_PARALLEL"]
 
-        # Load the negative weights
         if "negative_weights" in kwargs:
-            neg_W = kwargs["negative_weights"]
-            self.neg_W = dict((k, float(v)) for k, v in neg_W.items())
-            self.neg_vec = dict((k, self.get_word_vector(k))
-                                for k, v in neg_W.items())
+            NV = []
+            for word,weight in kwargs["negative_weights"].items():
+                vec = self.get_word_vector(word)
+                scale = np.exp(-float(weight) * self.M.wv.syn0.dot(vec))
+
+                # Don't oversample, max out weights to unity
+                scale[scale > 1] = 1.0
+                NV.append(scale)
+
+
+            self.negative_weights = np.array(NV).T.sum(axis=1)
+            
         else:
-            self.neg_W = {}
-            self.neg_vec = {}
+            self.negative_weights = np.ones(vocab_n, dtype=float)
 
         # Save the target column to compute
         self.target_column = simple_config.load()["target_column"]
@@ -163,7 +169,7 @@ class generic_document_score(corpus_iterator):
                     "VX_explained_variance_ratio_",
                     "VX_components_"]:
             if col in gx:
-                print "  Clearing", self.method, self.current_filename, col
+                #print "  Clearing", self.method, self.current_filename, col
                 del gx[col]
 
         gx.create_dataset("V", data=self.V, **self.h5py_args)
@@ -211,10 +217,10 @@ class generic_document_score(corpus_iterator):
         h5.close()
 
     def get_word_vector(self, word):
-        return self.M[word]
-
-    def get_negative_word_vector(self, word):
-        return self.neg_vec[word]
+        return self.M[word].astype(np.float64)
+    
+    def get_negative_word_weight(self, word):
+        return self.negative_weights[self.word2index[word]]
 
 
 class score_simple(generic_document_score):
@@ -228,24 +234,17 @@ class score_simple(generic_document_score):
 
     def _compute_doc_vector(self, weights, DV, tokens, **da):
         # Build the weight matrix
-        W = np.array([weights[w] for w in tokens]).reshape(-1, 1)
+        W = np.array([weights[w] for w in tokens], dtype=np.float64)
+        W = W.reshape(-1, 1)
 
         # Empty document vector with no tokens, return zero
         if not W.shape[0]:
             dim = self.M.wv.syn0.shape[1]
-            return np.zeros((dim,))
-
-        # Apply the negative weights
-        # This needs to be multipled across the unit sphere so
-        # it "spreads" across and not just applies it to a single word.
-
+            return np.zeros((dim,), dtype=np.float64)
         
-        for neg_word, neg_weight in self.neg_W.items():
-            neg_vec = self.get_negative_word_vector(neg_word)
-            neg_scale = np.exp(-neg_weight * DV.dot(neg_vec))
-            # Don't oversample, max out weights to unity
-            neg_scale[neg_scale > 1] = 1.0
-            W = W * neg_scale.reshape(-1, 1)        
+        # Apply the negative weights
+        NV = np.array([self.get_negative_word_weight(w) for w in tokens])
+        W *= NV.reshape(-1,1)
 
         doc_vec = (W * DV).sum(axis=0)
         return L2_norm(doc_vec)
