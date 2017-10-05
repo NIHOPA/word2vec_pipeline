@@ -77,7 +77,7 @@ def analyze_metacluster_from_config(config):
         idx = MC["meta_labels"] == cluster_id
 
         item = {}
-        item["counts"] = idx.sum()
+        item["counts"] = idx.sum()       
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
 
         if config["compute_dispersion"]:
@@ -109,8 +109,6 @@ def analyze_metacluster_from_config(config):
 
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
-
-    #
 
     print("Computing master-label spreadsheets.")
     cluster_lookup = dict(zip(df.index, df.dispersion_order.values))

@@ -108,6 +108,9 @@ class cluster_object(object):
             X = X[~bad_row_idx]
             A = cosine_affinity(X)
 
+            # "Force" symmetry due to rounding errors
+            A = np.maximum( A, A.transpose() )
+
             labels = clf.fit_predict(A)
 
             # Compute the centroids
