@@ -166,7 +166,6 @@ def single_file_item_iterator(
         config = simple_config.load()
 
     config = simple_config.load()
-    input_data_dir = config[section]["output_data_directory"]
 
     # Make sure the file we requested exists
     assert(f_csv in get_section_filenames(section))

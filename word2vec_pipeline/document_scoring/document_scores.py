@@ -4,7 +4,6 @@ import os
 import joblib
 import simple_config
 import numpy as np
-import h5py
 import pandas as pd
 
 from tqdm import tqdm

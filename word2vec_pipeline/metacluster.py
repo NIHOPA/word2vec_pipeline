@@ -47,15 +47,15 @@ def cosine_affinity(X):
 
     return S
 
+
 def docv_centroid_order_idx(meta_clusters):
     dist = cdist(meta_clusters, meta_clusters, metric='cosine')
-    
+
     # Compute the linkage and the order
     linkage = hierarchy.linkage(dist, method='average')
     d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
     return d_idx
-
 
 
 class cluster_object(object):
@@ -73,8 +73,6 @@ class cluster_object(object):
         self.subcluster_repeats = int(config["subcluster_repeats"])
         self.subcluster_kn = int(config["subcluster_kn"])
 
-        config_score = simple_config.load()["score"]
-
         self.f_h5_centroids = os.path.join(
             config["output_data_directory"],
             config["f_centroids"],
@@ -84,7 +82,7 @@ class cluster_object(object):
         DV = uds.load_document_vectors(score_method)
         self._ref = DV["_refs"]
         self.docv = DV["docv"]
-        
+
         self.N, self.dim = self.docv.shape
 
     def compute_centroid_set(self):
@@ -154,7 +152,7 @@ class cluster_object(object):
         return np.array(meta_clusters)
 
     def compute_meta_labels(self, meta_clusters):
-        
+
         n_clusters = meta_clusters.shape[0]
 
         msg = "Assigning {} labels over {} documents."
@@ -183,7 +181,6 @@ class cluster_object(object):
         stats = np.array([mu, std, min])
         return stats
 
-    
 
 def metacluster_from_config(config):
 
@@ -196,15 +193,15 @@ def metacluster_from_config(config):
     # Remove the file if it exists and start fresh
     if os.path.exists(f_h5):
         os.remove(f_h5)
-    
+
     h5 = uds.touch_h5(f_h5)
-    
+
     # First compute the centroids
     C = CO.compute_centroid_set()
 
     # Now the meta centroids
     metaC = CO.compute_meta_centroid_set(C)
-    
+
     # Find a better ordering for the centroids and reorder
     metaC = metaC[docv_centroid_order_idx(metaC)]
 

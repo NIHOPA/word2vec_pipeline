@@ -48,7 +48,6 @@ def score_from_config(global_config):
 
         func.save(config)
 
-
     # Run the functions that act globally on the data
 
     for name in config["globaldata_commands"]:
@@ -68,7 +67,7 @@ def score_from_config(global_config):
             ITR = db.single_file_item_iterator(f_csv)
             func.compute_single(ITR)
             func.save_single()
-            
+
         func.compute_reduced_representation()
 
 

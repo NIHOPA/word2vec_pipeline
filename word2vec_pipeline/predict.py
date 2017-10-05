@@ -5,7 +5,7 @@ import itertools
 import collections
 import pylab as plt
 
-from utils.os_utils import grab_files, mkdir
+from utils.os_utils import mkdir
 import utils.data_utils as uds
 from predictions import categorical_predict
 
@@ -18,15 +18,12 @@ def predict_from_config(config):
     PREDICTIONS = {}
 
     use_meta = config["predict"]['use_meta']
-    use_reduced = config["predict"]['use_reduced']
 
     # For now, we can only deal with one column using meta!
     assert(len(config["predict"]["categorical_columns"]) == 1)
-    
+
     methods = uds.get_score_methods()
-    
-    pred_dir = config["import_data"]["output_data_directory"]
-    pred_files = grab_files('*.csv', pred_dir)
+
     pred_col = config["target_column"]
 
     pred_output_dir = config["predict"]["output_data_directory"]
@@ -50,14 +47,14 @@ def predict_from_config(config):
 
         DV = uds.load_document_vectors(method)
         X = DV["docv"]
-        
+
         if use_meta:
             X_META.append(X)
 
         Y = np.hstack(df[cat_col].values)
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
-        
+
         # print(" Class balance for catergorical prediction:
         # {}".format(counts))
 

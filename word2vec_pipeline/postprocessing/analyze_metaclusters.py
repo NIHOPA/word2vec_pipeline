@@ -3,7 +3,6 @@ import itertools
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-import h5py
 from scipy.spatial.distance import cdist, pdist
 from scipy.cluster import hierarchy
 
