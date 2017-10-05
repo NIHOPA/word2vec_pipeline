@@ -192,29 +192,6 @@ class cluster_object(object):
         stats = np.array([mu, std, min])
         return stats
 
-    def describe_clusters(self, **kwargs):
-
-        W = uds.load_w2vec()
-
-        meta_clusters = self.load_centroid_dataset("meta_centroids")
-        n_clusters = meta_clusters.shape[0]
-
-        # Find the closest items to each centroid
-        all_words = []
-
-        for i in range(n_clusters):
-            v = meta_clusters[i]
-
-            dist = W.wv.syn0.dot(v)
-            idx = np.argsort(dist)[::-1][:10]
-
-            words = [W.wv.index2word[i].replace('PHRASE_', '') for i in idx]
-
-            all_words.append(u' '.join(words))
-
-        return np.array(all_words)
-
-
 def metacluster_from_config(config):
 
     config = config['metacluster']
@@ -254,9 +231,6 @@ def metacluster_from_config(config):
     compute_func("meta_centroids", CO.compute_meta_centroid_set)
     compute_func("meta_labels", CO.compute_meta_labels)
     compute_func("docv_centroid_spread", CO.docv_centroid_spread)
-    compute_func("describe_clusters", CO.describe_clusters, dtype=str)
-
-    print(h5['describe_clusters'][:])
 
     h5.close()
 

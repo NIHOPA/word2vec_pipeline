@@ -38,6 +38,7 @@ def analyze_metacluster_from_config(config):
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
 
+    model = uds.load_w2vec()
     ORG = uds.load_ORG_data(config["master_columns"])
 
     MC = uds.load_metacluster_data()
@@ -74,19 +75,25 @@ def analyze_metacluster_from_config(config):
         item["counts"] = idx.sum()
         item["intra_document_dispersion"] = dist[cluster_id, cluster_id]
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
+
+        # Compute closest words to the centroid
+        desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
+        item["word2vec_description"] = desc
+    
         data.append(item)
 
     df = pd.DataFrame(data, index=labels)
 
     df.index.name = "cluster_id"
-    df["word2vec_description"] = MC["describe_clusters"]
     df["dendrogram_order"] = d_idx
 
-    cols = ["dendrogram_order",
-            "counts",
-            "avg_centroid_distance",
-            "intra_document_dispersion",
-            "word2vec_description"]
+    cols = [
+        "dendrogram_order",
+        "counts",
+        "avg_centroid_distance",
+        "intra_document_dispersion",
+        "word2vec_description"
+    ]
 
     df = df[cols].sort_values("dendrogram_order")
 
