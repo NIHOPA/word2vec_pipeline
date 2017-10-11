@@ -2,6 +2,7 @@ import h5py
 import os
 import pandas as pd
 import numpy as np
+import joblib
 
 import simple_config
 from os_utils import grab_files
@@ -48,6 +49,15 @@ def load_dispersion_data():
 
     return load_h5_file(f_h5)
 
+def simple_CSV_read(f, cols):
+    try:
+        dfx = pd.read_csv(f, usecols=cols)
+    except ValueError:
+        csv_cols = pd.read_csv(f, nrows=0).columns
+        msg = "Columns requested {}, do not match columns in input csv {}"
+        raise ValueError(msg.format(cols, csv_cols))
+    return dfx
+
 
 def load_ORG_data(extra_columns=None):
     print("Loading import data")
@@ -57,20 +67,17 @@ def load_ORG_data(extra_columns=None):
     if extra_columns is not None:
         cols += extra_columns
 
-    config_import = simple_config.load()["import_data"]
+    config = simple_config.load()
+    config_import = config["import_data"]
+
+    CORES = -1 if config["_PARALLEL"] else 1
 
     # Load the input columns
     F_CSV = grab_files("*.csv", config_import["output_data_directory"])
 
-    data = []
-    for f in F_CSV:
-        try:
-            dfx = pd.read_csv(f, usecols=cols)
-            data.append(dfx)
-        except ValueError:
-            csv_cols = pd.read_csv(f, nrows=0).columns
-            msg = "Columns requested {}, do not match columns in input csv {}"
-            raise ValueError(msg.format(cols, csv_cols))
+    with joblib.Parallel(CORES) as MP:
+        func = joblib.delayed(simple_CSV_read)
+        data = MP(func(x, cols) for x in F_CSV)
 
     # Require the _refs to be in order
     df = pd.concat(data).sort_values('_ref').set_index('_ref')
