@@ -5,7 +5,7 @@ pandas
 h5py
 
 # NLP core libraries
-gensim>=2.1.0
+gensim>=3.0.1
 nlpre
 
 # Figures out how many cores on machine (for parallel)
