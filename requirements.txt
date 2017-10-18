@@ -6,7 +6,7 @@ h5py
 
 # NLP core libraries
 gensim>=3.0.1
-nlpre
+nlpre>=1.1.2
 
 # Figures out how many cores on machine (for parallel)
 psutil
@@ -21,7 +21,7 @@ tqdm
 seaborn
 
 # Replaces pythons multiprocessing
-joblib==0.9.4
+joblib>=0.9.4
 
 # For locality hashing
 nearpy
