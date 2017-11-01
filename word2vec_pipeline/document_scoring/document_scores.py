@@ -46,6 +46,12 @@ class generic_document_score(corpus_iterator):
         if "negative_weights" in kwargs:
             NV = []
             for word,weight in kwargs["negative_weights"].items():
+
+                if not self.check_word_vector(word):
+                    msg = "Negative weight word '{}' not found in dictionary"
+                    print(msg.format(word))
+                    continue
+                
                 vec = self.get_word_vector(word)
                 scale = np.exp(-float(weight) * self.M.wv.syn0.dot(vec))
 
@@ -214,6 +220,10 @@ class generic_document_score(corpus_iterator):
             g[key].create_dataset("VX_components_", data=com)
 
         h5.close()
+
+    def check_word_vector(self, word):
+        # Reuturns True/False if the word vector is in the vocab
+        return word in self.M
 
     def get_word_vector(self, word):
         return self.M[word].astype(np.float64)
