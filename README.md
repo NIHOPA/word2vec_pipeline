@@ -5,7 +5,7 @@ While not designed for production, it is used internally within the [Office of P
 
 Everything is run by the file [config.ini](config.ini), the defaults should help guide a new project. Each step of the pipe in run by the corresponding bracketed section of the config file: for instance, the parameters that affect w2v embedding are found in the [embedding] section.
 
-The pipeline is all run from the files downloaded from the w2v repository. Each step of the pipeline has it’s own command associated with it which needs to be run in the command line. The commands, in order are 'import_data', 'parse', 'embed', 'score', 'predict', 'metacluster', and 'analyze'
+The pipeline is all run from the files downloaded from the w2v repository. Each step of the pipeline has it’s own command associated with it which needs to be run in the command line. The commands, in order are `import_data`, 'parse', 'embed', 'score', 'predict', 'metacluster', and 'analyze'
 
 ### Import Data
 
