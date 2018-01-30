@@ -19,6 +19,8 @@ as a measure of distance. Since spectral clustering is too computationally inten
 uses sampling to speed up the process. 
 """
 
+#Note - does the clustering directory do anything?
+
 def subset_iterator(X, m, repeats=1):
     '''
     Iterates over array X in chunks of m, repeat number of times.

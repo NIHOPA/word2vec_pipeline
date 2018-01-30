@@ -37,6 +37,8 @@ def _compute_dispersion_matrix(X, labels):
 
     return dist
 
+#Possible move this to next highest directory with other driver files, to fit the pattern of the rest of the
+#pipeline
 
 def analyze_metacluster_from_config(config):
 

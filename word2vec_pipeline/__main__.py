@@ -10,6 +10,8 @@ Usage:
   word2vec_pipeline analyze (<target_function>)
 
   The code that is run by each command is found in the filename in current directory that corresponds to each command.
+  The function BLANK_from_config(config) is the entry point for each file, and can be found at the bottom of each
+  file.
 
 """
 from docopt import docopt

@@ -12,50 +12,6 @@ Driver file to parse imported documents using the NLPre pre-processing library. 
 unimportant words, identifies acronyms, as well as other processings steps.
 """
 
-_global_batch_size = 500
-
-# This must be global for parallel to work properly
-parser_functions = []
-
-# import logging
-# nlpre.logger.setLevel(logging.INFO)
-
-
-def dispatcher(row, target_column):
-    text = row[target_column] if target_column in row else None
-
-    for f in parser_functions:
-        text = unicode(f(text))
-
-    row[target_column] = text
-    return row
-
-    '''
-    meta = {}
-    for f in parser_functions:
-        result = f(text)
-        text   = unicode(result)
-
-        if hasattr(result,"meta"):
-            meta.update(result.meta)
-
-    # Convert the meta information into a unicode string for serialization
-    #meta = unicode(meta)
-    '''
-
-
-def load_phrase_database(f_abbreviations):
-
-    P = {}
-    with open(f_abbreviations, 'r') as FIN:
-        CSV = csv.DictReader(FIN)
-        for row in CSV:
-            key = (tuple(row['phrase'].split()), row['abbr'])
-            val = int(row['count'])
-            P[key] = val
-    return P
-
-
 def parse_from_config(config):
 
     _PARALLEL = config.as_bool("_PARALLEL")
@@ -117,6 +73,52 @@ def parse_from_config(config):
     # Close the open files
     for F in F_CSV_OUT.values():
         F.close()
+
+
+
+_global_batch_size = 500
+
+# This must be global for parallel to work properly
+parser_functions = []
+
+# import logging
+# nlpre.logger.setLevel(logging.INFO)
+
+
+def dispatcher(row, target_column):
+    text = row[target_column] if target_column in row else None
+
+    for f in parser_functions:
+        text = unicode(f(text))
+
+    row[target_column] = text
+    return row
+
+    '''
+    meta = {}
+    for f in parser_functions:
+        result = f(text)
+        text   = unicode(result)
+
+        if hasattr(result,"meta"):
+            meta.update(result.meta)
+
+    # Convert the meta information into a unicode string for serialization
+    #meta = unicode(meta)
+    '''
+
+
+def load_phrase_database(f_abbreviations):
+
+    P = {}
+    with open(f_abbreviations, 'r') as FIN:
+        CSV = csv.DictReader(FIN)
+        for row in CSV:
+            key = (tuple(row['phrase'].split()), row['abbr'])
+            val = int(row['count'])
+            P[key] = val
+    return P
+
 
 
 if __name__ == "__main__":
