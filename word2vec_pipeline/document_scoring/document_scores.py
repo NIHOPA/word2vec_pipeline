@@ -94,7 +94,7 @@ class generic_document_score(corpus_iterator):
         raise KeyError(msg)
 
     def score_document(self, row):
-
+        print row
         text = row[self.target_column]
         text = unicode(text)
         tokens = text.split()
