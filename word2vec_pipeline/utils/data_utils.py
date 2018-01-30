@@ -7,6 +7,10 @@ import joblib
 import simple_config
 from os_utils import grab_files
 
+"""
+Utility file to assist in loading data saved as part of the pipeline, including .csv files, h5 files, amd gensim
+w2v models. There are also functions to extract specific data from these files.
+"""
 
 def load_h5_file(f_h5, *args):
     '''

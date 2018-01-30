@@ -1,5 +1,5 @@
 '''
-Builds the TF database for quick reference.
+Builds the Term Frequency database for quick reference.
 '''
 import collections
 import os

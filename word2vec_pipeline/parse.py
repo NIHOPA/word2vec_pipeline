@@ -6,6 +6,12 @@ import nlpre
 
 from utils.parallel_utils import jobmap
 
+
+"""
+Driver file to parse imported documents using the NLPre pre-processing library. The command strips out punctuation, 
+unimportant words, identifies acronyms, as well as other processings steps.
+"""
+
 _global_batch_size = 500
 
 # This must be global for parallel to work properly

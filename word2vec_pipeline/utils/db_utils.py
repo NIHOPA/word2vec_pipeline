@@ -5,6 +5,9 @@ import csv
 import os
 from os_utils import grab_files
 
+"""
+Utility file to assist in parsing .csv files, as well as display the process of parsing these files.
+"""
 
 def pretty_counter(C, min_count=1):
     for item in C.most_common():

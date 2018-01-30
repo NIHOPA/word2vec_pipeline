@@ -13,6 +13,12 @@ import utils.db_utils as db_utils
 
 from tqdm import tqdm
 
+
+"""
+Driver file to import documents into the pipeline, concatenate target fields into a specif field, and tag
+each document with a unique reference ID. It also identifies common phrases found in the document.
+"""
+
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
 

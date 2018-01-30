@@ -13,6 +13,11 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
+"""
+Driver file to perform spectral cluster meta-clustering of documents imported into the pipeline, using their scores 
+as a measure of distance. Since spectral clustering is too computationally intensive for most uses, this 
+uses sampling to speed up the process. 
+"""
 
 def subset_iterator(X, m, repeats=1):
     '''

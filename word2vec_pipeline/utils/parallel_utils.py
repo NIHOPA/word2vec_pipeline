@@ -2,6 +2,10 @@ import joblib
 from tqdm import tqdm
 
 
+"""
+Utility functions to assist in parallelizing the operation of the pipeline.
+"""
+
 def grouper(iterable, n):
     '''
     Reads ahead n items on an iterator.

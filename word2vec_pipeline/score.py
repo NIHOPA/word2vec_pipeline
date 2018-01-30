@@ -3,6 +3,11 @@ from utils.os_utils import mkdir
 import document_scoring as ds
 import utils.db_utils as db
 
+"""
+Driver file to score each document imported into the pipeline using a trained word2vec model. These scores are used
+in the pipeline to perform classification and and clustering. The output scores and word vectors can also be exported
+for further analysis.
+"""
 
 def score_from_config(global_config):
 

@@ -13,6 +13,12 @@ from sklearn.decomposition import IncrementalPCA
 from utils.mapreduce import corpus_iterator
 from utils.data_utils import load_w2vec, touch_h5
 
+"""
+File to score each document imported to the pipeline using a gensim word2vec model. The generic_document_score
+class is inherited by each other scoring class. Word scores can be weighted in the config file, which 
+affects clustering and classification
+"""
+
 
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere

@@ -7,6 +7,11 @@ import psutil
 CPU_CORES = psutil.cpu_count()
 CPU_CORES = 1
 
+"""
+File that performs the word2vec training used to create document embeddings. This uses the gensim python
+library for natural language processing.
+"""
+
 class iterator_factory(object):
     def __init__(self, func, total=0, *args, **kwargs):
         self.func = func

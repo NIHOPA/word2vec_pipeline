@@ -2,7 +2,15 @@ from utils.os_utils import mkdir
 import model_building as mb
 from utils.db_utils import item_iterator
 
+"""
+Driver file to train a  word2vec embedding of the documents imported into the pipeline. This creates a 
+gensim word2vec file, which can be then used for NLP tasks. In this pipeline, this model is used to cluster documents
+based on similarity, as well as run document classification.
 
+The code that performs this embedding is found in word2vec_pipeline/model_building, which creates the word2vec
+model itself
+
+"""
 def embed_from_config(config):
 
     mkdir(config["embedding"]["output_data_directory"])

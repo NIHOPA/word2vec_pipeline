@@ -2,6 +2,11 @@ import os
 from configobj import ConfigObj
 from validate import Validator, VdtTypeError
 
+"""
+Utility file to open the pipeline's config file, and check for errors
+"""
+
+
 
 def validate_errors(errors, name_stack=None):
 

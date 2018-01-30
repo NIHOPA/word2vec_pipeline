@@ -8,6 +8,15 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
+"""
+Driver function to perform analysis on the document metaclusters created by the pipeline. This will automatically
+provide labels to each cluster, by identifying which words are most similar to the centroid of each cluster.
+
+It also returns statistics on each cluster to determine the average similarity of each document to the cluster
+centroid, and the average similarity of each document to every other document in the cluster. 
+"""
+
+
 def _compute_centroid_dist(X, cx):
     return cdist(X, [cx, ], metric='cosine').mean()
 

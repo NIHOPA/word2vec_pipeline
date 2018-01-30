@@ -1,6 +1,10 @@
 import os
 import glob
 
+"""
+Utililty files to create directories for the pipeline, as well as grab files found in given directories.
+"""
+
 
 def mkdir(directory):
     # Tries to create a directory if it doesn't exist
