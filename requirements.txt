@@ -29,5 +29,8 @@ nearpy
 # For SMOTE
 imbalanced-learn
 
+# TO explain variables in predictions
+lime
+
 # For CLI interface
 docopt
