@@ -94,7 +94,6 @@ class generic_document_score(corpus_iterator):
         raise KeyError(msg)
 
     def score_document(self, row):
-        print row
         text = row[self.target_column]
         text = unicode(text)
         tokens = text.split()
@@ -111,7 +110,7 @@ class generic_document_score(corpus_iterator):
 
         if not da["tokens"]:
             msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
-            print(msg.format(row["_ref"], len(text)))
+            #print(msg.format(row["_ref"], len(text)))
             # raise ValueError(msg)
 
         da["weights"] = self._compute_item_weights(**da)
