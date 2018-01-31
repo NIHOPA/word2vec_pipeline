@@ -8,11 +8,12 @@ import pandas as pd
 
 from tqdm import tqdm
 
-from locality_hashing import RBP_hasher
+#from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
 from utils.mapreduce import corpus_iterator
 from utils.data_utils import load_w2vec, touch_h5
 
+from bounter import bounter
 
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
@@ -27,6 +28,17 @@ def L2_norm(doc_vec):
 
     return doc_vec
 
+def token_counts(tokens):
+    '''
+    Returns a count for the number of times a token appears in a list
+    '''
+    counts = bounter(size_mb=1)
+    counts.update(tokens)
+    return counts
+
+
+    
+
 class generic_document_score(corpus_iterator):
 
     def __init__(self, *args, **kwargs):
@@ -34,6 +46,9 @@ class generic_document_score(corpus_iterator):
 
         # Load the model from disk
         self.M = load_w2vec()
+
+        # Find the words known
+        self.vocab = set(self.M.wv.index2word)
         self.shape = self.M.wv.syn0.shape
 
         # Build the dictionary
@@ -102,17 +117,17 @@ class generic_document_score(corpus_iterator):
         da = {}
 
         # Find out which tokens are defined
-        valid_tokens = [w for w in tokens if w in self.M]
+        valid_tokens = [w for w in tokens if w in self.vocab]
 
-        da["local_counts"] = collections.Counter(valid_tokens)
-        da["tokens"] = list(set(valid_tokens))
+        da["local_counts"] = token_counts(valid_tokens)
 
-
-        if not da["tokens"]:
+        if not da["local_counts"].cardinality():
             msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
+            print msg
             #print(msg.format(row["_ref"], len(text)))
             # raise ValueError(msg)
-
+            da["local_counts"] = {}
+            
         da["weights"] = self._compute_item_weights(**da)
         da['DV'] = self._compute_embedding_vector(**da)
         da['doc_vec'] = self._compute_doc_vector(**da)
@@ -234,15 +249,15 @@ class generic_document_score(corpus_iterator):
 class score_simple(generic_document_score):
     method = "simple"
 
-    def _compute_item_weights(self, local_counts, tokens, **da):
-        return dict([(w, local_counts[w]) for w in tokens])
+    def _compute_item_weights(self, local_counts, **da):
+        return dict([(w, local_counts[w]) for w in local_counts])
 
-    def _compute_embedding_vector(self, tokens, **da):
-        return np.array([self.get_word_vector(w) for w in tokens])
+    def _compute_embedding_vector(self, local_counts, **da):
+        return np.array([self.get_word_vector(w) for w in local_counts])
 
-    def _compute_doc_vector(self, weights, DV, tokens, **da):
+    def _compute_doc_vector(self, weights, DV, local_counts, **da):
         # Build the weight matrix
-        W = np.array([weights[w] for w in tokens], dtype=np.float64)
+        W = np.array([weights[w] for w in local_counts], dtype=np.float64)
         W = W.reshape(-1, 1)
 
         # Empty document vector with no tokens, return zero
@@ -251,7 +266,7 @@ class score_simple(generic_document_score):
             return np.zeros((dim,), dtype=np.float64)
         
         # Apply the negative weights
-        NV = np.array([self.get_negative_word_weight(w) for w in tokens])
+        NV = np.array([self.get_negative_word_weight(w) for w in local_counts])
         W *= NV.reshape(-1,1)
 
         doc_vec = (W * DV).sum(axis=0)
@@ -301,93 +316,37 @@ class score_simple_TF(score_simple):
         else:
             return 0.0
 
-    def _compute_item_weights(self, local_counts, tokens, **da):
-        return dict([(w, local_counts[w] * self.get_IDF(w)) for w in tokens])
-
+    def _compute_item_weights(self, local_counts, **da):
+        return dict([(w, local_counts[w] * self.get_IDF(w)) for w in local_counts])
 #
 
 
 class score_unique_TF(score_simple_TF):
     method = "unique_TF"
 
-    def _compute_item_weights(self, tokens, **da):
-        return dict([(w, self.get_IDF(w) * 1.0) for w in tokens])
+    def _compute_item_weights(self, local_counts, **da):
+        return dict([(w, self.get_IDF(w) * 1.0) for w in local_counts])
 
 #
 
+###############################################################################
 
-class score_locality_hash(score_unique):
-    method = "locality_hash"
+'''
+class new_score_unique_TF(score_simple_TF):
+    method = "unique_TF"
 
-    def __init__(self, *args, **kwargs):
-        super(score_locality_hash, self).__init__(*args, **kwargs)
+    def __init__(self):
+        
+        # Load the model from disk
+        self.M = load_w2vec()
 
-        self.f_params = os.path.join(
-            kwargs["output_data_directory"],
-            "locality_hash_params.pkl")
+        # Find the words known
+        self.vocab = set(self.M.wv.index2word)
+        self.shape = self.M.wv.syn0.shape
 
-        params = self.load_params(**kwargs)
+        # Build the dictionary
+        vocab_n = self.shape[0]
+        self.word2index = dict(zip(self.M.wv.index2word, range(vocab_n)))
 
-        # Build the hash function lookup
-        dim = self.M.wv.syn0.shape[1]
-        n_bits = int(kwargs['locality_n_bits'])
-        alpha = float(kwargs['locality_alpha'])
-
-        R = RBP_hasher(dim, n_bits, alpha)
-
-        # We assume that all locality hashes will be the same, save these
-        # params to disk
-
-        for key in ['dim', 'projection_count']:
-            if key not in params:
-                continue
-            print(
-                "Checking if locality_hash({}) {}=={}".format(key,
-                                                              R.params[key],
-                                                              params[key]))
-            if R.params[key] != params[key]:
-                msg = '''\nLocality-hash config value of {} does
-                not match from {} to {}.\nDelete {} to continue.'''
-                raise ValueError(msg.format(key, R.params[key],
-                                            params[key], self.f_params))
-
-        if 'normals' in params:
-            print("Loading locality hash from {}".format(self.f_params))
-            R.load(params)
-        else:
-            joblib.dump(R.params, self.f_params)
-
-        self.RBP_hash = R
-        self.WORD_HASH = {}
-        for w, v in zip(self.M.wv.index2word, self.M.wv.syn0):
-            self.WORD_HASH[w] = self.RBP_hash(v)
-
-    def load_params(self, **kwargs):
-        if os.path.exists(self.f_params):
-            return joblib.load(self.f_params)
-        else:
-            return {}
-
-    def _compute_embedding_vector(self, tokens, **da):
-        sample_space = self.RBP_hash.sample_space
-        DV = np.zeros(shape=(len(tokens), sample_space))
-        for i, w in enumerate(tokens):
-            for key, val in self.WORD_HASH[w].items():
-                DV[i][key] += val
-        return DV
-
-    def _compute_doc_vector(self, DV, weights, tokens, **da):
-
-        W = np.array([weights[w] for w in tokens]).reshape(-1, 1)
-        doc_vec = (W * DV).sum(axis=0)
-
-        # Locality hash is a probability distribution, so take L1 norm
-        doc_vec /= doc_vec.sum()
-
-        # Quick hack
-        doc_vec[np.isnan(doc_vec)] = 0
-
-        return doc_vec
-
-
-#
+        print "HI!"
+'''

@@ -33,7 +33,7 @@ def score_from_config(global_config):
     col = global_config['target_column']
 
     # Run the functions that can act like mapreduce (eg. TF counts)
-
+    '''
     for name, func in mapreduce_functions:
         print("Starting mapreduce {}".format(func.table_name))
         INPUT_ITR = db.item_iterator(
@@ -47,7 +47,7 @@ def score_from_config(global_config):
         map(func.reduce, ITR)
 
         func.save(config)
-
+    '''
     # Run the functions that act globally on the data
 
     for name in config["globaldata_commands"]:
