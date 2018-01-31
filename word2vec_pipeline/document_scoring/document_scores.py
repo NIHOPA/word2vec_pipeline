@@ -9,7 +9,6 @@ import pandas as pd
 from tqdm import tqdm
 
 from sklearn.decomposition import IncrementalPCA
-from utils.mapreduce import corpus_iterator
 from utils.data_utils import load_w2vec, touch_h5
 
 from bounter import bounter
@@ -27,35 +26,25 @@ def L2_norm(doc_vec):
 
     return doc_vec
 
-def token_counts(tokens):
+def token_counts(tokens, size_mb=1):
     '''
     Returns a count for the number of times a token appears in a list
     '''
-    counts = bounter(size_mb=1)
+    counts = bounter(size_mb=size_mb)
     counts.update(tokens)
     return counts
-
-
     
 
-class generic_document_score(corpus_iterator):
+class generic_document_score(object):
 
     def __init__(self, *args, **kwargs):
-        super(generic_document_score, self).__init__(*args, **kwargs)
 
         # Load the model from disk
         self.M = load_w2vec()
 
-        # Find the words known
-        self.vocab = set(self.M.wv.index2word)
+        # Build the dictionary, and a mapping from word2index
         self.shape = self.M.wv.syn0.shape
-
-        # Build the dictionary
-        vocab_n = self.shape[0]
-        self.word2index = dict(zip(self.M.wv.index2word, range(vocab_n)))
-
-        # Set parallel option (currently does nothing)
-        # self._PARALLEL = kwargs["_PARALLEL"]
+        self.vocab = dict(zip(self.M.wv.index2word, xrange(self.shape[0])))
 
         if "negative_weights" in kwargs:
             NV = []
@@ -72,7 +61,6 @@ class generic_document_score(corpus_iterator):
                 # Don't oversample, max out weights to unity
                 scale[scale > 1] = 1.0
                 NV.append(scale)
-
 
             self.negative_weights = np.array(NV).T.sum(axis=1)
             
@@ -94,7 +82,44 @@ class generic_document_score(corpus_iterator):
             self.reduced_n_components = sec['n_components']
 
         self.h5py_args = {"compression":"gzip"}
+        
+    def _empty_vector(self):
+        return np.zeros((self.shape[1],), dtype=float)
+    
+    def check_word_vector(self, word):
+        # Reuturns True/False if the word vector is in the vocab
+        return word in self.vocab
 
+    def get_word_vector(self, word):
+        return self.M[word].astype(np.float64)
+    
+    def get_negative_word_weight(self, word):
+        return self.negative_weights[self.vocab[word]]
+    
+    def get_word_vectors(self, ws):
+        return np.array([self.get_word_vector(w) for w in ws])
+
+    def get_negative_word_weights(self, ws):
+        return np.array([self.get_negative_word_weight(w) for w in ws])
+
+    def get_counts(self, ws):
+        return np.array([ws[w] for w in ws])
+
+    def get_tokens_from_text(self, text):
+        tokens = text.split()
+        
+        # Find out which tokens are defined
+        valid_tokens = [w for w in tokens if w in self.vocab]
+
+        if not valid_tokens:
+            raise Warning("No valid tokens in document!")
+        
+        return valid_tokens
+
+    def __call__(self, text):
+        raise NotImplementedError
+    
+    '''
     def _compute_item_weights(self, **da):
         msg = "UNKNOWN w2v weights {}".format(self.method)
         raise KeyError(msg)
@@ -106,7 +131,9 @@ class generic_document_score(corpus_iterator):
     def _compute_doc_vector(self, **da):
         msg = "UNKNOWN w2v doc vec {}".format(self.method)
         raise KeyError(msg)
-
+    '''
+    
+    '''
     def score_document(self, row):
         text = row[self.target_column]
         text = unicode(text)
@@ -137,7 +164,7 @@ class generic_document_score(corpus_iterator):
         row['doc_vec'] = da['doc_vec']
 
         return row
-
+    
     def compute_single(self, INPUT_ITR):
 
         assert(self.method is not None)
@@ -233,52 +260,31 @@ class generic_document_score(corpus_iterator):
             g[key].create_dataset("VX_components_", data=com)
 
         h5.close()
-
-    def check_word_vector(self, word):
-        # Reuturns True/False if the word vector is in the vocab
-        return word in self.M
-
-    def get_word_vector(self, word):
-        return self.M[word].astype(np.float64)
-    
-    def get_negative_word_weight(self, word):
-        return self.negative_weights[self.word2index[word]]
-
+    '''
 
 class score_simple(generic_document_score):
     method = "simple"
 
-    def _compute_item_weights(self, local_counts, **da):
-        return dict([(w, local_counts[w]) for w in local_counts])
+    def __call__(self, text):
+        tokens = self.get_tokens_from_text(text)
+        counts = token_counts(tokens)
 
-    def _compute_embedding_vector(self, local_counts, **da):
-        return np.array([self.get_word_vector(w) for w in local_counts])
-
-    def _compute_doc_vector(self, weights, DV, local_counts, **da):
-        # Build the weight matrix
-        W = np.array([weights[w] for w in local_counts], dtype=np.float64)
-        W = W.reshape(-1, 1)
-
-        # Empty document vector with no tokens, return zero
-        if not W.shape[0]:
-            dim = self.M.wv.syn0.shape[1]
-            return np.zeros((dim,), dtype=np.float64)
+        W = self.get_word_vectors(counts)
+        n = self.get_negative_word_weights(counts)
+        C = self.get_counts(counts)
         
-        # Apply the negative weights
-        NV = np.array([self.get_negative_word_weight(w) for w in local_counts])
-        W *= NV.reshape(-1,1)
+        return L2_norm(((C*n)*W.T).sum(axis=1))
 
-        doc_vec = (W * DV).sum(axis=0)
-        return L2_norm(doc_vec)
+class score_unique(generic_document_score):
+    method = 'unique'
 
+    def __call__(self, text):
+        tokens = set(self.get_tokens_from_text(text))
 
-class score_unique(score_simple):
-    method = "unique"
-
-    def _compute_item_weights(self, local_counts, tokens, **da):
-        return dict.fromkeys(tokens, 1.0)
-
-#
+        W = self.get_word_vectors(tokens)
+        n = self.get_negative_word_weights(tokens)
+        
+        return L2_norm((n*W.T).sum(axis=1))
 
 
 class score_simple_TF(score_simple):

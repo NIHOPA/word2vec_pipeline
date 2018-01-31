@@ -97,108 +97,28 @@ class CSV_database_iterator(object):
 
 
 def text_iterator(
-    config=None,
+    F_CSV=None,
     progress_bar=True,
 ):
     '''
-    Returns a generator that loops over the parsed text data.
+    Returns a generator that loops the indicated files, if F_CSV is None or blank,
+    loops over the parsed text data.
     '''
-    
-    if config is None:
-        config = simple_config.load()
 
-    config = simple_config.load()
-    input_data_dir = config['parse']["output_data_directory"]
-    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
+    if F_CSV is None:
+        F_CSV = get_parsed_filenames()
 
-    for x in CSV_database_iterator(F_CSV,target_column='text',
+    for x in CSV_database_iterator(F_CSV, target_column='text',
         progress_bar=progress_bar,):
         yield x
     
-'''    
-def item_iterator(
-        config=None,
-        randomize_file_order=False,
-        whitelist=[],
-        section='parse',
-        progress_bar=False,
-        text_column=None,
-        include_filename=False,
-):
+
+def get_parsed_filenames():
+    '''
+    Returns the list of files in config['parse']
+    '''
     
-    #Iterates over the parsed corpus items and respects a given whitelist.
-    
-
-    if config is None:
-        config = simple_config.load()
-
-    config = simple_config.load()
-    input_data_dir = config['parse']["output_data_directory"]
-    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
-
-    if whitelist:
-        assert(isinstance(whitelist, list))
-
-        F_CSV2 = set()
-        for f_csv in F_CSV:
-            for token in whitelist:
-                if token in f_csv:
-                    F_CSV2.add(f_csv)
-        F_CSV = F_CSV2
-
-    # Randomize the order of the input files each time we get here
-    if randomize_file_order:
-        F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
-
-    INPUT_ITR = CSV_database_iterator(
-        F_CSV,
-        config["target_column"],
-        progress_bar=progress_bar,
-        include_filename=include_filename,
-    )
-
-    for row in INPUT_ITR:
-        if text_column is not None:
-            row['text'] = row[text_column]
-        yield row
-'''
-
-
-def get_section_filenames(section):
     config = simple_config.load()
     input_data_dir = config['parse']["output_data_directory"]
     return grab_files("*.csv", input_data_dir, verbose=False)
 
-def single_file_item_iterator(
-        f_csv,
-        config=None,
-        section='parse',
-        progress_bar=False,
-        text_column=None,
-        include_filename=True,
-):
-    '''
-    Iterates over a single file
-    '''
-    
-
-    if config is None:
-        config = simple_config.load()
-
-    config = simple_config.load()
-
-    # Make sure the file we requested exists
-    assert(f_csv in get_section_filenames(section))
-    
-
-    INPUT_ITR = CSV_database_iterator(
-        [f_csv],
-        config["target_column"],
-        progress_bar=progress_bar,
-        include_filename=include_filename,
-    )
-
-    for row in INPUT_ITR:
-        if text_column is not None:
-            row['text'] = row[text_column]
-        yield row
