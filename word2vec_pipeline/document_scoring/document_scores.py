@@ -11,8 +11,6 @@ from tqdm import tqdm
 from sklearn.decomposition import IncrementalPCA
 from utils.data_utils import load_w2vec, touch_h5
 
-from bounter import bounter
-
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
     doc_vec /= np.linalg.norm(doc_vec)
@@ -28,11 +26,11 @@ def L2_norm(doc_vec):
 
 def token_counts(tokens, size_mb=1):
     '''
-    Returns a count for the number of times a token appears in a list
+    Returns a count for the number of times a token appears in a list.
+    bounter is slower here since we aren't counting a large enough corpus.
     '''
-    counts = bounter(size_mb=size_mb)
-    counts.update(tokens)
-    return counts
+    return collections.Counter(tokens)
+
     
 
 class generic_document_score(object):
@@ -262,6 +260,46 @@ class generic_document_score(object):
         h5.close()
     '''
 
+
+class IDF_document_score(generic_document_score):
+    
+    def __init__(self, *args, **kwargs):
+        super(IDF_document_score, self).__init__(*args, **kwargs)
+
+        f_db = os.path.join(
+            kwargs['output_data_directory'],
+            kwargs['term_frequency']['f_db']
+        )
+        if not os.path.exists(f_db):
+            msg = "{} not computed yet, needed for TF methods!"
+            raise ValueError(msg.format(f_db))
+        
+        score_config = simple_config.load()["score"]
+        f_csv = os.path.join(
+            score_config["output_data_directory"],
+            score_config["term_document_frequency"]["f_db"],
+        )
+        IDF = pd.read_csv(f_csv)
+        IDF = dict(zip(IDF["word"].values, IDF["count"].values))
+        self.corpus_N = IDF.pop("__pipeline_document_counter")
+
+        # Compute the IDF
+        for key in IDF:
+            IDF[key] = np.log(float(self.corpus_N) / (IDF[key] + 1))
+        self.IDF = IDF
+
+    def get_IDF_weight(self, w):
+        if w in self.IDF:
+            return self.IDF[w]
+        else:
+            return 0.0
+
+    def get_IDF_weights(self, ws):
+        return np.array([self.get_IDF_weight(w) for w in ws])
+
+###############################################################################
+
+
 class score_simple(generic_document_score):
     method = "simple"
 
@@ -286,51 +324,34 @@ class score_unique(generic_document_score):
         
         return L2_norm((n*W.T).sum(axis=1))
 
-
-class score_simple_TF(score_simple):
+class score_simple_TF(IDF_document_score):
     method = "simple_TF"
+    
+    def __call__(self, text):
+        tokens = self.get_tokens_from_text(text)
+        counts = token_counts(tokens)
+        
+        W = self.get_word_vectors(counts)
+        n = self.get_negative_word_weights(counts)
+        C = self.get_counts(counts)
+        I = self.get_IDF_weights(counts)
 
-    def __init__(self, *args, **kwargs):
-        super(score_simple, self).__init__(*args, **kwargs)
+        return L2_norm(((I*C*n)*W.T).sum(axis=1))
 
-        f_db = os.path.join(
-            kwargs['output_data_directory'],
-            kwargs['term_frequency']['f_db']
-        )
-        if not os.path.exists(f_db):
-            msg = "{} not computed yet, needed for TF methods!"
-            raise ValueError(msg.format(f_db))
-
-        score_config = simple_config.load()["score"]
-        f_csv = os.path.join(
-            score_config["output_data_directory"],
-            score_config["term_document_frequency"]["f_db"],
-        )
-        IDF = pd.read_csv(f_csv)
-        IDF = dict(zip(IDF["word"].values, IDF["count"].values))
-        self.corpus_N = IDF.pop("__pipeline_document_counter")
-
-        # Compute the IDF
-        for key in IDF:
-            IDF[key] = np.log(float(self.corpus_N) / (IDF[key] + 1))
-        self.IDF = IDF
-
-    def get_IDF(self, word):
-        if word in self.IDF:
-            return self.IDF[word]
-        else:
-            return 0.0
-
-    def _compute_item_weights(self, local_counts, **da):
-        return dict([(w, local_counts[w] * self.get_IDF(w)) for w in local_counts])
-#
-
+    
 
 class score_unique_TF(score_simple_TF):
     method = "unique_TF"
 
-    def _compute_item_weights(self, local_counts, **da):
-        return dict([(w, self.get_IDF(w) * 1.0) for w in local_counts])
+    def __call__(self, text):
+        tokens = set(self.get_tokens_from_text(text))
+        
+        W = self.get_word_vectors(tokens)
+        n = self.get_negative_word_weights(tokens)
+        I = self.get_IDF_weights(tokens)
+
+        return L2_norm(((I*n)*W.T).sum(axis=1))
+
 
 #
 
