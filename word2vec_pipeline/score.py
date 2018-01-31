@@ -3,6 +3,13 @@ from utils.os_utils import mkdir
 import document_scoring as ds
 import utils.db_utils as db
 
+'''
+Can probably merge the two score functions into one, 
+no need for a mapreduce+global
+
+Can test speed difference in making parallel
+'''
+
 
 def score_from_config(global_config):
 
@@ -39,19 +46,16 @@ def score_from_config(global_config):
 
         print("Starting score model {}".format(model.method))
 
+    
         for f_csv in db.get_parsed_filenames():
+            data = {}
             for row in db.text_iterator([f_csv,]):
+                data[row["_ref"]] = model(row['text'])
 
-                text = row['text']
-                vec = model(text)
-                
-                
-            #exit()
-            #model.compute_single(ITR)
-            #model.save_single()
+            model.save(data, f_csv)
+        
+        model.compute_reduced_representation()
 
-        #exit()
-        #func.compute_reduced_representation()
 
 
 if __name__ == "__main__":

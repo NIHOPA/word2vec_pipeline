@@ -90,6 +90,7 @@ class CSV_database_iterator(object):
                     if self.include_filename:
                         row["_filename"] = os.path.basename(f)
 
+                    row['_ref'] = int(row['_ref'])
                     yield row
 
         if self.progress_bar is not None:
@@ -101,8 +102,8 @@ def text_iterator(
     progress_bar=True,
 ):
     '''
-    Returns a generator that loops the indicated files, if F_CSV is None or blank,
-    loops over the parsed text data.
+    Returns a generator that loops the indicated files, 
+    if F_CSV is None or blank, loops over the parsed text data.
     '''
 
     if F_CSV is None:

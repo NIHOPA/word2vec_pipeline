@@ -10,7 +10,7 @@ class frequency_counter(object):
 
     def __init__(
             self,
-            bounter_size_mb=100,
+            bounter_size_mb=1024,
             *args, **kwargs):
         # Global counter for term frequency
         self.TF = bounter(size_mb=bounter_size_mb)

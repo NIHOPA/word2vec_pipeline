@@ -7,9 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-
-from sklearn.decomposition import IncrementalPCA
-from utils.data_utils import load_w2vec, touch_h5
+from utils.data_utils import load_w2vec, touch_h5, load_document_vectors
 
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
@@ -31,8 +29,8 @@ def token_counts(tokens, size_mb=1):
     '''
     return collections.Counter(tokens)
 
+#####################################################################################
     
-
 class generic_document_score(object):
 
     def __init__(self, *args, **kwargs):
@@ -70,15 +68,6 @@ class generic_document_score(object):
 
         # Make sure nothing has been set yet
         self.V = self._ref = None
-
-        # Set the variables for reduced representation
-        config_score = simple_config.load()["score"]
-        self.compute_reduced = config_score["compute_reduced_representation"]
-
-        if self.compute_reduced:
-            sec = config_score['reduced_representation']
-            self.reduced_n_components = sec['n_components']
-
         self.h5py_args = {"compression":"gzip"}
         
     def _empty_vector(self):
@@ -116,149 +105,88 @@ class generic_document_score(object):
 
     def __call__(self, text):
         raise NotImplementedError
-    
-    '''
-    def _compute_item_weights(self, **da):
-        msg = "UNKNOWN w2v weights {}".format(self.method)
-        raise KeyError(msg)
 
-    def _compute_embedding_vector(self, **da):
-        msg = "UNKNOWN w2v embedding {}".format(self.method)
-        raise KeyError(msg)
-
-    def _compute_doc_vector(self, **da):
-        msg = "UNKNOWN w2v doc vec {}".format(self.method)
-        raise KeyError(msg)
-    '''
-    
-    '''
-    def score_document(self, row):
-        text = row[self.target_column]
-        text = unicode(text)
-        tokens = text.split()
-
-        # Document args
-        da = {}
-
-        # Find out which tokens are defined
-        valid_tokens = [w for w in tokens if w in self.vocab]
-
-        da["local_counts"] = token_counts(valid_tokens)
-
-        if not da["local_counts"].cardinality():
-            msg = "Document (_ref={}, len(text)={}) has no valid tokens!"
-            print msg
-            #print(msg.format(row["_ref"], len(text)))
-            # raise ValueError(msg)
-            da["local_counts"] = {}
-            
-        da["weights"] = self._compute_item_weights(**da)
-        da['DV'] = self._compute_embedding_vector(**da)
-        da['doc_vec'] = self._compute_doc_vector(**da)
-
-        # Sanity check, should not have any NaNs
-        assert(not np.isnan(da['doc_vec']).any())
-
-        row['doc_vec'] = da['doc_vec']
-
-        return row
-    
-    def compute_single(self, INPUT_ITR):
-
-        assert(self.method is not None)
-        print("Scoring {}".format(self.method))
-
-        self._ref = []
-        self.V = []
-        self.current_filename = None
-        ITR = itertools.imap(self.score_document, tqdm(INPUT_ITR))
-
-        for row in ITR:
-
-            # Require that filenames don't change in compute_single
-            assert (self.current_filename in [None, row["_filename"]])
-            self.current_filename = row["_filename"]
-
-            self.V.append(row["doc_vec"])
-            self._ref.append(int(row["_ref"]))
-
-        self.V = np.array(self.V)
-        self._ref = np.array(self._ref)
-
-
-    def save_single(self):
-
-        assert(self.V is not None)
-        assert(self._ref is not None)
-
-        # Set the size explictly as a sanity check
-        size_n, dim_V = self.V.shape
-
+    def get_h5save_object(self):
+        # Returns a usable h5 object to store data
+        
         config_score = simple_config.load()["score"]
         f_db = os.path.join(
             config_score["output_data_directory"],
             config_score["document_scores"]["f_db"]
         )
-
+        
         h5 = touch_h5(f_db)
         g  = h5.require_group(self.method)
-        gx = g.require_group(self.current_filename)
+        return g
 
-        # Save the data array
-        msg = "Saving {} {} ({})"
-        print(msg.format(self.method, self.current_filename, size_n))
+    
+    def save_h5(self, h5, col, data):
+        # Saves (or overwrites) a column in an h5 object
+        if col in h5:
+            del h5[col]        
+        return h5.create_dataset(col, data=data, **self.h5py_args)
 
-        for col in ["V", "_ref", "VX",
-                    "VX_explained_variance_ratio_",
-                    "VX_components_"]:
-            if col in gx:
-                #print "  Clearing", self.method, self.current_filename, col
-                del gx[col]
+    def save(self, data, f_csv):
+        '''
+        Takes in a dictionary of _ref:doc_vec and saves it to an h5 file.
+        Save only to the basename of the file.
+        '''
+        
+        _refs = sorted(data.keys())
+        V = np.array([data[r] for r in _refs])
 
-        gx.create_dataset("V", data=self.V, **self.h5py_args)
-        gx.create_dataset("_ref", data=self._ref, **self.h5py_args)
+        # Sanity check, should not have any NaNs
+        assert(not np.isnan(V).any())
+
+        # Set the size explictly as a sanity check
+        size_n, dim_V = V.shape
+
+        g = self.get_h5save_object()
+        gx = g.require_group(os.path.basename(f_csv))
+
+        self.save_h5(gx, "V", V)
+        self.save_h5(gx, "_ref", _refs)
 
     def compute_reduced_representation(self):
-
-        if not self.compute_reduced:
-            return None
-
+        
+        # Load the variables for reduced representation
         config_score = simple_config.load()["score"]
-        f_db = os.path.join(
-            config_score["output_data_directory"],
-            config_score["document_scores"]["f_db"]
-        )
+        compute_reduced = config_score["compute_reduced_representation"]
 
-        h5 = touch_h5(f_db)
-        g = h5[self.method]
+        if not compute_reduced:
+            return False
 
+        # Only load the library if we are performing PCA
+        from sklearn.decomposition import IncrementalPCA
+
+        DV = load_document_vectors(self.method)
+        V = DV["docv"]
+
+        '''
+        g = self.get_h5save_object()
         keys = g.keys()
+        print keys
         V     = np.vstack([g[x]["V"][:] for x in keys])
         sizes = [g[x]["_ref"].shape[0] for x in keys]
-        
-        nc = self.reduced_n_components
+        '''
+
+        nc = config_score['reduced_representation']['n_components']
         clf = IncrementalPCA(n_components=nc)
 
         msg = "Performing PCA on {}, ({})->({})"
         print(msg.format(self.method, V.shape[1], nc))
-
         VX = clf.fit_transform(V)
-        EVR = clf.explained_variance_ratio_
-        COMPONENTS = clf.components_
 
-        for key, size in zip(keys, sizes):
+        g = self.get_h5save_object()
+        for key in g.keys():
+            idx = g[key]["_ref"][:]
+            
+            self.save_h5(g[key], "VX", VX[idx, :])
+            self.save_h5(g[key], "VX_explained_variance_ratio_", clf.explained_variance_ratio_)
+            self.save_h5(g[key], "VX_components_", clf.components_)
 
-            # Take slices equal to the size
-            vx, VX = VX[:size,:], VX[size:, :]
-            evr, EVR = EVR[:size], EVR[size:]
-            com, COMPONENTS = COMPONENTS[:size,:], COMPONENTS[size:, :]
 
-            g[key].create_dataset("VX", data=vx, **self.h5py_args)
-            g[key].create_dataset("VX_explained_variance_ratio_", data=evr)
-            g[key].create_dataset("VX_components_", data=com)
-
-        h5.close()
-    '''
+#####################################################################################
 
 
 class IDF_document_score(generic_document_score):
@@ -351,28 +279,3 @@ class score_unique_TF(score_simple_TF):
         I = self.get_IDF_weights(tokens)
 
         return L2_norm(((I*n)*W.T).sum(axis=1))
-
-
-#
-
-###############################################################################
-
-'''
-class new_score_unique_TF(score_simple_TF):
-    method = "unique_TF"
-
-    def __init__(self):
-        
-        # Load the model from disk
-        self.M = load_w2vec()
-
-        # Find the words known
-        self.vocab = set(self.M.wv.index2word)
-        self.shape = self.M.wv.syn0.shape
-
-        # Build the dictionary
-        vocab_n = self.shape[0]
-        self.word2index = dict(zip(self.M.wv.index2word, range(vocab_n)))
-
-        print "HI!"
-'''
