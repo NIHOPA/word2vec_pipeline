@@ -9,7 +9,17 @@ in the pipeline to perform classification and and clustering. The output scores 
 for further analysis.
 """
 
+#DOCUMENTATION_UNKNOWN
+#in other files the parameter is 'config', rather than 'global_config'
+
 def score_from_config(global_config):
+    '''
+    Score each document imported into the pipeline using a gensim word2vec model. The config file has the
+    parameters of what scoring methods to use
+
+    Args:
+        global_config: a config file
+    '''
 
     config = global_config["score"]
 
@@ -54,9 +64,14 @@ def score_from_config(global_config):
         func.save(config)
 
     # Run the functions that act globally on the data
-
+    # DOCUMENTATION_UNKNOWN
+    # what is obj used for?
     for name in config["globaldata_commands"]:
         obj = getattr(ds, name)
+
+
+#DOCUMENTATION_UNKNOWN
+#is this function ever used?
 def parse_from_config(config):
 
     _PARALLEL = config.as_bool("_PARALLEL")

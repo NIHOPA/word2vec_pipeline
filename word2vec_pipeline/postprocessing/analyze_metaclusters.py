@@ -16,11 +16,28 @@ It also returns statistics on each cluster to determine the average similarity o
 centroid, and the average similarity of each document to every other document in the cluster. 
 """
 
-
+#DOCUMENTATION_UNKNOWN
+#not sure about what this does
 def _compute_centroid_dist(X, cx):
+    '''
+    Find the average distance of all documents in a cluster to its centroid
+        X: a document vector
+        cx: a list of cluster centroids
+    Returns
+        a float similarity value
+    '''
     return cdist(X, [cx, ], metric='cosine').mean()
 
 def _compute_dispersion_matrix(X, labels):
+    '''
+    Function to find the intra-document dispersion of every document in a cluster
+
+    Args:
+        X: an numpy array of each document in a cluster's document vector
+        labels: labels for each cluster
+    Returns
+        dist: a numpy array of the matrix of pairwise dispersion measures between each document in a cluster
+    '''
     n = len(np.unique(labels))
     dist = np.zeros((n, n))
     ITR = list(itertools.combinations_with_replacement(range(n), 2))
@@ -41,6 +58,12 @@ def _compute_dispersion_matrix(X, labels):
 #pipeline
 
 def analyze_metacluster_from_config(config):
+    '''
+    Does analysis on metaclusters to return descriptive information and statistics on them
+
+    Args:
+        config: a config file
+    '''
 
     score_method = config["metacluster"]["score_method"]
     config = config["postprocessing"]

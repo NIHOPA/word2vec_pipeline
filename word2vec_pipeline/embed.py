@@ -12,6 +12,10 @@ model itself
 
 """
 def embed_from_config(config):
+    '''
+    Args:
+        config: config file to import parameters
+    '''
 
     mkdir(config["embedding"]["output_data_directory"])
 

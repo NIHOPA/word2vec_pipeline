@@ -13,6 +13,13 @@ unimportant words, identifies acronyms, as well as other processings steps.
 """
 
 def parse_from_config(config):
+    '''
+    Function to read the parameters from the pipeline config file, and then begin pre-processing the imported
+    documents in order to train a word2vec model and assign a score to each document
+
+    Args:
+        config: a config file
+    '''
 
     _PARALLEL = config.as_bool("_PARALLEL")
 
@@ -86,6 +93,16 @@ parser_functions = []
 
 
 def dispatcher(row, target_column):
+    """
+    Perform the operation of each step of the NLPre pre-processing specified in the config file
+
+    Args:
+        row: a row of a pandas DataFrame corresponding to a text document
+        target_column: a string specifying which column is to be processed
+
+    Returns:
+         row: a row of a pandas DataFrame with the pre-processed text returned
+    """
     text = row[target_column] if target_column in row else None
 
     for f in parser_functions:
@@ -109,6 +126,15 @@ def dispatcher(row, target_column):
 
 
 def load_phrase_database(f_abbreviations):
+    '''
+    Load the dictionary of abbreviated steps created in the "import_data" step
+
+    Args:
+        f_abbreviations: string that lists the filename and location of the abbreviation dictionary
+
+    Returns:
+         P: a dictionary
+    '''
 
     P = {}
     with open(f_abbreviations, 'r') as FIN:

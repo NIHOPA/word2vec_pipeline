@@ -47,6 +47,15 @@ parser_parenthetical = nlpre.identify_parenthetical_phrases()
 
 
 def func_parenthetical(data, **kwargs):
+    '''
+    Identify paranthetical phrases in the data
+
+    Args:
+        data: a text document
+        kwargs: additional arguments
+    Returns:
+        parser_parenthetical(text): A collections.counter object with count of parenthetical phrases
+    '''
     text = data[kwargs["col"]]
     return parser_parenthetical(text)
 
@@ -54,6 +63,15 @@ parser_unicode = nlpre.unidecoder()
 
 
 def map_to_unicode(s):
+    '''
+    Convert input string to unicode.
+
+    Args:
+        s: an input string document
+
+    Returns
+        s: a copy of the input string in unicode
+    '''
     # Helper function to fix input format
     s = str(s)
     return s.decode('utf-8', errors='replace')
@@ -62,15 +80,28 @@ def map_to_unicode(s):
 def clean_row(row):
     '''
     Maps all keys through a unicode and unidecode fixer.
+
+    Args:
+        row: a row of text
+
+    Returns:
+        row: the same row of text converted to unicode
     '''
     for key, val in row.iteritems():
         row[key] = parser_unicode(map_to_unicode(val))
     return row
 
-
+#Can merge_cols be removed?
 def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
     '''
-    Creates and iterator over a CSV file, optionally cleans it.
+    Creates an iterator over a CSV file, optionally cleans it.
+
+    Args
+        f_csv: a string that has the filename of the csv to open and iterate over
+        clean: a boolean to set whether to clean the csv file
+        PARALLEL: a boolean to set whether the iterator should be run in parallel
+        merge_cols:
+
     '''
     with open(f_csv) as FIN:
         CSV = csv.DictReader(FIN)
@@ -86,8 +117,18 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         except:
             pass
 
-
+#Any reason it takes a list as an input, instead of the 4 parameters
 def import_csv(item):
+    """
+    Import a csv file, optionally merging select text fields into a single field
+
+    Args:
+        item: a list containing function paramters
+            f_csv: a string with the filename of the csv file to open
+            f_csv_out: a string with the filename of where the input document should be saved to
+            f_target_column: a string with the name of the column with concatenated text
+            merge_columns: a list of strings with the names of the text columns that are to be concatenated
+    """
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
@@ -136,6 +177,12 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
     Takes a input_directory and output_directory and builds
     and cleaned (free of encoding errors) CSV for all input
     and attaches unique _ref numbers to each entry.
+
+    Args:
+        d_in: a string with the directory of the csv file to open
+        d_out: a string with the directory of where the input document should be saved to
+        target_column: a string with the name of the column with concatenated text
+        merge_columns: a list of strings with the names of the text columns that are to be concatenated
     '''
 
     INPUT_FILES = grab_files("*.csv", d_in)
@@ -176,6 +223,13 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
 
 
 def import_data_from_config(config):
+    """
+    Import parameters from the config file. import_data_from_config() and phrases_from_config() are
+    the entry points for this step of the pipeline
+
+    Args:
+        config: a config file
+    """
 
     merge_columns = (config["import_data"]["merge_columns"]
                      if "merge_columns" in config["import_data"] else [])
@@ -200,6 +254,15 @@ def import_data_from_config(config):
 
 
 def dedupe_abbr(ABR):
+    """
+    Remove duplicate entries in dictionary of abbreviations
+
+    Args:
+        ABR: a dictionary of abbreviations and corresponding phrases
+
+    Returns:
+        df: a DataFrame of sorted abbreviations
+    """
 
     df = pd.DataFrame()
     df['phrase'] = [' '.join(x[0]) for x in ABR.keys()]
@@ -226,6 +289,15 @@ def dedupe_abbr(ABR):
 
 
 def phrases_from_config(config):
+    """
+    Identify parenthetical phrases in the documents as they are being imported to the pipeline.
+
+    import_data_from_config() and phrases_from_config() are the entry points for this step of the pipeline
+
+    Args:
+        config: a config file
+    :return:
+    """
 
     _PARALLEL = config.as_bool("_PARALLEL")
     output_dir = config["phrase_identification"]["output_data_directory"]

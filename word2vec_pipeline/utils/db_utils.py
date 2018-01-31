@@ -9,7 +9,15 @@ from os_utils import grab_files
 Utility file to assist in parsing .csv files, as well as display the process of parsing these files.
 """
 
+#DOCUMENTATION_UNKNOWN
+#this function is never used
 def pretty_counter(C, min_count=1):
+    """
+    Counts
+    :param C:
+    :param min_count:
+    :return:
+    """
     for item in C.most_common():
         (phrase, abbr), count = item
         if count > min_count:
@@ -18,6 +26,18 @@ def pretty_counter(C, min_count=1):
 
 
 def CSV_list_columns(f_csv):
+    """
+    iterate through the columns of a .csv file.
+
+    Args:
+        f_csv: string location of the .csv file
+
+    Returns:
+        return tuple(reader.next()): DOCUMENTATION_UNKNOWN
+
+
+
+    """
     if not os.path.exists(f_csv):
         msg = "File not found {}".format(f_csv)
         raise IOError(msg)
