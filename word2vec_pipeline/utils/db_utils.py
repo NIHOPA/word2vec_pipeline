@@ -96,6 +96,26 @@ class CSV_database_iterator(object):
             self.progress_bar.close()
 
 
+def text_iterator(
+    config=None,
+    progress_bar=True,
+):
+    '''
+    Returns a generator that loops over the parsed text data.
+    '''
+    
+    if config is None:
+        config = simple_config.load()
+
+    config = simple_config.load()
+    input_data_dir = config['parse']["output_data_directory"]
+    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
+
+    for x in CSV_database_iterator(F_CSV,target_column='text',
+        progress_bar=progress_bar,):
+        yield x
+    
+'''    
 def item_iterator(
         config=None,
         randomize_file_order=False,
@@ -105,9 +125,9 @@ def item_iterator(
         text_column=None,
         include_filename=False,
 ):
-    '''
-    Iterates over the parsed corpus items and respects a given whitelist.
-    '''
+    
+    #Iterates over the parsed corpus items and respects a given whitelist.
+    
 
     if config is None:
         config = simple_config.load()
@@ -141,7 +161,7 @@ def item_iterator(
         if text_column is not None:
             row['text'] = row[text_column]
         yield row
-
+'''
 
 
 def get_section_filenames(section):

@@ -8,7 +8,6 @@ import pandas as pd
 
 from tqdm import tqdm
 
-#from locality_hashing import RBP_hasher
 from sklearn.decomposition import IncrementalPCA
 from utils.mapreduce import corpus_iterator
 from utils.data_utils import load_w2vec, touch_h5

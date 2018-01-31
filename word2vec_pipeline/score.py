@@ -32,22 +32,12 @@ def score_from_config(global_config):
 
     col = global_config['target_column']
 
-    # Run the functions that can act like mapreduce (eg. TF counts)
-
-
-    for x in db.item_iterator():
-        print x
-    exit()
-    
+    # Run the functions that can act like mapreduce (eg. TF counts)    
     for name, func in mapreduce_functions:
         print("Starting mapreduce {}".format(func.table_name))
-        INPUT_ITR = db.item_iterator(
-            config,
-            text_column=col,
-            progress_bar=True,
-            include_filename=True,
-        )
-
+        exit()
+        
+        INPUT_ITR = db.text_iterator()
         ITR = itertools.imap(func, INPUT_ITR)
         map(func.reduce, ITR)
 

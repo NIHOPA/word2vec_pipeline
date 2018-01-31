@@ -1,17 +1,11 @@
 from utils.os_utils import mkdir
 import model_building as mb
-from utils.db_utils import item_iterator
+from utils.db_utils import text_iterator
 
 
 def embed_from_config(config):
 
     mkdir(config["embedding"]["output_data_directory"])
-
-    # If there is a whitelist only keep the matching filename
-    try:
-        whitelist = config["score"]["input_file_whitelist"]
-    except:
-        whitelist = []
 
     #
     # Run the functions that act globally on the data
@@ -27,10 +21,7 @@ def embed_from_config(config):
         kwargs['target_column'] = config['target_column']
 
         func = obj(**kwargs)
-        func.set_iterator_function(item_iterator,
-                                   config["embedding"],
-                                   whitelist,
-                                   section="parse")
+        func.set_iterator_function(text_iterator)
         func.compute(**kwargs)
 
 
