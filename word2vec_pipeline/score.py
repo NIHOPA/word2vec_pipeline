@@ -7,42 +7,25 @@ import utils.db_utils as db
 def score_from_config(global_config):
 
     config = global_config["score"]
+    dout = config["output_data_directory"]
+    mkdir(dout)
 
-    mkdir(config["output_data_directory"])
-
-    #
-    # Fill the pipeline with function objects
-
-    mapreduce_functions = []
+    # Run the functions that can act like mapreduce (eg. TF counts)
     for name in config["mapreduce_commands"]:
-
-        obj = getattr(ds, name)
-
-        # Load any kwargs in the config file
-        kwargs = {}
-        if name in config:
-            kwargs = config[name]
-
-        # Add in the embedding configuration options
-        kwargs["embedding"] = global_config["embedding"]
-        kwargs["score"] = global_config["score"]
-
-        val = name, obj(**kwargs)
-        mapreduce_functions.append(val)
-
-    col = global_config['target_column']
-
-    # Run the functions that can act like mapreduce (eg. TF counts)    
-    for name, func in mapreduce_functions:
-        print("Starting mapreduce {}".format(func.table_name))
-        exit()
         
-        INPUT_ITR = db.text_iterator()
-        ITR = itertools.imap(func, INPUT_ITR)
-        map(func.reduce, ITR)
+        # Load any kwargs in the config file
+        kwargs = {"output_data_directory":dout}
+        if name in config:
+            kwargs.update(config[name])
 
-        func.save(config)
-    
+        model = getattr(ds, name)(**kwargs)
+        
+        print("Starting mapreduce {}".format(model.function_name))
+        map(model, db.text_iterator())
+        model.save(**kwargs)
+        
+    exit()
+    col = global_config['target_column']    
     # Run the functions that act globally on the data
 
     for name in config["globaldata_commands"]:
