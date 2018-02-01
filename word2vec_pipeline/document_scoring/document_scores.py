@@ -28,13 +28,17 @@ def token_counts(tokens, size_mb=1):
     '''
     return collections.Counter(tokens)
 
-def save_h5(h5, col, data):
-    h5py_args = {"compression":"gzip"}
-    
+def get_h5save_object(f_db, method):
+    # Returns a usable h5 object to store data
+    h5 = touch_h5(f_db)
+    g  = h5.require_group(method)
+    return g
+
+def save_h5(h5, col, data, compression="gzip"):
     # Saves (or overwrites) a column in an h5 object
     if col in h5:
         del h5[col]        
-    return h5.create_dataset(col, data=data, **h5py_args)
+    return h5.create_dataset(col, data=data, compression=compression)
 
 
 #####################################################################################
@@ -112,12 +116,6 @@ class generic_document_score(object):
     def __call__(self, text):
         raise NotImplementedError
 
-    def get_h5save_object(self, f_db):
-        # Returns a usable h5 object to store data
-        h5 = touch_h5(f_db)
-        g  = h5.require_group(self.method)
-        return g
-    
     def save(
             self,
             data,
@@ -138,7 +136,7 @@ class generic_document_score(object):
         # Set the size explictly as a sanity check
         size_n, dim_V = V.shape
 
-        g = self.get_h5save_object(f_db)
+        g = get_h5save_object(f_db, self.method)
         gx = g.require_group(os.path.basename(f_csv))
 
         save_h5(gx, "V", V)
@@ -167,7 +165,7 @@ class generic_document_score(object):
 
     def save_reduced_representation(self, data, f_db):
 
-        g = self.get_h5save_object(f_db)
+        g = get_h5save_object(f_db, self.method)
         for key in g.keys():
             idx = g[key]["_ref"][:]
             
