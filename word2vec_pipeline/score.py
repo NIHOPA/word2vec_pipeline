@@ -49,7 +49,7 @@ def score_from_config(global_config):
 
             model.save(data, f_csv)
         
-        model.compute_reduced_representation()
+        model.compute_reduced_representation(**kwargs)
 
 
 

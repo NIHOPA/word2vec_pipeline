@@ -144,7 +144,10 @@ class generic_document_score(object):
         self.save_h5(gx, "V", V)
         self.save_h5(gx, "_ref", _refs)
 
-    def compute_reduced_representation(self):
+    def compute_reduced_representation(self, *args, **kwargs):
+
+        print kwargs
+        exit()
         
         # Load the variables for reduced representation
         config_score = simple_config.load()["score"]
