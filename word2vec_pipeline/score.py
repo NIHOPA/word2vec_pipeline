@@ -14,11 +14,10 @@ Can test speed difference in making parallel
 def _load_model(name, config):
     # Load any kwargs in the config file
     kwargs = config.copy()
-    kwargs["output_data_directory"] = config["output_data_directory"]
     
     if name in config:
         kwargs.update(config[name])
-        
+
     return getattr(ds, name)(**kwargs), kwargs
 
 
@@ -48,8 +47,10 @@ def score_from_config(global_config):
                 data[row["_ref"]] = model(row['text'])
 
             model.save(data, f_csv)
-        
-        model.compute_reduced_representation(**kwargs)
+
+        if kwargs["compute_reduced_representation"]:
+            nc = kwargs['reduced_representation']['n_components']
+            model.compute_reduced_representation(n_components=nc)
 
 
 

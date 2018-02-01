@@ -32,7 +32,11 @@ def token_counts(tokens, size_mb=1):
     
 class generic_document_score(object):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 negative_weights=None,
+                 output_data_directory=None,
+                 f_db=None,
+                 *args, **kwargs):
 
         # Load the model from disk
         self.M = load_w2vec()
@@ -41,9 +45,10 @@ class generic_document_score(object):
         self.shape = self.M.wv.syn0.shape
         self.vocab = dict(zip(self.M.wv.index2word, xrange(self.shape[0])))
 
-        if "negative_weights" in kwargs:
+        if negative_weights:
+            
             NV = []
-            for word,weight in kwargs["negative_weights"].items():
+            for word,weight in negative_weights.items():
 
                 if not self.check_word_vector(word):
                     msg = "Negative weight word '{}' not found in dictionary"
@@ -56,7 +61,6 @@ class generic_document_score(object):
                 # Don't oversample, max out weights to unity
                 scale[scale > 1] = 1.0
                 NV.append(scale)
-
             self.negative_weights = np.array(NV).T.sum(axis=1)
             
         else:
@@ -66,10 +70,9 @@ class generic_document_score(object):
         self.V = self._ref = None
         self.h5py_args = {"compression":"gzip"}
 
-        self.f_db = os.path.join(
-            kwargs["output_data_directory"],
-            kwargs["document_scores"]["f_db"]
-        )
+        assert(output_data_directory is not None)
+        assert(f_db is not None)        
+        self.f_db = os.path.join(output_data_directory, f_db)
         
     def _empty_vector(self):
         return np.zeros((self.shape[1],), dtype=float)
@@ -140,25 +143,17 @@ class generic_document_score(object):
         self.save_h5(gx, "V", V)
         self.save_h5(gx, "_ref", _refs)
 
-    def compute_reduced_representation(self, *args, **kwargs):
-        
-        # Load the variables for reduced representation
-        compute_reduced = kwargs["compute_reduced_representation"]
-
-        if not compute_reduced:
-            return False
+    def compute_reduced_representation(self, n_components=10):
 
         # Only load the library if we are performing PCA
         from sklearn.decomposition import IncrementalPCA
 
         DV = load_document_vectors(self.method)
         V = DV["docv"]
-
-        nc = kwargs['reduced_representation']['n_components']
-        clf = IncrementalPCA(n_components=nc)
+        clf = IncrementalPCA(n_components=n_components)
 
         msg = "Performing PCA on {}, ({})->({})"
-        print(msg.format(self.method, V.shape[1], nc))
+        print(msg.format(self.method, V.shape[1], n_components))
         VX = clf.fit_transform(V)
 
         g = self.get_h5save_object()
@@ -175,20 +170,19 @@ class generic_document_score(object):
 
 class IDF_document_score(generic_document_score):
     
-    def __init__(self, *args, **kwargs):
-        super(IDF_document_score, self).__init__(*args, **kwargs)
-
-        f_db = os.path.join(
-            kwargs['output_data_directory'],
-            kwargs['term_frequency']['f_db']
-        )
-        if not os.path.exists(f_db):
-            msg = "{} not computed yet, needed for TF methods!"
-            raise ValueError(msg.format(f_db))
+    def __init__(self,
+                 output_data_directory=None,
+                 term_document_frequency=None,
+                 *args, **kwargs):
         
+        super(IDF_document_score, self).__init__(
+            output_data_directory=output_data_directory, *args, **kwargs)
+
+        assert(term_document_frequency is not None)
+
         f_csv = os.path.join(
-            kwargs["output_data_directory"],
-            kwargs["term_document_frequency"]["f_db"],
+            output_data_directory,
+            term_document_frequency["f_db"],
         )
         
         IDF = pd.read_csv(f_csv)

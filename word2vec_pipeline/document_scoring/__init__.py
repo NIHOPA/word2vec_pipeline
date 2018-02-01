@@ -7,7 +7,6 @@ from .Z_weighted import score_Z_weighted
 
 from .document_scores import score_simple, score_unique
 from .document_scores import score_simple_TF, score_unique_TF
-from .reduced_representation import reduced_representation
 
 __all__ = [
     'term_frequency',
