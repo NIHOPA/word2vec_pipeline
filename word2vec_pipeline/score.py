@@ -48,7 +48,7 @@ def score_from_config(global_config):
         # If required, compute the reduced representation
         if kwargs["compute_reduced_representation"]:
             nc = kwargs['reduced_representation']['n_components']
-            rdata = RREP.compute(model.method)
+            rdata = RREP.compute(model.method, n_components=nc)
             RREP.save(model.method, rdata, f_db)
 
 if __name__ == "__main__":
