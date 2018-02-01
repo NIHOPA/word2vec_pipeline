@@ -7,6 +7,8 @@ h5py
 # NLP core libraries
 gensim>=3.0.1
 nlpre>=1.1.3
+pattern
+flashtext
 
 # Figures out how many cores on machine (for parallel)
 psutil
@@ -31,6 +33,7 @@ imbalanced-learn
 
 # TO explain variables in predictions
 lime
+bounter
 
 # For CLI interface
 docopt
