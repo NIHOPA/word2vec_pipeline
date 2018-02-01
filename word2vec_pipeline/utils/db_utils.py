@@ -102,7 +102,7 @@ def text_iterator(
     progress_bar=True,
 ):
     '''
-    Returns a generator that loops the indicated files, 
+    Returns a generator that loops the indicated files,
     if F_CSV is None or blank, loops over the parsed text data.
     '''
 
@@ -110,16 +110,15 @@ def text_iterator(
         F_CSV = get_parsed_filenames()
 
     for x in CSV_database_iterator(F_CSV, target_column='text',
-        progress_bar=progress_bar,):
+                                   progress_bar=progress_bar,):
         yield x
-    
+
 
 def get_parsed_filenames():
     '''
     Returns the list of files in config['parse']
     '''
-    
+
     config = simple_config.load()
     input_data_dir = config['parse']["output_data_directory"]
     return grab_files("*.csv", input_data_dir, verbose=False)
-

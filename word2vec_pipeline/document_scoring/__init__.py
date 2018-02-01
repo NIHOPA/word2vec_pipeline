@@ -1,5 +1,5 @@
-#from .log_probablity import document_log_probability
-#from .Z_weighted import score_Z_weighted
+# from .log_probablity import document_log_probability
+# from .Z_weighted import score_Z_weighted
 
 # from .affinity_mapping import affinity_mapping, affinity_grouping
 # from .affinity_mapping import affinity_scoring

@@ -3,14 +3,11 @@ from utils.os_utils import mkdir
 import document_scoring as ds
 import utils.db_utils as db
 
-'''
-Can test speed difference in making parallel (single core 27/49)
-'''
 
 def _load_model(name, config):
     # Load any kwargs in the config file
     kwargs = config.copy()
-    
+
     if name in config:
         kwargs.update(config[name])
 
@@ -19,21 +16,20 @@ def _load_model(name, config):
 
 def score_from_config(global_config):
 
-    config = global_config["score"] 
+    config = global_config["score"]
     mkdir(config["output_data_directory"])
 
     # Run the functions that can sum over the data (eg. TF counts)
     for name in config["count_commands"]:
- 
+
         model, kwargs = _load_model(name, config)
         print("Starting mapreduce {}".format(model.function_name))
         map(model, db.text_iterator())
         model.save(**kwargs)
 
-
     # Load the reduced representation model
     RREP = ds.reduced_representation()
-            
+
     # Run the functions that act per documnet (eg. word2vec)
     for name in config["score_commands"]:
 
@@ -41,11 +37,12 @@ def score_from_config(global_config):
         f_db = os.path.join(kwargs["output_data_directory"], kwargs["f_db"])
 
         print("Starting score model {}".format(model.method))
-    
+
         for f_csv in db.get_parsed_filenames():
             data = {}
-            for row in db.text_iterator([f_csv,]):
+            for row in db.text_iterator([f_csv, ]):
                 data[row["_ref"]] = model(row['text'])
+
             model.save(data, f_csv, f_db)
 
         # If required, compute the reduced representation

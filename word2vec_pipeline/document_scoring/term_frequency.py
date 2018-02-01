@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from bounter import bounter
 
+
 class frequency_counter(object):
     function_name = "frequency_counter"
 
@@ -34,10 +35,10 @@ class term_frequency(frequency_counter):
 
     def __call__(self, row):
         text = row['text']
-        
+
         tokens = unicode(text).split()
         self.TF.update(tokens)
-        self.TF.update(["__pipeline_document_counter",])
+        self.TF.update(["__pipeline_document_counter", ])
 
 
 class term_document_frequency(frequency_counter):
@@ -51,6 +52,4 @@ class term_document_frequency(frequency_counter):
         tokens = set(unicode(text).split())
 
         self.TF.update(tokens)
-        self.TF.update(["__pipeline_document_counter",])
-
-
+        self.TF.update(["__pipeline_document_counter", ])

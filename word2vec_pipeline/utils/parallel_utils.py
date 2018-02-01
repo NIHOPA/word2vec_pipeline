@@ -39,6 +39,6 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
         progress_bar = tqdm()
         for block in grouper(ITR, batch_size):
             MPITR = MP(dfunc(x, *args, **kwargs) for x in block)
-            for k,z in enumerate(MPITR):
+            for k, z in enumerate(MPITR):
                 yield z
-            progress_bar.update(k+1)
+            progress_bar.update(k + 1)

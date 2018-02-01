@@ -37,20 +37,22 @@ def touch_h5(f_db):
         h5 = h5py.File(f_db, 'r+')
     return h5
 
+
 def get_h5save_object(f_db, method):
     # Returns a usable h5 object to store data
     h5 = touch_h5(f_db)
-    g  = h5.require_group(method)
+    g = h5.require_group(method)
     return g
+
 
 def save_h5(h5, col, data, compression="gzip"):
     # Saves (or overwrites) a column in an h5 object
     if col in h5:
-        del h5[col]        
+        del h5[col]
     return h5.create_dataset(col, data=data, compression=compression)
 
 
-######################################################################
+#
 
 def load_dispersion_data():
     print("Loading dispersion data")
@@ -62,6 +64,7 @@ def load_dispersion_data():
         "cluster_dispersion.h5")
 
     return load_h5_file(f_h5)
+
 
 def simple_CSV_read(f, cols):
     try:
@@ -124,6 +127,7 @@ def get_score_methods():
     with h5py.File(f_h5, 'r') as h5:
         return h5.keys()
 
+
 def load_document_vectors(score_method, use_reduced=False):
     config_score = simple_config.load()["score"]
 
@@ -138,7 +142,7 @@ def load_document_vectors(score_method, use_reduced=False):
         g = h5[score_method]
 
         _refs = np.hstack([g[k]["_ref"][:] for k in g.keys()])
-        
+
         vector_key = "VX" if use_reduced else "V"
         X = np.vstack([g[k][vector_key][:] for k in g.keys()])
 
@@ -148,7 +152,7 @@ def load_document_vectors(score_method, use_reduced=False):
         sort_idx = np.argsort(_refs)
         _refs = _refs[sort_idx]
         X = np.vstack(X)[sort_idx]
-        
+
     return {
         "docv": X,
         "_refs": _refs

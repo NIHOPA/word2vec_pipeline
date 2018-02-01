@@ -109,7 +109,7 @@ class cluster_object(object):
             A = cosine_affinity(X)
 
             # "Force" symmetry due to rounding errors
-            A = np.maximum( A, A.transpose() )
+            A = np.maximum(A, A.transpose())
 
             labels = clf.fit_predict(A)
 

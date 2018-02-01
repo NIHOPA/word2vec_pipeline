@@ -9,6 +9,7 @@ from tqdm import tqdm
 from utils.data_utils import load_w2vec, load_document_vectors
 from utils.data_utils import touch_h5, save_h5, get_h5save_object
 
+
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
     doc_vec /= np.linalg.norm(doc_vec)
@@ -22,6 +23,7 @@ def L2_norm(doc_vec):
 
     return doc_vec
 
+
 def token_counts(tokens, size_mb=1):
     '''
     Returns a count for the number of times a token appears in a list.
@@ -30,8 +32,8 @@ def token_counts(tokens, size_mb=1):
     return collections.Counter(tokens)
 
 
-#####################################################################################
-    
+# ----------------------------------------------------------------------------
+
 class generic_document_score(object):
 
     def __init__(self,
@@ -46,15 +48,15 @@ class generic_document_score(object):
         self.vocab = dict(zip(self.M.wv.index2word, xrange(self.shape[0])))
 
         if negative_weights:
-            
+
             NV = []
-            for word,weight in negative_weights.items():
+            for word, weight in negative_weights.items():
 
                 if not self.check_word_vector(word):
                     msg = "Negative weight word '{}' not found in dictionary"
                     print(msg.format(word))
                     continue
-                
+
                 vec = self.get_word_vector(word)
                 scale = np.exp(-float(weight) * self.M.wv.syn0.dot(vec))
 
@@ -62,26 +64,26 @@ class generic_document_score(object):
                 scale[scale > 1] = 1.0
                 NV.append(scale)
             self.negative_weights = np.array(NV).T.sum(axis=1)
-            
+
         else:
             self.negative_weights = np.ones(len(self.vocab), dtype=float)
 
         # Make sure nothing has been set yet
         self.V = self._ref = None
-        
+
     def _empty_vector(self):
         return np.zeros((self.shape[1],), dtype=float)
-    
+
     def check_word_vector(self, word):
         # Reuturns True/False if the word vector is in the vocab
         return word in self.vocab
 
     def get_word_vector(self, word):
         return self.M[word].astype(np.float64)
-    
+
     def get_negative_word_weight(self, word):
         return self.negative_weights[self.vocab[word]]
-    
+
     def get_word_vectors(self, ws):
         return np.array([self.get_word_vector(w) for w in ws])
 
@@ -93,13 +95,13 @@ class generic_document_score(object):
 
     def get_tokens_from_text(self, text):
         tokens = text.split()
-        
+
         # Find out which tokens are defined
         valid_tokens = [w for w in tokens if w in self.vocab]
 
         if not valid_tokens:
             raise Warning("No valid tokens in document!")
-        
+
         return valid_tokens
 
     def __call__(self, text):
@@ -115,7 +117,7 @@ class generic_document_score(object):
         Takes in a (data) dictionary of _ref:doc_vec and saves it to an h5 file.
         Save only to the basename of the file (f_csv), saves to (f_db).
         '''
-        
+
         _refs = sorted(data.keys())
         V = np.array([data[r] for r in _refs])
 
@@ -132,16 +134,16 @@ class generic_document_score(object):
         save_h5(gx, "_ref", _refs)
 
 
-#####################################################################################
+# ----------------------------------------------------------------------------
 
 
 class IDF_document_score(generic_document_score):
-    
+
     def __init__(self,
                  output_data_directory=None,
                  term_document_frequency=None,
                  *args, **kwargs):
-        
+
         super(IDF_document_score, self).__init__(
             output_data_directory=output_data_directory, *args, **kwargs)
 
@@ -151,7 +153,7 @@ class IDF_document_score(generic_document_score):
             output_data_directory,
             term_document_frequency["f_db"],
         )
-        
+
         IDF = pd.read_csv(f_csv)
         IDF = dict(zip(IDF["word"].values, IDF["count"].values))
         self.corpus_N = IDF.pop("__pipeline_document_counter")
@@ -170,7 +172,7 @@ class IDF_document_score(generic_document_score):
     def get_IDF_weights(self, ws):
         return np.array([self.get_IDF_weight(w) for w in ws])
 
-###############################################################################
+# ----------------------------------------------------------------------------
 
 
 class score_simple(generic_document_score):
@@ -183,8 +185,9 @@ class score_simple(generic_document_score):
         W = self.get_word_vectors(counts)
         n = self.get_negative_word_weights(counts)
         C = self.get_counts(counts)
-        
-        return L2_norm(((C*n)*W.T).sum(axis=1))
+
+        return L2_norm(((C * n) * W.T).sum(axis=1))
+
 
 class score_unique(generic_document_score):
     method = 'unique'
@@ -194,33 +197,33 @@ class score_unique(generic_document_score):
 
         W = self.get_word_vectors(tokens)
         n = self.get_negative_word_weights(tokens)
-        
-        return L2_norm((n*W.T).sum(axis=1))
+
+        return L2_norm((n * W.T).sum(axis=1))
+
 
 class score_simple_IDF(IDF_document_score):
     method = "simple_IDF"
-    
+
     def __call__(self, text):
         tokens = self.get_tokens_from_text(text)
         counts = token_counts(tokens)
-        
+
         W = self.get_word_vectors(counts)
         n = self.get_negative_word_weights(counts)
         C = self.get_counts(counts)
         I = self.get_IDF_weights(counts)
 
-        return L2_norm(((I*C*n)*W.T).sum(axis=1))
+        return L2_norm(((I * C * n) * W.T).sum(axis=1))
 
-    
 
 class score_unique_IDF(IDF_document_score):
     method = "unique_IDF"
 
     def __call__(self, text):
         tokens = set(self.get_tokens_from_text(text))
-        
+
         W = self.get_word_vectors(tokens)
         n = self.get_negative_word_weights(tokens)
         I = self.get_IDF_weights(tokens)
 
-        return L2_norm(((I*n)*W.T).sum(axis=1))
+        return L2_norm(((I * n) * W.T).sum(axis=1))

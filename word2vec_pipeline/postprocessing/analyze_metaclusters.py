@@ -8,8 +8,10 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
+
 def _compute_centroid_dist(X, cx):
     return cdist(X, [cx, ], metric='cosine').mean()
+
 
 def _compute_dispersion_matrix(X, labels):
     n = len(np.unique(labels))
@@ -47,7 +49,7 @@ def analyze_metacluster_from_config(config):
 
     # Fix any zero vectors with random ones
     dim = DV["docv"].shape[1]
-    idx = np.where(np.linalg.norm(DV["docv"],axis=1)==0)[0]
+    idx = np.where(np.linalg.norm(DV["docv"], axis=1) == 0)[0]
     for i in idx:
         vec = np.random.uniform(size=(dim,))
         vec /= np.linalg.norm(vec)
@@ -68,7 +70,6 @@ def analyze_metacluster_from_config(config):
         # If dispersion is not calculated set d_idx to be the cluster index
         d_idx = np.sort(labels)
 
-
     #
 
     V = DV["docv"]
@@ -77,7 +78,7 @@ def analyze_metacluster_from_config(config):
         idx = MC["meta_labels"] == cluster_id
 
         item = {}
-        item["counts"] = idx.sum()       
+        item["counts"] = idx.sum()
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
 
         if config["compute_dispersion"]:
@@ -85,11 +86,10 @@ def analyze_metacluster_from_config(config):
         else:
             item["intra_document_dispersion"] = -1
 
-
         # Compute closest words to the centroid
         desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
         item["word2vec_description"] = desc
-    
+
         data.append(item)
 
     df = pd.DataFrame(data, index=labels)
@@ -127,13 +127,13 @@ def analyze_metacluster_from_config(config):
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
     ORG.to_csv(f_csv, index=False)
 
-    #df = df.sort_values("cluster_id")
+    # df = df.sort_values("cluster_id")
     print(df)
 
     '''
     # We don't need to save the values anymore
     f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
-    
+
     with h5py.File(f_h5_save, 'w') as h5_save:
         h5_save["dispersion"] = dist
         h5_save["cluster_id"] = df.cluster_id

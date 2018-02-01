@@ -7,19 +7,22 @@ import psutil
 CPU_CORES = psutil.cpu_count()
 CPU_CORES = 1
 
+
 class iterator_factory(object):
+
     def __init__(self, func, total=0, *args, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
         self.counter = tqdm(total=total)
-            
+
     def __iter__(self):
-        #print "Starting iteration {}".format(self.count)
-        ITR = self.func(*self.args,**self.kwargs)
+        # print "Starting iteration {}".format(self.count)
+        ITR = self.func(*self.args, **self.kwargs)
         for x in ITR:
             yield x
         self.counter.update()
+
 
 class w2v_embedding(corpus_iterator):
 
@@ -56,15 +59,15 @@ class w2v_embedding(corpus_iterator):
         print("Learning the vocabulary")
 
         ITR = iterator_factory(self.sentence_iterator,
-                               total=self.epoch_n+1,
+                               total=self.epoch_n + 1,
                                target_column=config["target_column"])
-        
+
         self.clf.build_vocab(ITR)
         print("{} words in vocabulary".format(len(self.clf.wv.index2word)))
 
         print("Training the features")
-        #for n in tqdm(range(self.epoch_n)):
-        #    # print " - Epoch {}".format(n)
+        # for n in tqdm(range(self.epoch_n)):
+        # print " - Epoch {}".format(n)
         self.clf.train(
             ITR,
             total_examples=self.clf.corpus_count,
