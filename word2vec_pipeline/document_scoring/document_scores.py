@@ -21,6 +21,16 @@ affects clustering and classification
 
 
 def L2_norm(doc_vec):
+    '''
+    Renormalize document vector onto the hypersphere and sanity check it
+
+    Args:
+        doc_vec: a document vector
+
+    Returns:
+        doc_vec: a normalized document vector
+    '''
+
     # Renormalize onto the hypersphere
     doc_vec /= np.linalg.norm(doc_vec)
 
@@ -34,8 +44,20 @@ def L2_norm(doc_vec):
     return doc_vec
 
 class generic_document_score(corpus_iterator):
+    '''
+    Class to score documents with word2vec model, using scoring method specified in config file.
+    Each scoring method has its own class associated with it that inherits generic_document_score()
+    '''
 
     def __init__(self, *args, **kwargs):
+        '''
+        Initialize the class, loading the word2vec model. If any words are
+        given weights in the config file, then they are applied here (DOCUMENTATION_UNKNOWN ?)
+
+        Args:
+            *args: DOCUMENTATION_UNKNOWN
+            **kwargs: DOCUMENTATION_UNKNOWN
+        '''
         super(generic_document_score, self).__init__(*args, **kwargs)
 
         # Load the model from disk
@@ -88,18 +110,36 @@ class generic_document_score(corpus_iterator):
         self.h5py_args = {"compression":"gzip"}
 
     def _compute_item_weights(self, **da):
+        '''
+        This function is overwritten by specific method classes. Returns message to signify there's an error
+        '''
         msg = "UNKNOWN w2v weights {}".format(self.method)
         raise KeyError(msg)
 
     def _compute_embedding_vector(self, **da):
+        '''
+        This function is overwritten by specific method classes. Returns message to signify there's an error
+        '''
         msg = "UNKNOWN w2v embedding {}".format(self.method)
         raise KeyError(msg)
 
     def _compute_doc_vector(self, **da):
+        '''
+        This function is overwritten by specific method classes. Returns message to signify there's an error
+        '''
         msg = "UNKNOWN w2v doc vec {}".format(self.method)
         raise KeyError(msg)
 
     def score_document(self, row):
+        '''
+        Scores document based on method indicated in config file
+
+        Args:
+            row: a row of a pandas dataframe
+
+        Returns:
+            row: a row of a pandas dataframe, with the document's vector score attached
+        '''
 
         text = row[self.target_column]
         text = unicode(text)
@@ -132,6 +172,12 @@ class generic_document_score(corpus_iterator):
         return row
 
     def compute_single(self, INPUT_ITR):
+        '''
+        Iterate over each document in the INPUT_ITR, scoring each document
+
+        Args:
+            INPUT_ITR: list of files to score
+        '''
 
         assert(self.method is not None)
         print("Scoring {}".format(self.method))
@@ -155,6 +201,9 @@ class generic_document_score(corpus_iterator):
 
 
     def save_single(self):
+        '''
+        Save document scores in h5 file
+        '''
 
         assert(self.V is not None)
         assert(self._ref is not None)
@@ -187,6 +236,9 @@ class generic_document_score(corpus_iterator):
         gx.create_dataset("_ref", data=self._ref, **self.h5py_args)
 
     def compute_reduced_representation(self):
+        '''
+        Perform dimensional reduction on document vectors using PCA
+        '''
 
         if not self.compute_reduced:
             return None
@@ -228,26 +280,72 @@ class generic_document_score(corpus_iterator):
         h5.close()
 
     def check_word_vector(self, word):
-        # Reuturns True/False if the word vector is in the vocab
+        '''
+        Returns True/False if the word vector is in the vocab
+        '''
+
         return word in self.M
 
     def get_word_vector(self, word):
+        '''
+        Return word vector
+        '''
+
         return self.M[word].astype(np.float64)
     
     def get_negative_word_weight(self, word):
+        '''
+        Return negative word weight
+        '''
         return self.negative_weights[self.word2index[word]]
 
 
 class score_simple(generic_document_score):
+    '''
+    Class to score documents with word2vec model, using simple scoring method.
+    '''
     method = "simple"
 
     def _compute_item_weights(self, local_counts, tokens, **da):
+        '''
+        Create weight of each token based on counts.
+
+        Args:
+            local_counts: counts of each token
+            tokens:  DOCUMENTATION_UNKNOWN - are these tokens from just a single document, or all?
+            da: DOCUMENTATION_UNKNOWN
+
+        Return:
+             Dictionary of weights for each token
+        '''
         return dict([(w, local_counts[w]) for w in tokens])
 
     def _compute_embedding_vector(self, tokens, **da):
+        '''
+        Compute the word vector for each token.
+
+        Args:
+            tokens: DOCUMENTATION_UNKNOWN
+            da: DOCUMENTATION_UNKNOWN
+
+        Return:
+            an array of all word vectors
+        '''
         return np.array([self.get_word_vector(w) for w in tokens])
 
     def _compute_doc_vector(self, weights, DV, tokens, **da):
+        '''
+        Compute the document vector summing the consitutent word vectors of each word in document
+
+        Args:
+            weights: dictionary of weights for each token
+            DV: DOCUMENTATION_UNKNOWN
+            tokens: DOCUMENTATION_UNKNOWN
+            da: DOCUMENTATION_UNKNOWN
+
+        Returns:
+            normalized doc vector
+        '''
         # Build the weight matrix
         W = np.array([weights[w] for w in tokens], dtype=np.float64)
         W = W.reshape(-1, 1)
@@ -266,18 +364,43 @@ class score_simple(generic_document_score):
 
 
 class score_unique(score_simple):
+    '''
+    Class to score documents with word2vec model, using unique simple scoring method.
+    '''
     method = "unique"
 
     def _compute_item_weights(self, local_counts, tokens, **da):
+        '''
+        Create weight of each token based on counts.
+
+        Args:
+            local_counts: counts of each token
+            tokens:  DOCUMENTATION_UNKNOWN
+            da: DOCUMENTATION_UNKNOWN
+
+        Return:
+             Dictionary of weights for each token
+        '''
         return dict.fromkeys(tokens, 1.0)
 
 #
 
 
 class score_simple_TF(score_simple):
+    '''
+    Class to score documents with word2vec model, using simple_TF scoring method.
+    '''
+
     method = "simple_TF"
 
     def __init__(self, *args, **kwargs):
+        '''
+        Calculate the the inverse document frequency of each token to create weights
+
+        Args:
+            args: DOCUMENTATION_UNKNOWN
+            kwargs: DOCUMENTATION_UNKNOWN
+        '''
         super(score_simple, self).__init__(*args, **kwargs)
 
         f_db = os.path.join(
@@ -303,26 +426,57 @@ class score_simple_TF(score_simple):
         self.IDF = IDF
 
     def get_IDF(self, word):
+        '''
+        Get inverse document frequency of a word in a document
+
+        Args:
+            word: string, a word token
+        '''
         if word in self.IDF:
             return self.IDF[word]
         else:
             return 0.0
 
     def _compute_item_weights(self, local_counts, tokens, **da):
+        '''
+        Create weight of each token based on counts.
+
+        Args:
+            local_counts: counts of each token
+            tokens:  DOCUMENTATION_UNKNOWN
+            da: DOCUMENTATION_UNKNOWN
+
+        Return:
+             Dictionary of weights for each token
+        '''
         return dict([(w, local_counts[w] * self.get_IDF(w)) for w in tokens])
 
 #
 
 
 class score_unique_TF(score_simple_TF):
+    '''
+    Class to score documents with word2vec model, using unique_TF scoring method.
+    '''
     method = "unique_TF"
 
     def _compute_item_weights(self, tokens, **da):
+        '''
+        Create weight of each token based on frequence.
+
+        Args:
+            local_counts: counts of each token
+            tokens:  DOCUMENTATION_UNKNOWN
+            da: DOCUMENTATION_UNKNOWN
+
+        Return:
+             Dictionary of weights for each token
+        '''
         return dict([(w, self.get_IDF(w) * 1.0) for w in tokens])
 
 #
 
-
+# DOCUMENTATION_UNKNOWN
 class score_locality_hash(score_unique):
     method = "locality_hash"
 
