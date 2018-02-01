@@ -27,8 +27,16 @@ class iterator_factory(object):
         self.counter.update()
 
 class w2v_embedding(corpus_iterator):
+    """
+    Class to perform the word2vec training on documents imported to the pipeline.
+    """
 
     def __init__(self, *args, **kwargs):
+        '''
+        Initialize the class, and the word2vec model for training
+            args: DOCUMENTATION_UNKNOWN
+            kwargs: DOCUMENTATION_UNKNOWN
+        '''
         super(w2v_embedding, self).__init__(*args, **kwargs)
         self.epoch_n = int(kwargs["epoch_n"])
 
@@ -58,6 +66,12 @@ class w2v_embedding(corpus_iterator):
         )
 
     def compute(self, **config):
+        '''
+        Build the vocab for the word2vec model, and run the actual training
+
+        Args:
+            config: config file
+        '''
         print("Learning the vocabulary")
 
         ITR = iterator_factory(self.sentence_iterator,

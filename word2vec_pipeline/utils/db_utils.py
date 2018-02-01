@@ -35,8 +35,6 @@ def CSV_list_columns(f_csv):
     Returns:
         return tuple(reader.next()): DOCUMENTATION_UNKNOWN
 
-
-
     """
     if not os.path.exists(f_csv):
         msg = "File not found {}".format(f_csv)
@@ -47,6 +45,12 @@ def CSV_list_columns(f_csv):
 
 
 class CSV_database_iterator(object):
+    '''
+    Class to open .csv files, check that they are valid, and iterate through them.
+    DOCUMENTATION_UNKNOWN : the name "F_CSV" makes it seem like one file, when it actually works on a list
+                            of multiple files. It might make the code clearer to rename this variable
+    '''
+
 
     def __init__(self,
                  F_CSV,
@@ -59,6 +63,20 @@ class CSV_database_iterator(object):
                  include_table_name=False,
                  include_filename=False,
                  ):
+        '''
+        Initialize the iterator
+
+        Args:
+            F_CSV: a list of .csv files to iterate over
+            target_column: string, the column name that is being parsed
+            progress_bar: boolean, a flag to display a progress bar
+            shuffle: DOCUMENTATION_UNKNOWN
+            limit: DOCUMENTATION_UNKNOWN
+            offset: DOCUMENTATION_UNKNOWN
+            include_meta: DOCUMENTATION_UNKNOWN
+            include_table_name: DOCUMENTATION_UNKNOWN
+            include_filename: boolean, a flag to save the documentation location in imported document
+        '''
         self.F_CSV = sorted(F_CSV)
         self.col = target_column
 
@@ -96,6 +114,9 @@ class CSV_database_iterator(object):
         return self.iter_state.next()
 
     def _iterate_items(self):
+        '''
+        Iterate through each document in the F_CSV list
+        '''
 
         for f in self.F_CSV:
             with open(f, 'rb') as FIN:
@@ -127,9 +148,18 @@ def item_iterator(
         progress_bar=False,
         text_column=None,
         include_filename=False,
-):
+        ):
     '''
     Iterates over the parsed corpus items and respects a given whitelist.
+
+    Args:
+        config: config file to load parameters from
+        randomize_file_order: boolean, a flag to randomize the order that files are imported in
+        whitelist: list, a whitelist of accepted terms (?) DOCUMENTATION_UNKNOWN
+        section: DOCUMENTATION_UNKNOWN
+        progress_bar: bar to measure progress of iteration
+        text_column: string, the column header to iterate over
+        include_filename: boolean, a flag to save the documentation location in imported document
     '''
 
     if config is None:
@@ -168,6 +198,16 @@ def item_iterator(
 
 
 def get_section_filenames(section):
+    '''
+    Grab filename in given secion of pipeline
+    Args:
+        section: a string to determine which section of the config to read
+                 DOCUMENTATION_UNKNOWN - should 'parse' be replaced with the section variable
+
+    Return:
+         grab_files("*.csv", input_data_dir, verbose=False): files found in directory specified in config
+
+    '''
     config = simple_config.load()
     input_data_dir = config['parse']["output_data_directory"]
     return grab_files("*.csv", input_data_dir, verbose=False)
@@ -182,6 +222,15 @@ def single_file_item_iterator(
 ):
     '''
     Iterates over a single file
+
+    Args:
+        f_csv: a file to iterate over
+        config: config file to load parameters from
+        section: DOCUMENTATION_UNKNOWN
+        progress_bar: bar to measure progress of iteration
+        text_column: string, the column header to iterate over
+        include_filename: boolean, a flag to save the documentation location in imported document
+
     '''
     
 

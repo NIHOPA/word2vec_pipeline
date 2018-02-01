@@ -16,6 +16,13 @@ def load_h5_file(f_h5, *args):
     '''
     Generically  loads a h5 files top level data structures (assumes
     no nesting). If *args is specified, only the *args subset will be loaded.
+
+    Args:
+        f_h5: an h5 file
+        *args: additional args
+
+    Returns:
+        data: data stored in h5 file
     '''
     data = {}
 
@@ -34,7 +41,16 @@ def load_h5_file(f_h5, *args):
 
 
 def touch_h5(f_db):
-    # Create the h5 file if it doesn't exist
+    '''
+    Create the h5 file if it doesn't exist
+
+    Args:
+        f_db: string, filename of the h5 file
+
+    Returns
+        h5: an h5 file
+    '''
+    #
     if not os.path.exists(f_db):
         h5 = h5py.File(f_db, 'w')
     else:
@@ -43,6 +59,13 @@ def touch_h5(f_db):
 
 
 def load_dispersion_data():
+    '''
+    Load the dispersion data of each cluster
+
+
+    Returns:
+         load_h5_file(f_h5): returns the dispersion data found in the h5 file found in the pipeline
+    '''
     print("Loading dispersion data")
 
     config_post = simple_config().load["postprocessing"]
@@ -54,6 +77,16 @@ def load_dispersion_data():
     return load_h5_file(f_h5)
 
 def simple_CSV_read(f, cols):
+    '''
+    Open a .csv file as a pandas dataframe
+
+    Args:
+        f: string, a filename
+        cols: cols that are to be read into data
+
+    Returns:
+        dfx: a pandas dataframe containing data from file
+    '''
     try:
         dfx = pd.read_csv(f, usecols=cols)
     except ValueError:
@@ -64,6 +97,9 @@ def simple_CSV_read(f, cols):
 
 
 def load_ORG_data(extra_columns=None):
+    '''
+    DOCUMENTATION_UNKNOWN
+    '''
     print("Loading import data")
 
     cols = ["_ref", ]
@@ -93,6 +129,15 @@ def load_ORG_data(extra_columns=None):
 
 
 def load_metacluster_data(*args):
+    '''
+    Load information on metaclusters from where they're saved in the pipeline
+
+    Args:
+        *args: DOCUMENTATION_UNKNOWN
+
+    Returns:
+        load_h5_file(f_h5, *args): the data on each cluster found in the h5 file
+    '''
 
     config_metacluster = simple_config.load()["metacluster"]
 
@@ -104,6 +149,12 @@ def load_metacluster_data(*args):
 
 
 def get_score_methods():
+    '''
+    Determines which scoring methods to return for each document, based on what's set in config file
+
+    Returns:
+         h5.keys(): DOCUMENTATION_UNKNOWN
+    '''
     config_score = simple_config.load()["score"]
 
     f_h5 = os.path.join(
@@ -115,6 +166,19 @@ def get_score_methods():
         return h5.keys()
 
 def load_document_vectors(score_method, use_reduced=False):
+
+    '''
+    Load the word2vec document vectors for each document from the h5 file saved in pipeline
+
+    Args:
+        score_method: string, score method to load
+        use_reduced: boolean, flag to determine whether to use reduced dimension vectors, or the orgiginal vectors
+
+    Return:
+        {"docv": X, "_refs": _refs}: dictionary, contains a list of document vectors and corresponding references
+
+    '''
+
     config_score = simple_config.load()["score"]
 
     f_h5 = os.path.join(
@@ -146,6 +210,15 @@ def load_document_vectors(score_method, use_reduced=False):
 
 
 def load_w2vec(config=None):
+    '''
+    loads gensim word2vec model saved in pipeline
+
+    Args:
+        config: config file to get parameters from
+
+    Returns:
+        W2V.Word2Vec.load(f_w2v): gensim word2vec model
+    '''
     import gensim.models.word2vec as W2V
 
     if config is None:
