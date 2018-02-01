@@ -4,6 +4,7 @@ import document_scoring as ds
 import utils.db_utils as db
 
 '''
+Remove dependence on config from document scores
 Can probably merge the two score functions into one, 
 no need for a mapreduce+global
 
@@ -28,7 +29,7 @@ def score_from_config(global_config):
 
     # Run the functions that can sum over the data (eg. TF counts)
     for name in config["count_commands"]:
-
+ 
         model, kwargs = _load_model(name, config)
         print("Starting mapreduce {}".format(model.function_name))
         map(model, db.text_iterator())

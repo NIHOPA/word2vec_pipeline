@@ -63,9 +63,6 @@ class generic_document_score(object):
         else:
             self.negative_weights = np.ones(len(self.vocab), dtype=float)
 
-        # Save the target column to compute
-        self.target_column = simple_config.load()["target_column"]
-
         # Make sure nothing has been set yet
         self.V = self._ref = None
         self.h5py_args = {"compression":"gzip"}
@@ -202,11 +199,11 @@ class IDF_document_score(generic_document_score):
             msg = "{} not computed yet, needed for TF methods!"
             raise ValueError(msg.format(f_db))
         
-        score_config = simple_config.load()["score"]
         f_csv = os.path.join(
-            score_config["output_data_directory"],
-            score_config["term_document_frequency"]["f_db"],
+            kwargs["output_data_directory"],
+            kwargs["term_document_frequency"]["f_db"],
         )
+        
         IDF = pd.read_csv(f_csv)
         IDF = dict(zip(IDF["word"].values, IDF["count"].values))
         self.corpus_N = IDF.pop("__pipeline_document_counter")
