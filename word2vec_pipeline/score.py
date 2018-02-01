@@ -51,6 +51,7 @@ def score_from_config(global_config):
             rdata = RREP.compute(model.method, n_components=nc)
             RREP.save(model.method, rdata, f_db)
 
+
 if __name__ == "__main__":
 
     import simple_config

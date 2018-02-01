@@ -1,4 +1,3 @@
-import random
 import tqdm
 import simple_config
 import csv

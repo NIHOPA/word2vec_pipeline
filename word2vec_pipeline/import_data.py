@@ -44,6 +44,7 @@ def func_parenthetical(data, **kwargs):
     text = data[kwargs["col"]]
     return parser_parenthetical(text)
 
+
 parser_unicode = nlpre.unidecoder()
 
 
@@ -77,7 +78,7 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         try:
             for row in CSV:
                 yield row
-        except:
+        except Exception:
             pass
 
 

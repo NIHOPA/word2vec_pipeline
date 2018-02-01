@@ -17,6 +17,5 @@ __all__ = [
     'score_unique',
     'score_simple_IDF',
     'score_unique_IDF',
-    #'document_log_probability',
-    #'score_Z_weighted',
+    'reduced_representation',
 ]

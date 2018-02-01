@@ -1,13 +1,10 @@
 import collections
-import itertools
 import os
-import joblib
 import numpy as np
 import pandas as pd
 
-from tqdm import tqdm
-from utils.data_utils import load_w2vec, load_document_vectors
-from utils.data_utils import touch_h5, save_h5, get_h5save_object
+from utils.data_utils import load_w2vec
+from utils.data_utils import save_h5, get_h5save_object
 
 
 def L2_norm(doc_vec):
@@ -114,8 +111,9 @@ class generic_document_score(object):
             f_db,
     ):
         '''
-        Takes in a (data) dictionary of _ref:doc_vec and saves it to an h5 file.
-        Save only to the basename of the file (f_csv), saves to (f_db).
+        Takes in a (data) dictionary of _ref:doc_vec and saves it to an
+        h5 file.  Save only to the basename of the file (f_csv), saves to
+        (f_db).
         '''
 
         _refs = sorted(data.keys())
@@ -211,9 +209,9 @@ class score_simple_IDF(IDF_document_score):
         W = self.get_word_vectors(counts)
         n = self.get_negative_word_weights(counts)
         C = self.get_counts(counts)
-        I = self.get_IDF_weights(counts)
+        idf = self.get_IDF_weights(counts)
 
-        return L2_norm(((I * C * n) * W.T).sum(axis=1))
+        return L2_norm(((idf * C * n) * W.T).sum(axis=1))
 
 
 class score_unique_IDF(IDF_document_score):
@@ -224,6 +222,6 @@ class score_unique_IDF(IDF_document_score):
 
         W = self.get_word_vectors(tokens)
         n = self.get_negative_word_weights(tokens)
-        I = self.get_IDF_weights(tokens)
+        idf = self.get_IDF_weights(tokens)
 
-        return L2_norm(((I * n) * W.T).sum(axis=1))
+        return L2_norm(((idf * n) * W.T).sum(axis=1))

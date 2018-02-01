@@ -4,7 +4,6 @@ from pygments import highlight, lexers, formatters
 import sklearn.ensemble
 import sklearn.preprocessing
 from sklearn.pipeline import Pipeline
-from sklearn import metrics
 
 import word2vec_pipeline.utils.db_utils as db
 import word2vec_pipeline.utils.data_utils as uds
@@ -66,7 +65,7 @@ P = Pipeline([
 
 P.fit(ALL_TEXT, Y)
 # proba = P.predict_proba(ALL_TEXT)
-# print proba
+
 
 i0, i1 = 0, 4000
 sample1 = ALL_TEXT[i0]

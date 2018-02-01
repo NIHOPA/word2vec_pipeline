@@ -213,6 +213,7 @@ def metacluster_from_config(config):
 
     h5.close()
 
+
 if __name__ == "__main__":
 
     config = simple_config.load()
