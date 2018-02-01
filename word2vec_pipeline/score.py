@@ -1,4 +1,4 @@
-import itertools
+import os
 from utils.os_utils import mkdir
 import document_scoring as ds
 import utils.db_utils as db
@@ -39,18 +39,19 @@ def score_from_config(global_config):
     for name in config["score_commands"]:
 
         model, kwargs = _load_model(name, config)
+        f_db = os.path.join(kwargs["output_data_directory"], kwargs["f_db"])
+
         print("Starting score model {}".format(model.method))
     
         for f_csv in db.get_parsed_filenames():
             data = {}
             for row in db.text_iterator([f_csv,]):
                 data[row["_ref"]] = model(row['text'])
-
-            model.save(data, f_csv)
+            model.save(data, f_csv, f_db)
 
         if kwargs["compute_reduced_representation"]:
             nc = kwargs['reduced_representation']['n_components']
-            model.compute_reduced_representation(n_components=nc)
+            model.compute_reduced_representation(f_db, n_components=nc)
 
 
 

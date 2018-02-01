@@ -34,8 +34,6 @@ class generic_document_score(object):
 
     def __init__(self,
                  negative_weights=None,
-                 output_data_directory=None,
-                 f_db=None,
                  *args, **kwargs):
 
         # Load the model from disk
@@ -69,10 +67,6 @@ class generic_document_score(object):
         # Make sure nothing has been set yet
         self.V = self._ref = None
         self.h5py_args = {"compression":"gzip"}
-
-        assert(output_data_directory is not None)
-        assert(f_db is not None)        
-        self.f_db = os.path.join(output_data_directory, f_db)
         
     def _empty_vector(self):
         return np.zeros((self.shape[1],), dtype=float)
@@ -110,9 +104,9 @@ class generic_document_score(object):
     def __call__(self, text):
         raise NotImplementedError
 
-    def get_h5save_object(self):
+    def get_h5save_object(self, f_db):
         # Returns a usable h5 object to store data
-        h5 = touch_h5(self.f_db)
+        h5 = touch_h5(f_db)
         g  = h5.require_group(self.method)
         return g
     
@@ -122,7 +116,12 @@ class generic_document_score(object):
             del h5[col]        
         return h5.create_dataset(col, data=data, **self.h5py_args)
 
-    def save(self, data, f_csv):
+    def save(
+            self,
+            data,
+            f_csv,
+            f_db,
+    ):
         '''
         Takes in a dictionary of _ref:doc_vec and saves it to an h5 file.
         Save only to the basename of the file.
@@ -137,13 +136,13 @@ class generic_document_score(object):
         # Set the size explictly as a sanity check
         size_n, dim_V = V.shape
 
-        g = self.get_h5save_object()
+        g = self.get_h5save_object(f_db)
         gx = g.require_group(os.path.basename(f_csv))
 
         self.save_h5(gx, "V", V)
         self.save_h5(gx, "_ref", _refs)
 
-    def compute_reduced_representation(self, n_components=10):
+    def compute_reduced_representation(self, f_db, n_components=10):
 
         # Only load the library if we are performing PCA
         from sklearn.decomposition import IncrementalPCA
@@ -156,7 +155,7 @@ class generic_document_score(object):
         print(msg.format(self.method, V.shape[1], n_components))
         VX = clf.fit_transform(V)
 
-        g = self.get_h5save_object()
+        g = self.get_h5save_object(f_db)
         for key in g.keys():
             idx = g[key]["_ref"][:]
             
@@ -230,8 +229,8 @@ class score_unique(generic_document_score):
         
         return L2_norm((n*W.T).sum(axis=1))
 
-class score_simple_TF(IDF_document_score):
-    method = "simple_TF"
+class score_simple_IDF(IDF_document_score):
+    method = "simple_IDF"
     
     def __call__(self, text):
         tokens = self.get_tokens_from_text(text)
@@ -246,8 +245,8 @@ class score_simple_TF(IDF_document_score):
 
     
 
-class score_unique_TF(score_simple_TF):
-    method = "unique_TF"
+class score_unique_IDF(IDF_document_score):
+    method = "unique_IDF"
 
     def __call__(self, text):
         tokens = set(self.get_tokens_from_text(text))
