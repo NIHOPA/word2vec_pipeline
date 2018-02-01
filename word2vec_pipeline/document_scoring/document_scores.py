@@ -2,7 +2,6 @@ import collections
 import itertools
 import os
 import joblib
-import simple_config
 import numpy as np
 import pandas as pd
 
@@ -66,6 +65,11 @@ class generic_document_score(object):
         # Make sure nothing has been set yet
         self.V = self._ref = None
         self.h5py_args = {"compression":"gzip"}
+
+        self.f_db = os.path.join(
+            kwargs["output_data_directory"],
+            kwargs["document_scores"]["f_db"]
+        )
         
     def _empty_vector(self):
         return np.zeros((self.shape[1],), dtype=float)
@@ -105,17 +109,9 @@ class generic_document_score(object):
 
     def get_h5save_object(self):
         # Returns a usable h5 object to store data
-        
-        config_score = simple_config.load()["score"]
-        f_db = os.path.join(
-            config_score["output_data_directory"],
-            config_score["document_scores"]["f_db"]
-        )
-        
-        h5 = touch_h5(f_db)
+        h5 = touch_h5(self.f_db)
         g  = h5.require_group(self.method)
         return g
-
     
     def save_h5(self, h5, col, data):
         # Saves (or overwrites) a column in an h5 object
@@ -145,13 +141,9 @@ class generic_document_score(object):
         self.save_h5(gx, "_ref", _refs)
 
     def compute_reduced_representation(self, *args, **kwargs):
-
-        print kwargs
-        exit()
         
         # Load the variables for reduced representation
-        config_score = simple_config.load()["score"]
-        compute_reduced = config_score["compute_reduced_representation"]
+        compute_reduced = kwargs["compute_reduced_representation"]
 
         if not compute_reduced:
             return False
@@ -162,15 +154,7 @@ class generic_document_score(object):
         DV = load_document_vectors(self.method)
         V = DV["docv"]
 
-        '''
-        g = self.get_h5save_object()
-        keys = g.keys()
-        print keys
-        V     = np.vstack([g[x]["V"][:] for x in keys])
-        sizes = [g[x]["_ref"].shape[0] for x in keys]
-        '''
-
-        nc = config_score['reduced_representation']['n_components']
+        nc = kwargs['reduced_representation']['n_components']
         clf = IncrementalPCA(n_components=nc)
 
         msg = "Performing PCA on {}, ({})->({})"
