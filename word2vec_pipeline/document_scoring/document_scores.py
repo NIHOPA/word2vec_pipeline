@@ -61,7 +61,7 @@ class generic_document_score(object):
             self.negative_weights = np.array(NV).T.sum(axis=1)
             
         else:
-            self.negative_weights = np.ones(vocab_n, dtype=float)
+            self.negative_weights = np.ones(len(self.vocab), dtype=float)
 
         # Save the target column to compute
         self.target_column = simple_config.load()["target_column"]

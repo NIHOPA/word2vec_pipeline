@@ -10,42 +10,36 @@ no need for a mapreduce+global
 Can test speed difference in making parallel
 '''
 
+def _load_model(name, config):
+    # Load any kwargs in the config file
+    kwargs = config.copy()
+    kwargs["output_data_directory"] = config["output_data_directory"]
+    
+    if name in config:
+        kwargs.update(config[name])
+        
+    return getattr(ds, name)(**kwargs), kwargs
+
 
 def score_from_config(global_config):
 
-    config = global_config["score"]
-    dout = config["output_data_directory"]
-    mkdir(dout)
+    config = global_config["score"] 
+    mkdir(config["output_data_directory"])
 
     # Run the functions that can sum over the data (eg. TF counts)
-    for name in config["mapreduce_commands"]:
-        
-        # Load any kwargs in the config file
-        kwargs = {"output_data_directory":dout}
-        if name in config:
-            kwargs.update(config[name])
+    for name in config["count_commands"]:
 
-        model = getattr(ds, name)(**kwargs)
-        
+        model, kwargs = _load_model(name, config)
         print("Starting mapreduce {}".format(model.function_name))
         map(model, db.text_iterator())
         model.save(**kwargs)
         
     
     # Run the functions that act per documnet (eg. word2vec)
+    for name in config["score_commands"]:
 
-    for name in config["globaldata_commands"]:
-
-        # Load any kwargs in the config file
-        kwargs = config.copy()
-        if name in config:
-            kwargs.update(config[name])
-
-        # Add in the embedding configuration options
-        model = getattr(ds, name)(**kwargs)
-
+        model, kwargs = _load_model(name, config)
         print("Starting score model {}".format(model.method))
-
     
         for f_csv in db.get_parsed_filenames():
             data = {}
