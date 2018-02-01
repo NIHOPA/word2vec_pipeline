@@ -51,7 +51,8 @@ def score_from_config(global_config):
 
         if kwargs["compute_reduced_representation"]:
             nc = kwargs['reduced_representation']['n_components']
-            model.compute_reduced_representation(f_db, n_components=nc)
+            rdata = model.compute_reduced_representation(n_components=nc)
+            model.save_reduced_representation(rdata, f_db)
 
 
 
