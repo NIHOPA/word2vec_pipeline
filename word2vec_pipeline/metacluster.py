@@ -49,10 +49,9 @@ def cosine_affinity(X):
 
 
 def docv_centroid_order_idx(meta_clusters):
-    dist = cdist(meta_clusters, meta_clusters, metric='cosine')
-
     # Compute the linkage and the order
-    linkage = hierarchy.linkage(dist, method='average')
+    linkage = hierarchy.linkage(meta_clusters,
+                                metric='cosine', method='average')
     d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
     return d_idx

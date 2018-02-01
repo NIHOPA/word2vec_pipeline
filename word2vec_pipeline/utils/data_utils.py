@@ -121,7 +121,7 @@ def get_score_methods():
 
     f_h5 = os.path.join(
         config_score["output_data_directory"],
-        config_score['document_scores']["f_db"],
+        config_score["f_db"],
     )
 
     with h5py.File(f_h5, 'r') as h5:
