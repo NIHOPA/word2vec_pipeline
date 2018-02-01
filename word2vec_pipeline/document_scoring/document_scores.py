@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from utils.data_utils import load_w2vec, touch_h5, load_document_vectors
+from utils.data_utils import load_w2vec, load_document_vectors
+from utils.data_utils import touch_h5, save_h5, get_h5save_object
 
 def L2_norm(doc_vec):
     # Renormalize onto the hypersphere
@@ -27,18 +28,6 @@ def token_counts(tokens, size_mb=1):
     bounter is slower here since we aren't counting a large enough corpus.
     '''
     return collections.Counter(tokens)
-
-def get_h5save_object(f_db, method):
-    # Returns a usable h5 object to store data
-    h5 = touch_h5(f_db)
-    g  = h5.require_group(method)
-    return g
-
-def save_h5(h5, col, data, compression="gzip"):
-    # Saves (or overwrites) a column in an h5 object
-    if col in h5:
-        del h5[col]        
-    return h5.create_dataset(col, data=data, compression=compression)
 
 
 #####################################################################################
@@ -123,8 +112,8 @@ class generic_document_score(object):
             f_db,
     ):
         '''
-        Takes in a dictionary of _ref:doc_vec and saves it to an h5 file.
-        Save only to the basename of the file.
+        Takes in a (data) dictionary of _ref:doc_vec and saves it to an h5 file.
+        Save only to the basename of the file (f_csv), saves to (f_db).
         '''
         
         _refs = sorted(data.keys())
@@ -142,37 +131,6 @@ class generic_document_score(object):
         save_h5(gx, "V", V)
         save_h5(gx, "_ref", _refs)
 
-    def compute_reduced_representation(self, n_components=10):
-
-        # Only load the library if we are performing PCA
-        from sklearn.decomposition import IncrementalPCA
-
-        DV = load_document_vectors(self.method)
-        V = DV["docv"]
-        clf = IncrementalPCA(n_components=n_components)
-
-        msg = "Performing PCA on {}, ({})->({})"
-        print(msg.format(self.method, V.shape[1], n_components))
-        VX = clf.fit_transform(V)
-
-        data = {
-            "VX":VX,
-            "VX_explained_variance_ratio_": clf.explained_variance_ratio_,
-            "VX_components_": clf.components_,
-        }
-
-        return data
-
-    def save_reduced_representation(self, data, f_db):
-
-        g = get_h5save_object(f_db, self.method)
-        for key in g.keys():
-            idx = g[key]["_ref"][:]
-            
-            save_h5(g[key], "VX", data["VX"][idx, :])
-            save_h5(g[key], "VX_components_", data["VX_components_"])
-            save_h5(g[key], "VX_explained_variance_ratio_",
-                    data["VX_explained_variance_ratio_"])
 
 #####################################################################################
 

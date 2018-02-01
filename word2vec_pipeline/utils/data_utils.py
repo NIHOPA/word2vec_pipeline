@@ -37,13 +37,20 @@ def touch_h5(f_db):
         h5 = h5py.File(f_db, 'r+')
     return h5
 
-def save_h5column(h5, col, data, **kwargs):
+def get_h5save_object(f_db, method):
+    # Returns a usable h5 object to store data
+    h5 = touch_h5(f_db)
+    g  = h5.require_group(method)
+    return g
+
+def save_h5(h5, col, data, compression="gzip"):
     # Saves (or overwrites) a column in an h5 object
     if col in h5:
         del h5[col]        
-    return h5.create_dataset(col, data=data, **kwargs)
+    return h5.create_dataset(col, data=data, compression=compression)
 
 
+######################################################################
 
 def load_dispersion_data():
     print("Loading dispersion data")

@@ -4,11 +4,7 @@ import document_scoring as ds
 import utils.db_utils as db
 
 '''
-Remove dependence on config from document scores
-Can probably merge the two score functions into one, 
-no need for a mapreduce+global
-
-Can test speed difference in making parallel
+Can test speed difference in making parallel (single core 27/49)
 '''
 
 def _load_model(name, config):
@@ -33,8 +29,11 @@ def score_from_config(global_config):
         print("Starting mapreduce {}".format(model.function_name))
         map(model, db.text_iterator())
         model.save(**kwargs)
-        
-    
+
+
+    # Load the reduced representation model
+    RREP = ds.reduced_representation()
+            
     # Run the functions that act per documnet (eg. word2vec)
     for name in config["score_commands"]:
 
@@ -49,12 +48,11 @@ def score_from_config(global_config):
                 data[row["_ref"]] = model(row['text'])
             model.save(data, f_csv, f_db)
 
+        # If required, compute the reduced representation
         if kwargs["compute_reduced_representation"]:
             nc = kwargs['reduced_representation']['n_components']
-            rdata = model.compute_reduced_representation(n_components=nc)
-            model.save_reduced_representation(rdata, f_db)
-
-
+            rdata = RREP.compute(model.method)
+            RREP.save(model.method, rdata, f_db)
 
 if __name__ == "__main__":
 
