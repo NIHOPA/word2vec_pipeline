@@ -4,9 +4,7 @@ from utils.mapreduce import corpus_iterator
 from tqdm import tqdm
 
 import psutil
-CPU_CORES = psutil.cpu_count()
-CPU_CORES = 1
-
+CPU_CORES = max(4, psutil.cpu_count())
 
 class iterator_factory(object):
 
@@ -26,14 +24,29 @@ class iterator_factory(object):
 
 class w2v_embedding(corpus_iterator):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            epoch_n,
+            skip_gram,
+            hierarchical_softmax,
+            negative,
+            window,
+            sample,
+            size,
+            min_count,            
+            *args,
+            **kwargs
+    ):
+
+        # LOOK INTO THIS OBJECT INHERETANCE?
         super(w2v_embedding, self).__init__(*args, **kwargs)
-        self.epoch_n = int(kwargs["epoch_n"])
+        
+        self.epoch_n = int(epoch_n)
 
         # sg == skip_gram vs cbow
-        sg = int(kwargs["skip_gram"])
-        hs = int(kwargs["hierarchical_softmax"])
-        negative = int(kwargs["negative"])
+        sg = int(skip_gram)
+        hs = int(hierarchical_softmax)
+        negative = int(negative)
 
         # Input bounds checks
         assert(sg in [0, 1])
@@ -47,27 +60,26 @@ class w2v_embedding(corpus_iterator):
             workers=CPU_CORES,
             sg=sg,
             hs=hs,
-            window=int(kwargs["window"]),
+            window=int(window),
             negative=negative,
-            sample=float(kwargs["sample"]),
-            size=int(kwargs["size"]),
-            min_count=int(kwargs["min_count"]),
-            iter=int(kwargs["epoch_n"]),
+            sample=float(sample),
+            size=int(size),
+            min_count=int(min_count),
+            iter=int(epoch_n),
         )
 
-    def compute(self, **config):
+    def compute(self, target_column='text'):
         print("Learning the vocabulary")
 
         ITR = iterator_factory(self.sentence_iterator,
                                total=self.epoch_n + 1,
-                               target_column=config["target_column"])
+                               target_column=target_column)
 
         self.clf.build_vocab(ITR)
+        
         print("{} words in vocabulary".format(len(self.clf.wv.index2word)))
-
         print("Training the features")
-        # for n in tqdm(range(self.epoch_n)):
-        # print " - Epoch {}".format(n)
+        
         self.clf.train(
             ITR,
             total_examples=self.clf.corpus_count,
@@ -77,7 +89,6 @@ class w2v_embedding(corpus_iterator):
         print("Reducing the features")
         self.clf.init_sims(replace=True)
 
+    def save(self, f_db):
         print("Saving the features")
-        out_dir = config["output_data_directory"]
-        f_features = os.path.join(out_dir, config["w2v_embedding"]["f_db"])
-        self.clf.save(f_features)
+        self.clf.save(f_db)

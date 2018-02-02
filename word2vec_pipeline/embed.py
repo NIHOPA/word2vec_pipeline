@@ -1,28 +1,33 @@
+import os
 from utils.os_utils import mkdir
 import model_building as mb
 from utils.db_utils import text_iterator
 
-
 def embed_from_config(config):
 
-    mkdir(config["embedding"]["output_data_directory"])
+    # Only load options from the embedding section
+    target_column = config['target_column']
+    econfig = config['embed']
 
-    #
-    # Run the functions that act globally on the data
+    # Create any missing directories
+    d_out = econfig['output_data_directory']
+    mkdir(d_out)
 
-    for name in config["embedding"]["embedding_commands"]:
-        obj = getattr(mb, name)
+    # Train each embedding model
+    for name in econfig["embedding_commands"]:
 
         # Load any kwargs in the config file
-        kwargs = config["embedding"].copy()
+        kwargs = econfig.copy()
 
         if name in kwargs:
             kwargs.update(kwargs[name])
-        kwargs['target_column'] = config['target_column']
 
-        func = obj(**kwargs)
-        func.set_iterator_function(text_iterator)
-        func.compute(**kwargs)
+        model = getattr(mb, name)(**kwargs)
+        model.set_iterator_function(text_iterator)
+        model.compute(target_column)
+        
+        f_save = os.path.join(d_out, kwargs[name]['f_db'])
+        model.save(f_save)
 
 
 if __name__ == "__main__":

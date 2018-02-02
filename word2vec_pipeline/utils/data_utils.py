@@ -165,7 +165,7 @@ def load_w2vec(config=None):
     if config is None:
         config = simple_config.load()
 
-    config_embed = config["embedding"]
+    config_embed = config["embed"]
 
     f_w2v = os.path.join(
         config_embed["output_data_directory"],
