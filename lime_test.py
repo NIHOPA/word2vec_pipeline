@@ -9,7 +9,6 @@ import word2vec_pipeline.utils.db_utils as db
 import word2vec_pipeline.utils.data_utils as uds
 import word2vec_pipeline.document_scoring as ds
 
-
 from lime.lime_text import LimeTextExplainer
 
 import joblib
@@ -40,21 +39,25 @@ explainer = LimeTextExplainer(class_names=class_names)
 
 M = ds.score_unique()
 
-
+'''
 def _vectorizer(text_blocks):
-    return np.array([
-        M.score_document({"text": text})['doc_vec']
-        for text in text_blocks
-    ])
 
+    return np.array([
+        M(text)['doc_vec']
+        for text in text_blocks
+        #M.score_document({"text": text})['doc_vec']
+        #for text in text_blocks
+    ])
+'''
+def _vectorizer(text_blocks):
+    v = np.array([M(x) for x in text_blocks])
+    return v
 
 vectorizer = sklearn.preprocessing.FunctionTransformer(
     _vectorizer, validate=False)
 
-INPUT_ITR = db.text_iterator()#item_iterator({}, text_column="text",)
+INPUT_ITR = db.text_iterator()
 ALL_TEXT = np.array([row['text'] for row in INPUT_ITR])
-# print vectorizer.fit_transform(ALL_TEXT)
-
 
 clf = sklearn.ensemble.RandomForestClassifier(
     n_estimators=50,
@@ -68,20 +71,18 @@ P = Pipeline([
 P.fit(ALL_TEXT, Y)
 # proba = P.predict_proba(ALL_TEXT)
 
-
 i0, i1 = 0, 4000
 sample1 = ALL_TEXT[i0]
 sample2 = ALL_TEXT[i1]
 print P.predict_proba([sample1, sample2])
 l0, l1 = class_names[Y[i0]], class_names[Y[i1]],
 
-
 def evaluate_text(text):
     exp = explainer.explain_instance(sample1, P.predict_proba, num_features=60)
     item = collections.Counter()
     for k, v in exp.as_list():
         item[k] += v
-    print item
+
     return item
 
 

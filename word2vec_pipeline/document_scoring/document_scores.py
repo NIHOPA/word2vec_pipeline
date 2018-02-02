@@ -97,7 +97,8 @@ class generic_document_score(object):
         valid_tokens = [w for w in tokens if w in self.vocab]
 
         if not valid_tokens:
-            raise Warning("No valid tokens in document!")
+            return []
+            #raise Warning("No valid tokens in document!")
 
         return valid_tokens
 
@@ -178,6 +179,9 @@ class score_simple(generic_document_score):
 
     def __call__(self, text):
         tokens = self.get_tokens_from_text(text)
+        if not tokens:
+            return self._empty_vector()
+        
         counts = token_counts(tokens)
 
         W = self.get_word_vectors(counts)
@@ -192,6 +196,8 @@ class score_unique(generic_document_score):
 
     def __call__(self, text):
         tokens = set(self.get_tokens_from_text(text))
+        if not tokens:
+            return self._empty_vector()
 
         W = self.get_word_vectors(tokens)
         n = self.get_negative_word_weights(tokens)
@@ -204,6 +210,9 @@ class score_simple_IDF(IDF_document_score):
 
     def __call__(self, text):
         tokens = self.get_tokens_from_text(text)
+        if not tokens:
+            return self._empty_vector()
+        
         counts = token_counts(tokens)
 
         W = self.get_word_vectors(counts)
@@ -219,6 +228,8 @@ class score_unique_IDF(IDF_document_score):
 
     def __call__(self, text):
         tokens = set(self.get_tokens_from_text(text))
+        if not tokens:
+            return self._empty_vector()
 
         W = self.get_word_vectors(tokens)
         n = self.get_negative_word_weights(tokens)
