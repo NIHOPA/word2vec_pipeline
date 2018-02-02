@@ -3,23 +3,11 @@ import gensim.models.doc2vec
 LabeledSentence = gensim.models.doc2vec.LabeledSentence
 
 
-class simple_mapreduce(object):
+class corpus_iterator(object):
 
     def __init__(self, *args, **kwargs):
         # Set any function arguments for calling
         self.kwargs = kwargs
-
-    def __call__(self, x):
-        raise NotImplementedError
-
-    def reduce(self, *x):
-        raise NotImplementedError
-
-    def report(self):
-        raise NotImplementedError
-
-
-class corpus_iterator(simple_mapreduce):
 
     def set_iterator_function(self, iter_func, *args, **kwargs):
         self.iter_func = iter_func
@@ -36,6 +24,8 @@ class corpus_iterator(simple_mapreduce):
             yield unicode(text).split()
 
     def labelized_sentence_iterator(self):
+        # Useful for doc2vec
+        
         for item in self:
             text = item[0]
             idx = item[1]
