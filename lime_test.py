@@ -8,6 +8,8 @@ from sklearn.pipeline import Pipeline
 import word2vec_pipeline.utils.db_utils as db
 import word2vec_pipeline.utils.data_utils as uds
 import word2vec_pipeline.document_scoring as ds
+
+
 from lime.lime_text import LimeTextExplainer
 
 import joblib
@@ -49,7 +51,7 @@ def _vectorizer(text_blocks):
 vectorizer = sklearn.preprocessing.FunctionTransformer(
     _vectorizer, validate=False)
 
-INPUT_ITR = db.item_iterator({}, text_column="text",)
+INPUT_ITR = db.text_iterator()#item_iterator({}, text_column="text",)
 ALL_TEXT = np.array([row['text'] for row in INPUT_ITR])
 # print vectorizer.fit_transform(ALL_TEXT)
 
@@ -79,6 +81,7 @@ def evaluate_text(text):
     item = collections.Counter()
     for k, v in exp.as_list():
         item[k] += v
+    print item
     return item
 
 
@@ -97,7 +100,7 @@ print df
 df = df.sort_values(0)
 print df
 print class_names
-df.to_csv("LIME_result.csv")
+#df.to_csv("LIME_result.csv")
 
 
 '''
