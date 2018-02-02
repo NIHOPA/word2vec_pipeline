@@ -24,19 +24,6 @@ def dispatcher(row, target_column):
     row[target_column] = text
     return row
 
-    '''
-    meta = {}
-    for f in parser_functions:
-        result = f(text)
-        text   = unicode(result)
-
-        if hasattr(result,"meta"):
-            meta.update(result.meta)
-
-    # Convert the meta information into a unicode string for serialization
-    #meta = unicode(meta)
-    '''
-
 
 def load_phrase_database(f_abbreviations):
 
