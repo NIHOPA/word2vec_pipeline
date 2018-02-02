@@ -63,7 +63,14 @@ def predict_from_config(config):
         baseline_score = max(y_counts) / float(sum(y_counts))
 
         # Predict
-        scores, F1, errors, pred, dfs = categorical_predict(X, Y, method, cfg)
+        scores, F1, errors, pred, dfs = categorical_predict(
+            X=X,
+            y_org=Y,
+            method_name=method,
+            use_SMOTE=int(cfg['use_SMOTE']),
+            use_PARALLEL=int(cfg['_PARALLEL']),
+            n_estimators=int(cfg['n_estimators']),
+        )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         print(text.format(scores.mean(), F1.mean(), baseline_score))
@@ -86,9 +93,13 @@ def predict_from_config(config):
         text = "Predicting [{}] [{}:{}]"
         print(text.format(method, cat_col, pred_col))
 
-        scores, F1, errors, pred, dfs = categorical_predict(X_META, Y,
-                                                            method,
-                                                            config["predict"])
+        scores, F1, errors, pred, dfs = categorical_predict(
+            X=X_META,
+            y_org=Y,
+            method_name=method,
+            n_estimators=int(cfg['n_estimators']),
+            use_PARALLEL=int(cfg['_PARALLEL']),
+        )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         print(text.format(scores.mean(), F1.mean(), baseline_score))

@@ -31,7 +31,14 @@ def clf_extratree_predictor(item):
     return idx, pred, pred_proba
 
 
-def categorical_predict(X, y_org, method_name, config):
+def categorical_predict(
+        X,
+        y_org,
+        method_name,
+        n_estimators=50,
+        use_SMOTE=False,
+        use_PARALLEL=True,
+):
 
     # Make sure the sizes match
     msg = "X shape {}, y_org shape {} (mismatch!)"
@@ -45,15 +52,13 @@ def categorical_predict(X, y_org, method_name, config):
     # msg = "[{}] number of unique entries in [y {}]: {}"
     # print msg.format(method_name, X.shape, label_n)
 
-    use_SMOTE = config["use_SMOTE"]
+    use_SMOTE = use_SMOTE
     if use_SMOTE:
         print("  Adjusting class balance using SMOTE")
 
-    is_PARALLEL = config["_PARALLEL"]
-
     clf_args = {
-        "n_jobs": -1 if is_PARALLEL else 1,
-        "n_estimators": int(config["n_estimators"]),
+        "n_jobs": -1 if use_PARALLEL else 1,
+        "n_estimators": n_estimators,
     }
 
     skf = StratifiedKFold(n_splits=10, shuffle=False).split(X, y)
@@ -96,8 +101,10 @@ def categorical_predict(X, y_org, method_name, config):
     # so normalization is simple
     error_counts /= 1.0
 
-    return (np.array(scores),
-            np.array(F1_scores),
-            error_counts,
-            predict_scores,
-            df)
+    return (
+        np.array(scores),
+        np.array(F1_scores),
+        error_counts,
+        predict_scores,
+        df
+    )
