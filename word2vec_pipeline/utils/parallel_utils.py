@@ -1,45 +1,50 @@
-import joblib
-from tqdm import tqdm
-
-
 """
 Utility functions to assist in parallelizing the operation of the pipeline.
 """
 
-#DOCUMENTATION_UNKNOWN
-#not sure what this does
-def grouper(iterable, n):
+import joblib
+from tqdm import tqdm
+
+def grouper(itr, n):
     '''
-    Reads ahead n items on an iterator. On last pass returns a smaller list with the remaining items.
+    Reads ahead n items on an iterator. On last pass returns a smaller 
+    list with the remaining items. Useful for batch processing in parallel.
 
     Args:
-        iterable: an iterable list
-        n: an integer, the number of items to read ahead
+        itr (iterable): a object to iterate over
+        n (int): Number of items to read ahead
+
+    Yields:
+        list: A list of at least n items from the iterable 
     '''
+    
     block = []
     while True:
         try:
-            block.append(iterable.next())
+            block.append(itr.next())
         except StopIteration:
             break
         if len(block) == n:
             yield block
             block = []
 
-    yield block
+    if block:
+        yield block
 
 
 def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
            *args, **kwargs):
     '''
-    Function to parallalize the operation of another function that is passed to it on the given input
+    Function to parallalize the operation of another function 
+    passed to it.
+
     Args:
-        func: Function that is run in parallel on the input
-        INPUT_ITR: Iterable list of documents that are operated on in parallel
-        FLAG_PARALLEL: Boolean flag to run the functions in parallel
-        batch_size: An integer
-        args: additional arguments
-        kwargs: additional arguments
+        func (function): Run in parallel on the input
+        INPUT_ITR (iterable): Input to be operated on
+        FLAG_PARALLEL (bool): Flag to run the functions in parallel
+        batch_size (int): 
+        args: additional arguments passed to the function
+        kwargs: additional keyword arguments passed to the function
     '''
 
     n_jobs = -1 if FLAG_PARALLEL else 1
@@ -58,6 +63,6 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
         progress_bar = tqdm()
         for block in grouper(ITR, batch_size):
             MPITR = MP(dfunc(x, *args, **kwargs) for x in block)
-            for k,z in enumerate(MPITR):
+            for k, z in enumerate(MPITR):
                 yield z
-            progress_bar.update(k+1)
+            progress_bar.update(k + 1)

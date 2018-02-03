@@ -1,115 +1,77 @@
 '''
-Builds the Term Frequency database for quick reference.
+Builds the TF database for quick reference.
 '''
-import collections
 import os
-
 import pandas as pd
-from utils.mapreduce import simple_mapreduce
+from bounter import bounter
 
 
-class frequency_counter(simple_mapreduce):
-    table_name = None
+class frequency_counter(object):
+    function_name = "frequency_counter"
 
-    def __init__(self, *args, **kwargs):
-        '''
-        Initialize counter
-
-        Args:
-            args: DOCUMENTATION_UNKNOWN
-            kwargs: DOCUMENTATION_UNKNOWN
-        '''
-
+    def __init__(
+            self,
+            bounter_size_mb=1024,
+            *args, **kwargs):
         # Global counter for term frequency
-        self.TF = collections.Counter()
-        super(frequency_counter, self).__init__(*args, **kwargs)
+        self.TF = bounter(size_mb=bounter_size_mb)
 
-    def reduce(self, C):
-        '''
-        Update counter
+    def __call__(self, row):
+        raise NotImplementedError
 
-        Args:
-            C: term [possible rename to something more informative]
-        '''
-        self.TF.update(C)
+    def save(self, output_data_directory, f_db, **kwargs):
 
-    def report(self):
-        '''
-        Return counter
-        '''
-        return self.TF
+        f_csv = os.path.join(output_data_directory, f_db)
+        key_vals = [(x, self.TF[x]) for x in self.TF]
 
-    def save(self, config):
-        '''
-        Save counter
-
-        Args:
-            config: config file
-        '''
-        f_csv = os.path.join(
-            config["output_data_directory"],
-            config[self.table_name]["f_db"])
-
-        df = pd.DataFrame(self.TF.most_common(),
-                          columns=["word", "count"])
-
-        df.set_index('word').to_csv(f_csv)
+        df = pd.DataFrame(key_vals, columns=["word", "count"])
+        df = df.sort_values("count", ascending=False)
+        df.to_csv(f_csv, index=False)
 
 
 class term_frequency(frequency_counter):
-    '''
-    Count frequency of terms
-    DOCUMENTATION_UNKNOWN - Is this for all documents, or a single document?
-    '''
 
-    table_name = "term_frequency"
+    function_name = "term_frequency"
 
     def __call__(self, row):
-        '''
-        Count frequency of terms in a single document
+       '''
+       Count frequency of terms in a single document and updates the 
+       class counters.
 
-        Args:
-            row: row of a pandas dataframe representing a single document
+       Args:
+           row (dict): Operates on the data in row['text']
 
-        Returns:
-            C: a counter of term frequency in the graph
-        '''
-        text = row['text']
+       Returns:
+           None
+       '''
+        
+       text = row['text']
 
-        tokens = unicode(text).split()
-        C = collections.Counter(tokens)
-
-        # Add a token to keep track of total documents
-        C["__pipeline_document_counter"] += 1
-
-        return C
+       tokens = unicode(text).split()
+       self.TF.update(tokens)
+       self.TF.update(["__pipeline_document_counter", ])
 
 
 class term_document_frequency(frequency_counter):
-    '''
-    Count frequency of terms
-    DOCUMENTATION_UNKNOWN - Is this for all documents, or a single document?
-    '''
 
-    table_name = "term_document_frequency"
+    function_name = "term_document_frequency"
 
     def __call__(self, row):
-        '''
-        Count frequency of terms in a single document
+       '''
+       Count apperance of terms in a single document and updates the 
+       class counters.
 
-        Args:
-            row: row of a pandas dataframe representing a single document
+       Args:
+           row (dict): Operates on the data in row['text']
 
-        Returns:
-            C: a counter of term frequency in the graph
-        '''
-        text = row['text']
+       Returns:
+           None
+       '''
+        
+       text = row['text']
 
-        # For document frequency keep only the unique items
-        tokens = set(unicode(text).split())
-        C = collections.Counter(tokens)
+       # For document frequency keep only the unique items
+       tokens = set(unicode(text).split())
 
-        # Add an empty string token to keep track of total documents
-        C["__pipeline_document_counter"] += 1
-
-        return C
+       self.TF.update(tokens)
+       self.TF.update(["__pipeline_document_counter", ])

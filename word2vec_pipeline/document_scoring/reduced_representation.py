@@ -1,51 +1,35 @@
-from document_scores import score_unique_TF
-import simple_config
-import h5py
-import os
+from sklearn.decomposition import IncrementalPCA
+from utils.data_utils import load_document_vectors
+from utils.data_utils import save_h5, get_h5save_object
 
 
-class reduced_representation(score_unique_TF):
+class reduced_representation(object):
 
-    method = 'reduced_representation'
+    def compute(self, method, n_components=10):
 
-    def __init__(self, *args, **kwargs):
-        '''
-        The reduced representation takes an incremental PCA decomposition
-        and adds new negative weights based off the previous components
-        of PCA.
-        '''
+        DV = load_document_vectors(method)
+        V = DV["docv"]
+        clf = IncrementalPCA(n_components=n_components)
 
-        # Remove the bais to negative_weights
-        kwargs["negative_weights"] = {}
+        msg = "Performing PCA on {}, ({})->({})"
+        print(msg.format(method, V.shape[1], n_components))
+        VX = clf.fit_transform(V)
 
-        super(reduced_representation, self).__init__(*args, **kwargs)
+        data = {
+            "VX": VX,
+            "VX_explained_variance_ratio_": clf.explained_variance_ratio_,
+            "VX_components_": clf.components_,
+        }
 
-        config = simple_config.load()['score']
-        f_db = os.path.join(
-            config["output_data_directory"],
-            config["document_scores"]["f_db"]
-        )
+        return data
 
-        with h5py.File(f_db, 'r') as h5:
+    def save(self, method, data, f_db):
 
-            # Make sure the the column has a value
-            col = config['reduced_representation']['rescored_command']
-            assert(col in h5)
+        g = get_h5save_object(f_db, method)
+        for key in g.keys():
+            idx = g[key]["_ref"][:]
 
-            # Make sure the VX has been computed
-            assert("VX" in h5[col])
-            c = h5[col]['VX_components_'][:]
-            ex_var = h5[col]['VX_explained_variance_ratio_'][:]
-
-        bais = config['reduced_representation']['bais_strength']
-
-        self.word_vecs = {}
-        for w in self.M.wv.index2word:
-            weight = c.dot(self.M[w])
-            weight *= bais
-            weight *= ex_var
-            adjust_v = (weight.reshape(-1, 1) * c).sum(axis=0)
-            self.word_vecs[w] = self.M[w] - adjust_v
-
-    def get_word_vector(self, word):
-        return self.word_vecs[word]
+        save_h5(g[key], "VX", data["VX"][idx, :])
+        save_h5(g[key], "VX_components_", data["VX_components_"])
+        save_h5(g[key], "VX_explained_variance_ratio_",
+                data["VX_explained_variance_ratio_"])

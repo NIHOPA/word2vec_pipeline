@@ -5,18 +5,19 @@ import os
 __local__ = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file
+
 long_description = '''word2vec_pipeline
 =================================
 
-This is a research and exploration pipeline designed to analyze grants, publication abstracts, and other biomedical corpora. While not designed for production, it is used internally within the Office of Portfolio Analysis at the National Institutes of Health.'''
+This is a research and exploration pipeline designed to analyze grants, publication abstracts, and other biomedical corpora. While not designed for production, it is used internally within the Office of Portfolio Analysis at the National Institutes of Health.'''  # NOQA
 
 setuptools.setup(
-    name='w2v',
+    name='word2vec_pipeline',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',
+    version='0.2.0',
 
     description='NLP pipeline to parse, embed, and classify with word2vec',
     long_description=long_description,
@@ -61,15 +62,6 @@ setuptools.setup(
     # Include package data...
     include_package_data=True,
 
-    # entry_points={
-    #    'console_scripts': [
-    #        'miniprez=miniprez.__main__:main',
-    #    ]
-    #},
-
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
             'word2vec_pipeline=word2vec_pipeline.__main__:main',

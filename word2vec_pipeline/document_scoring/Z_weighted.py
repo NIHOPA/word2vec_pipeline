@@ -1,10 +1,10 @@
 import numpy as np
 
 from log_probablity import document_log_probability
-from document_scores import score_unique_TF
+from document_scores import score_unique_IDF
 
 
-class score_Z_weighted(score_unique_TF, document_log_probability):
+class score_Z_weighted(score_unique_IDF, document_log_probability):
 
     method = 'Z_weighted'
 
@@ -19,7 +19,7 @@ class score_Z_weighted(score_unique_TF, document_log_probability):
         thresholded word-weight.
         '''
 
-        score_unique_TF.__init__(self, *args, **kwargs)
+        score_unique_IDF.__init__(self, *args, **kwargs)
         document_log_probability.__init__(self, *args, **kwargs)
 
         self.kT = float(kwargs["kT"])

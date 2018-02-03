@@ -1,3 +1,14 @@
+"""
+Perform analysis on the document metaclusters created by the pipeline. 
+This will automatically provide labels to each cluster, by identifying 
+which words are most similar to the centroid of each cluster.
+
+It also returns statistics on each cluster to determine the average 
+similarity of each document to the cluster centroid, and the average 
+similarity of each document to every other document in the cluster. 
+"""
+
+
 import os
 import itertools
 import pandas as pd
@@ -8,16 +19,7 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
-"""
-Driver function to perform analysis on the document metaclusters created by the pipeline. This will automatically
-provide labels to each cluster, by identifying which words are most similar to the centroid of each cluster.
 
-It also returns statistics on each cluster to determine the average similarity of each document to the cluster
-centroid, and the average similarity of each document to every other document in the cluster. 
-"""
-
-#DOCUMENTATION_UNKNOWN
-#not sure about what this does
 def _compute_centroid_dist(X, cx):
     '''
     Find the average distance of all documents in a cluster to its centroid
@@ -28,16 +30,19 @@ def _compute_centroid_dist(X, cx):
     '''
     return cdist(X, [cx, ], metric='cosine').mean()
 
+
 def _compute_dispersion_matrix(X, labels):
     '''
-    Function to find the intra-document dispersion of every document in a cluster
+    Find the intra-document dispersion of every document in a cluster.
 
     Args:
         X: an numpy array of each document in a cluster's document vector
         labels: labels for each cluster
     Returns
-        dist: a numpy array of the matrix of pairwise dispersion measures between each document in a cluster
+        dist: a numpy array of the matrix of pairwise dispersion measures 
+              between each document in a cluster
     '''
+    
     n = len(np.unique(labels))
     dist = np.zeros((n, n))
     ITR = list(itertools.combinations_with_replacement(range(n), 2))
@@ -54,12 +59,11 @@ def _compute_dispersion_matrix(X, labels):
 
     return dist
 
-#Possible move this to next highest directory with other driver files, to fit the pattern of the rest of the
-#pipeline
 
 def analyze_metacluster_from_config(config):
     '''
-    Does analysis on metaclusters to return descriptive information and statistics on them
+    Does analysis on metaclusters to return descriptive information and 
+    statistics.
 
     Args:
         config: a config file
@@ -81,7 +85,7 @@ def analyze_metacluster_from_config(config):
 
     # Fix any zero vectors with random ones
     dim = DV["docv"].shape[1]
-    idx = np.where(np.linalg.norm(DV["docv"],axis=1)==0)[0]
+    idx = np.where(np.linalg.norm(DV["docv"], axis=1) == 0)[0]
     for i in idx:
         vec = np.random.uniform(size=(dim,))
         vec /= np.linalg.norm(vec)
@@ -102,7 +106,6 @@ def analyze_metacluster_from_config(config):
         # If dispersion is not calculated set d_idx to be the cluster index
         d_idx = np.sort(labels)
 
-
     #
 
     V = DV["docv"]
@@ -111,7 +114,7 @@ def analyze_metacluster_from_config(config):
         idx = MC["meta_labels"] == cluster_id
 
         item = {}
-        item["counts"] = idx.sum()       
+        item["counts"] = idx.sum()
         item["avg_centroid_distance"] = _compute_centroid_dist(V[idx], cx)
 
         if config["compute_dispersion"]:
@@ -119,11 +122,10 @@ def analyze_metacluster_from_config(config):
         else:
             item["intra_document_dispersion"] = -1
 
-
         # Compute closest words to the centroid
         desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
         item["word2vec_description"] = desc
-    
+
         data.append(item)
 
     df = pd.DataFrame(data, index=labels)
@@ -161,13 +163,13 @@ def analyze_metacluster_from_config(config):
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
     ORG.to_csv(f_csv, index=False)
 
-    #df = df.sort_values("cluster_id")
+    # df = df.sort_values("cluster_id")
     print(df)
 
     '''
     # We don't need to save the values anymore
     f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
-    
+
     with h5py.File(f_h5_save, 'w') as h5_save:
         h5_save["dispersion"] = dist
         h5_save["cluster_id"] = df.cluster_id
@@ -175,6 +177,7 @@ def analyze_metacluster_from_config(config):
         h5_save["dispersion_order"] = df.dispersion_order
         h5_save["linkage"] = linkage
     '''
+
 
 if __name__ == "__main__" and __package__ is None:
 

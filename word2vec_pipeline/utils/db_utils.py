@@ -1,41 +1,25 @@
-import random
+"""
+Utility file to assist in parsing .csv files, as well as display the process of parsing these files.
+"""
+
 import tqdm
 import simple_config
 import csv
 import os
 from os_utils import grab_files
 
-"""
-Utility file to assist in parsing .csv files, as well as display the process of parsing these files.
-"""
-
-#DOCUMENTATION_UNKNOWN
-#this function is never used
-def pretty_counter(C, min_count=1):
-    """
-    Counts
-    :param C:
-    :param min_count:
-    :return:
-    """
-    for item in C.most_common():
-        (phrase, abbr), count = item
-        if count > min_count:
-            s = "{:10s} {: 10d} {}".format(abbr, count, ' '.join(phrase))
-            yield s
-
 
 def CSV_list_columns(f_csv):
     """
-    iterate through the columns of a .csv file.
+    Iterate over the columns of a .csv file.
 
     Args:
-        f_csv: string location of the .csv file
+        f_csv (string): Location of the .csv file
 
     Returns:
         return tuple(reader.next()): DOCUMENTATION_UNKNOWN
-
     """
+    
     if not os.path.exists(f_csv):
         msg = "File not found {}".format(f_csv)
         raise IOError(msg)
@@ -46,11 +30,13 @@ def CSV_list_columns(f_csv):
 
 class CSV_database_iterator(object):
     '''
-    Class to open .csv files, check that they are valid, and iterate through them.
-    DOCUMENTATION_UNKNOWN : the name "F_CSV" makes it seem like one file, when it actually works on a list
-                            of multiple files. It might make the code clearer to rename this variable
+    Class to open .csv files, check that they are valid, and iterate 
+    through them.
+    
+    DOCUMENTATION_UNKNOWN : the name "F_CSV" makes it seem like one file, 
+    when it actually works on a list of multiple files. It might make the 
+    code clearer to rename this variable
     '''
-
 
     def __init__(self,
                  F_CSV,
@@ -63,6 +49,7 @@ class CSV_database_iterator(object):
                  include_table_name=False,
                  include_filename=False,
                  ):
+        
         '''
         Initialize the iterator
 
@@ -75,8 +62,10 @@ class CSV_database_iterator(object):
             offset: DOCUMENTATION_UNKNOWN
             include_meta: DOCUMENTATION_UNKNOWN
             include_table_name: DOCUMENTATION_UNKNOWN
-            include_filename: boolean, a flag to save the documentation location in imported document
+            include_filename: boolean, a flag to save the documentation 
+               location in imported document
         '''
+
         self.F_CSV = sorted(F_CSV)
         self.col = target_column
 
@@ -134,123 +123,43 @@ class CSV_database_iterator(object):
                     if self.include_filename:
                         row["_filename"] = os.path.basename(f)
 
+                    row['_ref'] = int(row['_ref'])
                     yield row
 
         if self.progress_bar is not None:
             self.progress_bar.close()
 
 
-def item_iterator(
-        config=None,
-        randomize_file_order=False,
-        whitelist=[],
-        section='parse',
-        progress_bar=False,
-        text_column=None,
-        include_filename=False,
-        ):
-    '''
-    Iterates over the parsed corpus items and respects a given whitelist.
-
-    Args:
-        config: config file to load parameters from
-        randomize_file_order: boolean, a flag to randomize the order that files are imported in
-        whitelist: list, a whitelist of accepted terms (?) DOCUMENTATION_UNKNOWN
-        section: DOCUMENTATION_UNKNOWN
-        progress_bar: bar to measure progress of iteration
-        text_column: string, the column header to iterate over
-        include_filename: boolean, a flag to save the documentation location in imported document
-    '''
-
-    if config is None:
-        config = simple_config.load()
-
-    config = simple_config.load()
-    input_data_dir = config['parse']["output_data_directory"]
-    F_CSV = grab_files("*.csv", input_data_dir, verbose=False)
-
-    if whitelist:
-        assert(isinstance(whitelist, list))
-
-        F_CSV2 = set()
-        for f_csv in F_CSV:
-            for token in whitelist:
-                if token in f_csv:
-                    F_CSV2.add(f_csv)
-        F_CSV = F_CSV2
-
-    # Randomize the order of the input files each time we get here
-    if randomize_file_order:
-        F_CSV = random.sample(sorted(F_CSV), len(F_CSV))
-
-    INPUT_ITR = CSV_database_iterator(
-        F_CSV,
-        config["target_column"],
-        progress_bar=progress_bar,
-        include_filename=include_filename,
-    )
-
-    for row in INPUT_ITR:
-        if text_column is not None:
-            row['text'] = row[text_column]
-        yield row
-
-
-
-def get_section_filenames(section):
-    '''
-    Grab filename in given secion of pipeline
-    Args:
-        section: a string to determine which section of the config to read
-                 DOCUMENTATION_UNKNOWN - should 'parse' be replaced with the section variable
-
-    Return:
-         grab_files("*.csv", input_data_dir, verbose=False): files found in directory specified in config
-
-    '''
-    config = simple_config.load()
-    input_data_dir = config['parse']["output_data_directory"]
-    return grab_files("*.csv", input_data_dir, verbose=False)
-
-def single_file_item_iterator(
-        f_csv,
-        config=None,
-        section='parse',
-        progress_bar=False,
-        text_column=None,
-        include_filename=True,
+def text_iterator(
+    F_CSV=None,
+    progress_bar=True,
 ):
     '''
-    Iterates over a single file
+    Returns a generator that loops the indicated files,
+    if F_CSV is None or blank, loops over the parsed text data.
+    '''
+
+    if F_CSV is None:
+        F_CSV = get_parsed_filenames()
+
+    for x in CSV_database_iterator(F_CSV, target_column='text',
+                                   progress_bar=progress_bar,):
+        yield x
+
+
+def get_section_filenames(section='parse')
+    '''
+    Grab filenames in given section of pipeline.
 
     Args:
-        f_csv: a file to iterate over
-        config: config file to load parameters from
-        section: DOCUMENTATION_UNKNOWN
-        progress_bar: bar to measure progress of iteration
-        text_column: string, the column header to iterate over
-        include_filename: boolean, a flag to save the documentation location in imported document
+        section (str): The section to grab the filenames (default: parse)
 
+    Returns:
+         list: files found in directory specified in config
     '''
-    
-
-    if config is None:
-        config = simple_config.load()
 
     config = simple_config.load()
+    input_data_dir = config[section]["output_data_directory"]
+    return grab_files("*.csv", input_data_dir, verbose=False)
 
-    # Make sure the file we requested exists
-    assert(f_csv in get_section_filenames(section))
-    
 
-    INPUT_ITR = CSV_database_iterator(
-        [f_csv],
-        config["target_column"],
-        progress_bar=progress_bar,
-        include_filename=include_filename,
-    )
-
-    for row in INPUT_ITR:
-        if text_column is not None:
-            row['text'] = row[text_column]
-        yield row

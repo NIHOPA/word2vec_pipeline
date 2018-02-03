@@ -1,3 +1,10 @@
+"""
+Perform spectral cluster meta-clustering of documents imported into the 
+pipeline, using their scores as a measure of distance. Since spectral 
+clustering is too computationally intensive for most uses, this uses sampling 
+to speed up the process. 
+"""
+
 import numpy as np
 import h5py
 import os
@@ -13,14 +20,6 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
-"""
-Driver file to perform spectral cluster meta-clustering of documents imported into the pipeline, using their scores 
-as a measure of distance. Since spectral clustering is too computationally intensive for most uses, this 
-uses sampling to speed up the process. 
-"""
-
-#DOCUMENTATION_UNKNOWN
-#Note - does the clustering directory do anything? It is never used
 
 def subset_iterator(X, m, repeats=1):
     '''
@@ -28,9 +27,9 @@ def subset_iterator(X, m, repeats=1):
     Each time the order of the repeat is randomly generated.
 
     Args:
-        X: a numpy array
-        m: int, the amount of each elements in a chunk
-        repeats: int, the number of time to iterate
+        X (numpy array): Input data
+        m (int): Number of each elements in a chunk
+        repeats (int): Number of time to iterate over input data
     '''
 
     N, dim = X.shape
@@ -49,12 +48,16 @@ def subset_iterator(X, m, repeats=1):
 
 def cosine_affinity(X):
     '''
+    Computes cosine affinity and fixes rounding errors that sometimes give
+    negative distance values.
+
     Args:
         X: a numpy array
 
     Returns:
          S: a float of pairwise similarity values
     '''
+    
     epsilon = 1e-8
     S = cosine_similarity(X)
     S[S > 1] = 1.0  # Rounding problems
@@ -70,18 +73,19 @@ def cosine_affinity(X):
 
 def docv_centroid_order_idx(meta_clusters):
     '''
-    Determine a more appropriate order for each meta cluster based on their pairwise similarity to one another
+    Determine a more appropriate order for each meta cluster based 
+    on their pairwise similarity.
 
     Args:
-        meta_clusters: a numpy vector representing the centroid of each cluster
+        meta_clusters (numpy array): Centroid of each cluster
 
     Returns:
-        d_idx = an array of ordered meta clusters
+        d_idx: an array of ordered meta clusters
     '''
-    dist = cdist(meta_clusters, meta_clusters, metric='cosine')
-
+    
     # Compute the linkage and the order
-    linkage = hierarchy.linkage(dist, method='average')
+    linkage = hierarchy.linkage(meta_clusters,
+                                metric='cosine', method='average')
     d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
     return d_idx
@@ -121,6 +125,7 @@ class cluster_object(object):
         Return:
             np.vstack(C): a numpy array of cluster centroids
         '''
+        
 
         INPUT_ITR = subset_iterator(
             X=self.docv,
@@ -144,7 +149,7 @@ class cluster_object(object):
             A = cosine_affinity(X)
 
             # "Force" symmetry due to rounding errors
-            A = np.maximum( A, A.transpose() )
+            A = np.maximum(A, A.transpose())
 
             labels = clf.fit_predict(A)
 
@@ -164,12 +169,16 @@ class cluster_object(object):
 
     def load_centroid_dataset(self, name):
         '''
-        Loads information about the centroids from the h5 file they are saved in.
-            name: string telling which field to load.
+        Loads information about the centroids from the h5 file 
+        they are saved in.
 
-        Return:
+        Args:
+            name (str): The column to load
+
+        Returns:
             h5[name][:]: a directory in an h5 file
         '''
+        
         with h5py.File(self.f_h5_centroids, 'r') as h5:
             return h5[name][:]
 
@@ -229,11 +238,13 @@ class cluster_object(object):
 
 def metacluster_from_config(config):
     '''
-    Imports the parameters for creating metaclusters from the config file, and then creates metaclusters
+    Imports the parameters for creating metaclusters from the config file, 
+    and then creates metaclusters
 
     Args:
         config: config file
     '''
+    
 
     config = config['metacluster']
     os.system('mkdir -p {}'.format(config['output_data_directory']))
@@ -262,13 +273,13 @@ def metacluster_from_config(config):
 
     h5.close()
 
+
 if __name__ == "__main__":
 
     config = simple_config.load()
     metacluster_from_config(config)
 
-#DOCUMENTATION_UNKNOWN
-#useful?
+
 #
 #
 # Old code below, useful for plotting the matrix?

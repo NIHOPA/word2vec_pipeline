@@ -67,4 +67,5 @@ def clean():
     local('find . -name "*.pyc" | xargs -I {} rm {}')
     local('rm -rvf w2v.egg-info')
     local(
-        "rm -rf data_import data_parsed data_document_scores data_clustering data_embeddings data_predict results")
+        "rm -rf data_import data_parsed data_document_scores "
+        "data_clustering data_embeddings data_predict results")

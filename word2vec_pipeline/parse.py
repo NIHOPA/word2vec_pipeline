@@ -1,3 +1,9 @@
+"""
+Parse imported documents using the NLPre pre-processing library. 
+These commands strips out punctuation, unimportant words, identifies acronyms, 
+as well as other processings steps.
+"""
+
 import os
 from utils.os_utils import mkdir, grab_files
 import utils.db_utils as db_utils
@@ -6,20 +12,60 @@ import nlpre
 
 from utils.parallel_utils import jobmap
 
+_global_batch_size = 500
 
-"""
-Driver file to parse imported documents using the NLPre pre-processing library. The command strips out punctuation, 
-unimportant words, identifies acronyms, as well as other processings steps.
-"""
+# This must be global for parallel to work properly
+parser_functions = []
 
-def parse_from_config(config):
-    '''
-    Function to read the parameters from the pipeline config file, and then begin pre-processing the imported
-    documents in order to train a word2vec model and assign a score to each document
+# import logging
+# nlpre.logger.setLevel(logging.INFO)
+
+
+def dispatcher(row, target_column):
+    """
+    Perform the operation of each step of the NLPre pre-processing 
+    specified in the config file. Requires a global list of parser_functions
+    to be defined.
 
     Args:
-        config: a config file
+        row (dict): A dictionary where the target column is defined as a key
+        target_column (str): The column is to be processed.
+
+    Returns:
+         Dict: The dictionary after processing
+    """
+    
+    text = row[target_column] if target_column in row else None
+
+    for f in parser_functions:
+        text = unicode(f(text))
+
+    row[target_column] = text
+    return row
+
+
+def load_phrase_database(f_abbreviations):
     '''
+    Load the dictionary of abbreviated steps created in the "import_data" step
+
+    Args:
+        f_abbreviations (str): Filename of the abbreviation dictionary
+
+    Returns:
+         A dictionary of abbreviations.
+    '''
+
+    P = {}
+    with open(f_abbreviations, 'r') as FIN:
+        CSV = csv.DictReader(FIN)
+        for row in CSV:
+            key = (tuple(row['phrase'].split()), row['abbr'])
+            val = int(row['count'])
+            P[key] = val
+    return P
+
+
+def parse_from_config(config):
 
     _PARALLEL = config.as_bool("_PARALLEL")
 
@@ -80,71 +126,6 @@ def parse_from_config(config):
     # Close the open files
     for F in F_CSV_OUT.values():
         F.close()
-
-
-
-_global_batch_size = 500
-
-# This must be global for parallel to work properly
-parser_functions = []
-
-# import logging
-# nlpre.logger.setLevel(logging.INFO)
-
-
-def dispatcher(row, target_column):
-    """
-    Perform the operation of each step of the NLPre pre-processing specified in the config file
-
-    Args:
-        row: a row of a pandas DataFrame corresponding to a text document
-        target_column: a string specifying which column is to be processed
-
-    Returns:
-         row: a row of a pandas DataFrame with the pre-processed text returned
-    """
-    text = row[target_column] if target_column in row else None
-
-    for f in parser_functions:
-        text = unicode(f(text))
-
-    row[target_column] = text
-    return row
-
-    '''
-    meta = {}
-    for f in parser_functions:
-        result = f(text)
-        text   = unicode(result)
-
-        if hasattr(result,"meta"):
-            meta.update(result.meta)
-
-    # Convert the meta information into a unicode string for serialization
-    #meta = unicode(meta)
-    '''
-
-
-def load_phrase_database(f_abbreviations):
-    '''
-    Load the dictionary of abbreviated steps created in the "import_data" step
-
-    Args:
-        f_abbreviations: string that lists the filename and location of the abbreviation dictionary
-
-    Returns:
-         P: a dictionary
-    '''
-
-    P = {}
-    with open(f_abbreviations, 'r') as FIN:
-        CSV = csv.DictReader(FIN)
-        for row in CSV:
-            key = (tuple(row['phrase'].split()), row['abbr'])
-            val = int(row['count'])
-            P[key] = val
-    return P
-
 
 
 if __name__ == "__main__":
