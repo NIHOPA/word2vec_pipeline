@@ -1,3 +1,9 @@
+"""
+Import documents into the pipeline, concatenate target fields into a 
+specifc field, and tag each document with a unique reference ID. 
+Identifies common phrases found in the document.
+"""
+
 import os
 import sys
 import csv
@@ -12,12 +18,6 @@ from utils.parallel_utils import jobmap
 import utils.db_utils as db_utils
 
 from tqdm import tqdm
-
-
-"""
-Driver file to import documents into the pipeline, concatenate target fields into a specif field, and tag
-each document with a unique reference ID. It also identifies common phrases found in the document.
-"""
 
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
@@ -54,7 +54,8 @@ def func_parenthetical(data, **kwargs):
         data: a text document
         kwargs: additional arguments
     Returns:
-        parser_parenthetical(text): A collections.counter object with count of parenthetical phrases
+        parser_parenthetical(text): A collections.counter object with 
+                                    count of parenthetical phrases
     '''
     text = data[kwargs["col"]]
     return parser_parenthetical(text)
@@ -92,18 +93,16 @@ def clean_row(row):
         row[key] = parser_unicode(map_to_unicode(val))
     return row
 
-#Can merge_cols be removed?
-def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
+def csv_iterator(f_csv, clean=True, _PARALLEL=False):
     '''
     Creates an iterator over a CSV file, optionally cleans it.
 
     Args
-        f_csv: a string that has the filename of the csv to open and iterate over
-        clean: a boolean to set whether to clean the csv file
-        PARALLEL: a boolean to set whether the iterator should be run in parallel
-        merge_cols:
-
+        f_csv (str): Filename of the csv to open and iterate over
+        clean (bool): Set whether to clean the csv file
+        PARALLEL (bool): Set whether the iterator should be run in parallel
     '''
+    
     with open(f_csv) as FIN:
         CSV = csv.DictReader(FIN)
 
@@ -118,17 +117,18 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False, merge_cols=False):
         except Exception:
             pass
 
-#Any reason it takes a list as an input, instead of the 4 parameters
+# Any reason it takes a list as an input, instead of the 4 parameters?
 def import_csv(item):
     """
-    Import a csv file, optionally merging select text fields into a single field
+    Import a csv file, optionally merging select fields into a single field.
 
     Args:
         item: a list containing function paramters
-            f_csv: a string with the filename of the csv file to open
-            f_csv_out: a string with the filename of where the input document should be saved to
-            f_target_column: a string with the name of the column with concatenated text
-            merge_columns: a list of strings with the names of the text columns that are to be concatenated
+            f_csv (str): Filename of the csv file to open
+            f_csv_out (str): Filename of output csv
+            f_target_column (str): Name of the column with concatenated text
+            merge_columns (list): Names of the text columns that are 
+              to be concatenated
     """
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
@@ -180,10 +180,11 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
     and attaches unique _ref numbers to each entry.
 
     Args:
-        d_in: a string with the directory of the csv file to open
-        d_out: a string with the directory of where the input document should be saved to
-        target_column: a string with the name of the column with concatenated text
-        merge_columns: a list of strings with the names of the text columns that are to be concatenated
+        d_in (str): Directory of the csv file to open
+        d_out (str): Directory of where the input document should be saved to
+        target_column (str): Name of the column with concatenated text
+        merge_columns (list): Names of the text columns that are to be 
+           concatenated
     '''
 
     INPUT_FILES = grab_files("*.csv", d_in)
@@ -225,8 +226,9 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
 
 def import_data_from_config(config):
     """
-    Import parameters from the config file. import_data_from_config() and phrases_from_config() are
-    the entry points for this step of the pipeline
+    Import parameters from the config file. import_data_from_config() 
+    and phrases_from_config() are the entry points for this step of the 
+    pipeline.
 
     Args:
         config: a config file
@@ -291,9 +293,11 @@ def dedupe_abbr(ABR):
 
 def phrases_from_config(config):
     """
-    Identify parenthetical phrases in the documents as they are being imported to the pipeline.
+    Identify parenthetical phrases in the documents as they are being 
+    imported to the pipeline.
 
-    import_data_from_config() and phrases_from_config() are the entry points for this step of the pipeline
+    import_data_from_config() and phrases_from_config() are the entry 
+    points for this step of the pipeline.
 
     Args:
         config: a config file
