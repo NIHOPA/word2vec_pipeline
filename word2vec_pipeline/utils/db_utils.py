@@ -147,7 +147,7 @@ def text_iterator(
         yield x
 
 
-def get_section_filenames(section='parse')
+def get_section_filenames(section='parse'):
     '''
     Grab filenames in given section of pipeline.
 
