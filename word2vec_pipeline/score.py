@@ -45,7 +45,7 @@ def score_from_config(global_config):
 
         print("Starting score model {}".format(model.method))
 
-        for f_csv in db.get_parsed_filenames():
+        for f_csv in db.get_section_filenames('parse'):
             data = {}
             for row in db.text_iterator([f_csv, ]):
                 data[row["_ref"]] = model(row['text'])

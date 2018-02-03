@@ -140,7 +140,7 @@ def text_iterator(
     '''
 
     if F_CSV is None:
-        F_CSV = get_parsed_filenames()
+        F_CSV = get_section_filenames('parse')
 
     for x in CSV_database_iterator(F_CSV, target_column='text',
                                    progress_bar=progress_bar,):
