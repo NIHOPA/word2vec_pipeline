@@ -2,6 +2,7 @@
 """
 Usage:
   word2vec_pipeline import_data
+  word2vec_pipeline phrase
   word2vec_pipeline parse
   word2vec_pipeline embed
   word2vec_pipeline score
@@ -9,17 +10,19 @@ Usage:
   word2vec_pipeline metacluster
   word2vec_pipeline analyze (<target_function>)
 
-  The code that is run by each command is found in the filename in current directory that corresponds to each command.
-  The function BLANK_from_config(config) is the entry point for each file, and can be found at the bottom of each
-  file.
-
+  The code that is run by each command is found in the filename in current 
+  directory that corresponds to each command. The function 
+  BLANK_from_config(config) is the entry point for each file, 
+  and can be found at the bottom of each file.
 """
+
 from docopt import docopt
 import simple_config
 # import logging
 # logging.basicConfig(level=logging.INFO)
 
-from import_data import import_data_from_config, phrases_from_config
+from import_data import import_data_from_config
+from phrase import phrases_from_config
 from parse import parse_from_config
 from embed import embed_from_config
 from score import score_from_config
@@ -34,6 +37,8 @@ def main():
 
     if args["import_data"]:
         import_data_from_config(config)
+
+    if args["phrase"]:
         phrases_from_config(config)
 
     if args["parse"]:

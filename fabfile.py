@@ -18,10 +18,11 @@ def pep():
 def import_data():
     local("python word2vec_pipeline import_data")
 
+def phrase():
+    local("python word2vec_pipeline phrase")
 
 def parse():
     local("python word2vec_pipeline parse")
-
 
 def embed():
     local("python word2vec_pipeline embed")
@@ -51,6 +52,7 @@ def test():
     clean()
 
     import_data()
+    phrase()
     parse()
     embed()
     score()
