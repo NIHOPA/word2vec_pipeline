@@ -1,11 +1,11 @@
 """
-Perform analysis on the document metaclusters created by the pipeline. 
-This will automatically provide labels to each cluster, by identifying 
+Perform analysis on the document metaclusters created by the pipeline.
+This will automatically provide labels to each cluster, by identifying
 which words are most similar to the centroid of each cluster.
 
-It also returns statistics on each cluster to determine the average 
-similarity of each document to the cluster centroid, and the average 
-similarity of each document to every other document in the cluster. 
+It also returns statistics on each cluster to determine the average
+similarity of each document to the cluster centroid, and the average
+similarity of each document to every other document in the cluster.
 """
 
 
@@ -39,10 +39,10 @@ def _compute_dispersion_matrix(X, labels):
         X: an numpy array of each document in a cluster's document vector
         labels: labels for each cluster
     Returns
-        dist: a numpy array of the matrix of pairwise dispersion measures 
+        dist: a numpy array of the matrix of pairwise dispersion measures
               between each document in a cluster
     '''
-    
+
     n = len(np.unique(labels))
     dist = np.zeros((n, n))
     ITR = list(itertools.combinations_with_replacement(range(n), 2))
@@ -62,7 +62,7 @@ def _compute_dispersion_matrix(X, labels):
 
 def analyze_metacluster_from_config(config):
     '''
-    Does analysis on metaclusters to return descriptive information and 
+    Does analysis on metaclusters to return descriptive information and
     statistics.
 
     Args:

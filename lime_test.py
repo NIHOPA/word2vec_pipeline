@@ -51,6 +51,8 @@ def _vectorizer(text_blocks):
         #for text in text_blocks
     ])
 '''
+
+
 def _vectorizer(text_blocks):
     v = np.array([M(x) for x in text_blocks])
     return v
@@ -78,6 +80,7 @@ sample1 = ALL_TEXT[i0]
 sample2 = ALL_TEXT[i1]
 print P.predict_proba([sample1, sample2])
 l0, l1 = class_names[Y[i0]], class_names[Y[i1]],
+
 
 def evaluate_text(text):
     exp = explainer.explain_instance(sample1, P.predict_proba, num_features=60)
@@ -107,7 +110,7 @@ df.score /= len(ALL_TEXT)
 
 print df
 print class_names
-df.to_csv("LIME_result.csv",index=False)
+df.to_csv("LIME_result.csv", index=False)
 
 
 '''

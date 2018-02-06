@@ -1,6 +1,6 @@
 """
 Identifies phrases from abbreivations for documents in the pipeline.
-Saves the result to disk for use with other parsers. 
+Saves the result to disk for use with other parsers.
 """
 
 import utils.db_utils as db_utils
@@ -14,12 +14,13 @@ import os
 
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
 
+
 def phrases_from_config(config):
     """
-    Identify parenthetical phrases in the documents as they are being 
+    Identify parenthetical phrases in the documents as they are being
     imported to the pipeline.
 
-    import_data_from_config() and phrases_from_config() are the entry 
+    import_data_from_config() and phrases_from_config() are the entry
     points for this step of the pipeline.
 
     Args:
@@ -63,8 +64,6 @@ def phrases_from_config(config):
     df.to_csv(f_csv)
 
 
-
-
 def dedupe_abbr(ABR):
     """
     Remove duplicate entries in dictionary of abbreviations
@@ -100,7 +99,6 @@ def dedupe_abbr(ABR):
     return df.sort_values("count", ascending=False)
 
 
-
 def func_parenthetical(data, **kwargs):
     '''
     Identify paranthetical phrases in the data
@@ -109,7 +107,7 @@ def func_parenthetical(data, **kwargs):
         data: a text document
         kwargs: additional arguments
     Returns:
-        parser_parenthetical(text): A collections.counter object with 
+        parser_parenthetical(text): A collections.counter object with
                                     count of parenthetical phrases
     '''
     text = data[kwargs["col"]]

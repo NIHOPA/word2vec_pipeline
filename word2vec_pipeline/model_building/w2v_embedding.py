@@ -1,15 +1,15 @@
 """
-Performs the word2vec training used to create document embeddings. 
+Performs the word2vec training used to create document embeddings.
 This uses the gensim to build the embeddings.
 """
 
-import os
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 from tqdm import tqdm
 
 import psutil
 CPU_CORES = max(4, psutil.cpu_count())
+
 
 class iterator_factory(object):
 
@@ -28,8 +28,9 @@ class iterator_factory(object):
 
 
 class w2v_embedding(corpus_iterator):
+
     """
-    Class to perform the word2vec training on documents 
+    Class to perform the word2vec training on documents
     imported to the pipeline.
     """
 
@@ -42,13 +43,13 @@ class w2v_embedding(corpus_iterator):
             window,
             sample,
             size,
-            min_count,            
+            min_count,
             *args,
             **kwargs
     ):
 
         super(w2v_embedding, self).__init__(*args, **kwargs)
-        
+
         self.epoch_n = int(epoch_n)
 
         # sg == skip_gram vs cbow
@@ -84,10 +85,10 @@ class w2v_embedding(corpus_iterator):
                                target_column=target_column)
 
         self.clf.build_vocab(ITR)
-        
+
         print("{} words in vocabulary".format(len(self.clf.wv.index2word)))
         print("Training the features")
-        
+
         self.clf.train(
             ITR,
             total_examples=self.clf.corpus_count,

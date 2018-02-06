@@ -1,23 +1,19 @@
 """
-Import documents into the pipeline, concatenate target fields into a 
-specifc field, and tag each document with a unique reference ID. 
+Import documents into the pipeline, concatenate target fields into a
+specifc field, and tag each document with a unique reference ID.
 Identifies common phrases found in the document.
 """
 
-import os
 import sys
 import csv
+import os
 import itertools
-import collections
-
-import nlpre
-import pandas as pd
 
 from utils.os_utils import mkdir, grab_files
 from utils.parallel_utils import jobmap
-import utils.db_utils as db_utils
-
 from tqdm import tqdm
+
+import nlpre
 
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
@@ -55,6 +51,7 @@ def clean_row(row):
         row[key] = parser_unicode(map_to_unicode(val))
     return row
 
+
 def csv_iterator(f_csv, clean=True, _PARALLEL=False):
     '''
     Creates an iterator over a CSV file, optionally cleans it.
@@ -64,7 +61,7 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
         clean (bool): Set whether to clean the csv file
         PARALLEL (bool): Set whether the iterator should be run in parallel
     '''
-    
+
     with open(f_csv) as FIN:
         CSV = csv.DictReader(FIN)
 
@@ -80,6 +77,8 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
             pass
 
 # Any reason it takes a list as an input, instead of the 4 parameters?
+
+
 def import_csv(item):
     """
     Import a csv file, optionally merging select fields into a single field.
@@ -89,7 +88,7 @@ def import_csv(item):
             f_csv (str): Filename of the csv file to open
             f_csv_out (str): Filename of output csv
             f_target_column (str): Name of the column with concatenated text
-            merge_columns (list): Names of the text columns that are 
+            merge_columns (list): Names of the text columns that are
               to be concatenated
     """
     (f_csv, f_csv_out, target_column, merge_columns) = item
@@ -104,7 +103,7 @@ def import_csv(item):
 
         for row in tqdm(csv_iterator(f_csv)):
 
-            output = {"_ref":_ref_counter.next()}
+            output = {"_ref": _ref_counter.next()}
 
             if not has_checked_keys:
                 for key in merge_columns:
@@ -126,7 +125,7 @@ def import_csv(item):
                     val += '.'
                 text.append(val)
 
-            output[target_column] = '\n'.join(text).strip()            
+            output[target_column] = '\n'.join(text).strip()
 
             if CSV_HANDLE is None:
                 CSV_HANDLE = csv.DictWriter(FOUT, sorted(output.keys()))
@@ -148,7 +147,7 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
         d_in (str): Directory of the csv file to open
         d_out (str): Directory of where the input document should be saved to
         target_column (str): Name of the column with concatenated text
-        merge_columns (list): Names of the text columns that are to be 
+        merge_columns (list): Names of the text columns that are to be
            concatenated
     '''
 
@@ -166,8 +165,8 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
 
 def import_data_from_config(config):
     """
-    Import parameters from the config file. import_data_from_config() 
-    and phrases_from_config() are the entry points for this step of the 
+    Import parameters from the config file. import_data_from_config()
+    and phrases_from_config() are the entry points for this step of the
     pipeline.
 
     Args:
@@ -194,10 +193,10 @@ def import_data_from_config(config):
     for d_in in data_in_list:
         import_directory_csv(d_in, data_out, target_column, merge_columns)
 
+
 if __name__ == "__main__":
 
     import simple_config
     config = simple_config.load()
 
-    # import_data_from_config(config)
-    phrases_from_config(config)
+    import_data_from_config(config)

@@ -1,5 +1,6 @@
 """
-Utility file to assist in parsing .csv files, as well as display the process of parsing these files.
+Utility file to assist in parsing .csv files, as well as display the
+process of parsing these files.
 """
 
 import tqdm
@@ -19,7 +20,7 @@ def CSV_list_columns(f_csv):
     Returns:
         return tuple(reader.next()): DOCUMENTATION_UNKNOWN
     """
-    
+
     if not os.path.exists(f_csv):
         msg = "File not found {}".format(f_csv)
         raise IOError(msg)
@@ -29,12 +30,13 @@ def CSV_list_columns(f_csv):
 
 
 class CSV_database_iterator(object):
+
     '''
-    Class to open .csv files, check that they are valid, and iterate 
+    Class to open .csv files, check that they are valid, and iterate
     through them.
-    
-    DOCUMENTATION_UNKNOWN : the name "F_CSV" makes it seem like one file, 
-    when it actually works on a list of multiple files. It might make the 
+
+    DOCUMENTATION_UNKNOWN : the name "F_CSV" makes it seem like one file,
+    when it actually works on a list of multiple files. It might make the
     code clearer to rename this variable
     '''
 
@@ -49,7 +51,6 @@ class CSV_database_iterator(object):
                  include_table_name=False,
                  include_filename=False,
                  ):
-        
         '''
         Initialize the iterator
 
@@ -62,7 +63,7 @@ class CSV_database_iterator(object):
             offset: DOCUMENTATION_UNKNOWN
             include_meta: DOCUMENTATION_UNKNOWN
             include_table_name: DOCUMENTATION_UNKNOWN
-            include_filename: boolean, a flag to save the documentation 
+            include_filename: boolean, a flag to save the documentation
                location in imported document
         '''
 
@@ -161,5 +162,3 @@ def get_section_filenames(section='parse'):
     config = simple_config.load()
     input_data_dir = config[section]["output_data_directory"]
     return grab_files("*.csv", input_data_dir, verbose=False)
-
-

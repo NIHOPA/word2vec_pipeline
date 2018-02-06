@@ -34,22 +34,22 @@ class term_frequency(frequency_counter):
     function_name = "term_frequency"
 
     def __call__(self, row):
-       '''
-       Count frequency of terms in a single document and updates the 
-       class counters.
+        '''
+        Count frequency of terms in a single document and updates the
+        class counters.
 
-       Args:
-           row (dict): Operates on the data in row['text']
+        Args:
+            row (dict): Operates on the data in row['text']
 
-       Returns:
-           None
-       '''
-        
-       text = row['text']
+        Returns:
+            None
+        '''
 
-       tokens = unicode(text).split()
-       self.TF.update(tokens)
-       self.TF.update(["__pipeline_document_counter", ])
+        text = row['text']
+
+        tokens = unicode(text).split()
+        self.TF.update(tokens)
+        self.TF.update(["__pipeline_document_counter", ])
 
 
 class term_document_frequency(frequency_counter):
@@ -57,21 +57,21 @@ class term_document_frequency(frequency_counter):
     function_name = "term_document_frequency"
 
     def __call__(self, row):
-       '''
-       Count apperance of terms in a single document and updates the 
-       class counters.
+        '''
+        Count apperance of terms in a single document and updates the
+        class counters.
 
-       Args:
-           row (dict): Operates on the data in row['text']
+        Args:
+            row (dict): Operates on the data in row['text']
 
-       Returns:
-           None
-       '''
-        
-       text = row['text']
+        Returns:
+            None
+        '''
 
-       # For document frequency keep only the unique items
-       tokens = set(unicode(text).split())
+        text = row['text']
 
-       self.TF.update(tokens)
-       self.TF.update(["__pipeline_document_counter", ])
+        # For document frequency keep only the unique items
+        tokens = set(unicode(text).split())
+
+        self.TF.update(tokens)
+        self.TF.update(["__pipeline_document_counter", ])

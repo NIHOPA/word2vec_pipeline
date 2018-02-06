@@ -7,7 +7,6 @@ Utility file to open the pipeline's config file, and check for errors
 """
 
 
-
 def validate_errors(errors, name_stack=None):
 
     # No errors found if errors object is True

@@ -1,6 +1,6 @@
 """
-Parse imported documents using the NLPre pre-processing library. 
-These commands strips out punctuation, unimportant words, identifies acronyms, 
+Parse imported documents using the NLPre pre-processing library.
+These commands strips out punctuation, unimportant words, identifies acronyms,
 as well as other processings steps.
 """
 
@@ -23,7 +23,7 @@ parser_functions = []
 
 def dispatcher(row, target_column):
     """
-    Perform the operation of each step of the NLPre pre-processing 
+    Perform the operation of each step of the NLPre pre-processing
     specified in the config file. Requires a global list of parser_functions
     to be defined.
 
@@ -34,7 +34,7 @@ def dispatcher(row, target_column):
     Returns:
          Dict: The dictionary after processing
     """
-    
+
     text = row[target_column] if target_column in row else None
 
     for f in parser_functions:

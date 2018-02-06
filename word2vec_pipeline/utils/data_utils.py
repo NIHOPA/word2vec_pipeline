@@ -1,6 +1,6 @@
 """
-Utility file to assist in loading data saved as part of the pipeline, 
-including .csv files, h5 files, amd gensim w2v models. There are also 
+Utility file to assist in loading data saved as part of the pipeline,
+including .csv files, h5 files, amd gensim w2v models. There are also
 functions to extract specific data from these files.
 """
 
@@ -12,6 +12,7 @@ import joblib
 
 import simple_config
 from os_utils import grab_files
+
 
 def load_h5_file(f_h5, *args):
     '''
@@ -51,7 +52,7 @@ def touch_h5(f_db):
     Returns
         h5: an h5 file
     '''
-    
+
     if not os.path.exists(f_db):
         h5 = h5py.File(f_db, 'w')
     else:
@@ -131,14 +132,14 @@ def load_ORG_data(extra_columns=None):
     F_CSV_REF = grab_files("*.csv", config_import["output_data_directory"])
     F_CSV = grab_files("*.csv", config_import["input_data_directories"][0])
 
-    with joblib.Parallel(-1) as MP:
+    with joblib.Parallel(CORES) as MP:
         func = joblib.delayed(simple_CSV_read)
         data = MP(func(x, cols) for x in F_CSV)
-        _refs= MP(func(x, ["_ref"]) for x in F_CSV_REF)
+        _refs = MP(func(x, ["_ref"]) for x in F_CSV_REF)
 
-    for df,df_refs in zip(data, _refs):
+    for df, df_refs in zip(data, _refs):
         df["_ref"] = df_refs["_ref"].values
-    
+
     # Require the _refs to be in order
     df = pd.concat(data).sort_values('_ref').set_index('_ref')
 
@@ -156,7 +157,7 @@ def load_metacluster_data(*args):
         *args: DOCUMENTATION_UNKNOWN
 
     Returns:
-        load_h5_file(f_h5, *args): the data on each cluster found in the 
+        load_h5_file(f_h5, *args): the data on each cluster found in the
         h5 file
     '''
 
@@ -171,7 +172,7 @@ def load_metacluster_data(*args):
 
 def get_score_methods():
     '''
-    Determines which scoring methods to return for each document, 
+    Determines which scoring methods to return for each document,
     based on what's set in config file
 
     Returns:
@@ -190,16 +191,16 @@ def get_score_methods():
 
 def load_document_vectors(score_method, use_reduced=False):
     '''
-    Load the word2vec document vectors for each document from the h5 file 
+    Load the word2vec document vectors for each document from the h5 file
     saved in pipeline
 
     Args:
         score_method: string, score method to load
-        use_reduced: boolean, flag to determine whether to use reduced 
+        use_reduced: boolean, flag to determine whether to use reduced
         dimension vectors, or the orgiginal vectors
 
     Return:
-        {"docv": X, "_refs": _refs}: dictionary, contains a list of document 
+        {"docv": X, "_refs": _refs}: dictionary, contains a list of document
         vectors and corresponding references
     '''
 

@@ -25,7 +25,7 @@ class corpus_iterator(object):
 
     def labelized_sentence_iterator(self):
         # Useful for doc2vec
-        
+
         for item in self:
             text = item[0]
             idx = item[1]

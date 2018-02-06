@@ -1,10 +1,10 @@
 """
-Train a word2vec embedding of the documents imported into the pipeline. 
-This creates a gensim word2vec file, which can be then used for NLP tasks. 
-In this pipeline, this model is used to cluster documents based on similarity, 
+Train a word2vec embedding of the documents imported into the pipeline.
+This creates a gensim word2vec file, which can be then used for NLP tasks.
+In this pipeline, this model is used to cluster documents based on similarity,
 as well as run document classification.
 
-The code that performs this embedding is found in model_building/, 
+The code that performs this embedding is found in model_building/,
 which creates the word2vec model itself.
 """
 
@@ -12,6 +12,7 @@ import os
 from utils.os_utils import mkdir
 import model_building as mb
 from utils.db_utils import text_iterator
+
 
 def embed_from_config(config):
     '''
@@ -39,7 +40,7 @@ def embed_from_config(config):
         model = getattr(mb, name)(**kwargs)
         model.set_iterator_function(text_iterator)
         model.compute(target_column)
-        
+
         f_save = os.path.join(d_out, kwargs[name]['f_db'])
         model.save(f_save)
 

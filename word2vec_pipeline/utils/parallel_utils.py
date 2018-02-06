@@ -5,9 +5,10 @@ Utility functions to assist in parallelizing the operation of the pipeline.
 import joblib
 from tqdm import tqdm
 
+
 def grouper(itr, n):
     '''
-    Reads ahead n items on an iterator. On last pass returns a smaller 
+    Reads ahead n items on an iterator. On last pass returns a smaller
     list with the remaining items. Useful for batch processing in parallel.
 
     Args:
@@ -15,9 +16,9 @@ def grouper(itr, n):
         n (int): Number of items to read ahead
 
     Yields:
-        list: A list of at least n items from the iterable 
+        list: A list of at least n items from the iterable
     '''
-    
+
     block = []
     while True:
         try:
@@ -35,14 +36,14 @@ def grouper(itr, n):
 def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
            *args, **kwargs):
     '''
-    Function to parallalize the operation of another function 
+    Function to parallalize the operation of another function
     passed to it.
 
     Args:
         func (function): Run in parallel on the input
         INPUT_ITR (iterable): Input to be operated on
         FLAG_PARALLEL (bool): Flag to run the functions in parallel
-        batch_size (int): 
+        batch_size (int):
         args: additional arguments passed to the function
         kwargs: additional keyword arguments passed to the function
     '''

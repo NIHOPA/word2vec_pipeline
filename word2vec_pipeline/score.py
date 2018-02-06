@@ -1,6 +1,6 @@
 """
-Score each document imported into the pipeline using a trained word2vec 
-model. These scores are used in the pipeline to perform classification 
+Score each document imported into the pipeline using a trained word2vec
+model. These scores are used in the pipeline to perform classification
 and and clustering. The output scores and word vectors can also be exported
 for further analysis.
 """

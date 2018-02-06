@@ -1,8 +1,8 @@
 """
-Perform spectral cluster meta-clustering of documents imported into the 
-pipeline, using their scores as a measure of distance. Since spectral 
-clustering is too computationally intensive for most uses, this uses sampling 
-to speed up the process. 
+Perform spectral cluster meta-clustering of documents imported into the
+pipeline, using their scores as a measure of distance. Since spectral
+clustering is too computationally intensive for most uses, this uses sampling
+to speed up the process.
 """
 
 import numpy as np
@@ -57,7 +57,7 @@ def cosine_affinity(X):
     Returns:
          S: a float of pairwise similarity values
     '''
-    
+
     epsilon = 1e-8
     S = cosine_similarity(X)
     S[S > 1] = 1.0  # Rounding problems
@@ -73,7 +73,7 @@ def cosine_affinity(X):
 
 def docv_centroid_order_idx(meta_clusters):
     '''
-    Determine a more appropriate order for each meta cluster based 
+    Determine a more appropriate order for each meta cluster based
     on their pairwise similarity.
 
     Args:
@@ -82,7 +82,7 @@ def docv_centroid_order_idx(meta_clusters):
     Returns:
         d_idx: an array of ordered meta clusters
     '''
-    
+
     # Compute the linkage and the order
     linkage = hierarchy.linkage(meta_clusters,
                                 metric='cosine', method='average')
@@ -125,7 +125,6 @@ class cluster_object(object):
         Return:
             np.vstack(C): a numpy array of cluster centroids
         '''
-        
 
         INPUT_ITR = subset_iterator(
             X=self.docv,
@@ -169,7 +168,7 @@ class cluster_object(object):
 
     def load_centroid_dataset(self, name):
         '''
-        Loads information about the centroids from the h5 file 
+        Loads information about the centroids from the h5 file
         they are saved in.
 
         Args:
@@ -178,7 +177,7 @@ class cluster_object(object):
         Returns:
             h5[name][:]: a directory in an h5 file
         '''
-        
+
         with h5py.File(self.f_h5_centroids, 'r') as h5:
             return h5[name][:]
 
@@ -238,13 +237,12 @@ class cluster_object(object):
 
 def metacluster_from_config(config):
     '''
-    Imports the parameters for creating metaclusters from the config file, 
+    Imports the parameters for creating metaclusters from the config file,
     and then creates metaclusters
 
     Args:
         config: config file
     '''
-    
 
     config = config['metacluster']
     os.system('mkdir -p {}'.format(config['output_data_directory']))

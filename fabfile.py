@@ -4,25 +4,27 @@ package_dir = "word2vec_pipeline"
 
 
 def deploy():
-    # local("nosetests -vs")
     local("flake8 --ignore=E501,F821 word2vec_pipeline tests")
-    local("aspell check README.md")
-    local("check-manifest")
-    # local("python miniprez tutorial.md")
+    # local("nosetests -vs")
+    # local("aspell check README.md")
+    # local("check-manifest")
 
 
 def pep():
-    local("autopep8 *.py -a -a -a --in-place --jobs=0".format(package_dir))
+    local("autopep8 . -aaa --in-place --recursive --jobs=0")
 
 
 def import_data():
     local("python word2vec_pipeline import_data")
 
+
 def phrase():
     local("python word2vec_pipeline phrase")
 
+
 def parse():
     local("python word2vec_pipeline parse")
+
 
 def embed():
     local("python word2vec_pipeline embed")

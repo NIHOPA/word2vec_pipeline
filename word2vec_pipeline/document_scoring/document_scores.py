@@ -1,7 +1,7 @@
 """
-Score each document imported to the pipeline using a gensim word2vec model. 
-The generic_document_score class is inherited by each other scoring class. 
-Word scores can be weighted in the config file, which affects clustering 
+Score each document imported to the pipeline using a gensim word2vec model.
+The generic_document_score class is inherited by each other scoring class.
+Word scores can be weighted in the config file, which affects clustering
 and classification.
 """
 
@@ -24,7 +24,7 @@ def L2_norm(doc_vec):
     Returns:
         doc_vec: Normalized document vector
     '''
-    
+
     # Renormalize onto the hypersphere
     doc_vec /= np.linalg.norm(doc_vec)
 
@@ -49,9 +49,10 @@ def token_counts(tokens, size_mb=1):
 # ----------------------------------------------------------------------------
 
 class generic_document_score(object):
+
     '''
-    Class to score documents with word2vec model, using scoring method 
-    specified. Each scoring method has its own class associated with it 
+    Class to score documents with word2vec model, using scoring method
+    specified. Each scoring method has its own class associated with it
     that inherits generic_document_score()
     '''
 
@@ -66,7 +67,6 @@ class generic_document_score(object):
             *args: DOCUMENTATION_UNKNOWN
             **kwargs: DOCUMENTATION_UNKNOWN
         '''
-
 
         # Load the model from disk
         self.M = load_w2vec()
@@ -129,7 +129,7 @@ class generic_document_score(object):
 
         if not valid_tokens:
             return []
-            #raise Warning("No valid tokens in document!")
+            # raise Warning("No valid tokens in document!")
 
         return valid_tokens
 
@@ -212,7 +212,7 @@ class score_simple(generic_document_score):
         tokens = self.get_tokens_from_text(text)
         if not tokens:
             return self._empty_vector()
-        
+
         counts = token_counts(tokens)
 
         W = self.get_word_vectors(counts)
@@ -243,7 +243,7 @@ class score_simple_IDF(IDF_document_score):
         tokens = self.get_tokens_from_text(text)
         if not tokens:
             return self._empty_vector()
-        
+
         counts = token_counts(tokens)
 
         W = self.get_word_vectors(counts)
