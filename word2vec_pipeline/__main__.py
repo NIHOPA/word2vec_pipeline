@@ -21,45 +21,45 @@ import simple_config
 # import logging
 # logging.basicConfig(level=logging.INFO)
 
-from import_data import import_data_from_config
-from phrase import phrases_from_config
-from parse import parse_from_config
-from embed import embed_from_config
-from score import score_from_config
-from predict import predict_from_config
-from metacluster import metacluster_from_config
-from postprocessing.analyze_metaclusters import analyze_metacluster_from_config
-
 
 def main():
     args = docopt(__doc__)
     config = simple_config.load()
 
     if args["import_data"]:
+        from import_data import import_data_from_config
         import_data_from_config(config)
 
-    if args["phrase"]:
+    elif args["phrase"]:
+        from phrase import phrases_from_config
         phrases_from_config(config)
 
     if args["parse"]:
+        from parse import parse_from_config
         parse_from_config(config)
 
     if args["embed"]:
+        from embed import embed_from_config
         embed_from_config(config)
 
     if args["score"]:
+        from score import score_from_config
         score_from_config(config)
 
     if args["predict"]:
+        from predict import predict_from_config
         predict_from_config(config)
 
     if args["metacluster"]:
+        from metacluster import metacluster_from_config
         metacluster_from_config(config)
 
     if args["analyze"]:
+        import postprocessing.analyze_metaclusters as pam
+
         func = args["<target_function>"]
         if func == 'metacluster':
-            analyze_metacluster_from_config(config)
+            pam.analyze_metacluster_from_config(config)
         else:
             raise KeyError("Analyze Function {} not known".format(func))
 
