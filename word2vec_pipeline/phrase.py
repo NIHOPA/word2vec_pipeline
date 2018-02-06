@@ -1,3 +1,8 @@
+"""
+Identifies phrases from abbreivations for documents in the pipeline.
+Saves the result to disk for use with other parsers. 
+"""
+
 import utils.db_utils as db_utils
 from utils.os_utils import grab_files, mkdir
 from utils.parallel_utils import jobmap
