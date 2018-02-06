@@ -117,7 +117,7 @@ def load_ORG_data(extra_columns=None):
     '''
     print("Loading import data")
 
-    cols = ["_ref", ]
+    cols = []
 
     if extra_columns is not None:
         cols += extra_columns
@@ -128,12 +128,17 @@ def load_ORG_data(extra_columns=None):
     CORES = -1 if config["_PARALLEL"] else 1
 
     # Load the input columns
-    F_CSV = grab_files("*.csv", config_import["output_data_directory"])
+    F_CSV_REF = grab_files("*.csv", config_import["output_data_directory"])
+    F_CSV = grab_files("*.csv", config_import["input_data_directories"][0])
 
-    with joblib.Parallel(CORES) as MP:
+    with joblib.Parallel(-1) as MP:
         func = joblib.delayed(simple_CSV_read)
         data = MP(func(x, cols) for x in F_CSV)
+        _refs= MP(func(x, ["_ref"]) for x in F_CSV_REF)
 
+    for df,df_refs in zip(data, _refs):
+        df["_ref"] = df_refs["_ref"].values
+    
     # Require the _refs to be in order
     df = pd.concat(data).sort_values('_ref').set_index('_ref')
 

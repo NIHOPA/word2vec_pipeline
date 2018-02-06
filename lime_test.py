@@ -18,6 +18,8 @@ import random
 from tqdm import tqdm
 import pandas as pd
 
+n_lime_samples = 1000
+
 
 def pp(js):
     s = json.dumps(js, indent=2)
@@ -88,7 +90,8 @@ def evaluate_text(text):
 
 print "Starting"
 random.shuffle(ALL_TEXT)
-ITR = tqdm(ALL_TEXT[:])
+ALL_TEXT = ALL_TEXT[:n_lime_samples]
+ITR = tqdm(ALL_TEXT)
 
 data = collections.Counter()
 func = joblib.delayed(evaluate_text)
@@ -97,11 +100,14 @@ with joblib.Parallel(-1) as MP:
         data.update(res)
 
 df = pd.DataFrame.from_dict(data, orient='index').reset_index()
-print df
 df = df.sort_values(0)
+df.columns = ["word", "score"]
+df.score /= len(ALL_TEXT)
+
+
 print df
 print class_names
-#df.to_csv("LIME_result.csv")
+df.to_csv("LIME_result.csv",index=False)
 
 
 '''

@@ -21,29 +21,10 @@ from tqdm import tqdm
 
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
-
-'''
-# Thread-safe lock https://stackoverflow.com/a/35088457/249341
-from multiprocessing import Process, RawValue, Lock
-class SafeCounter(object):
-
-    def __init__(self, value=0):
-        # RawValue because we don't need it to create a Lock:
-        self.val = RawValue('i', value)
-        self.lock = Lock()
-
-    def increment(self):
-        with self.lock:
-            self.val.value += 1
-            # Return the prior value
-            return self.val.value - 1
-
-# Create a global reference ID for each item
-_ref_counter = SafeCounter()
-'''
 _ref_counter = itertools.count()
 
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
+parser_unicode = nlpre.unidecoder()
 
 
 def func_parenthetical(data, **kwargs):
@@ -59,10 +40,6 @@ def func_parenthetical(data, **kwargs):
     '''
     text = data[kwargs["col"]]
     return parser_parenthetical(text)
-
-
-parser_unicode = nlpre.unidecoder()
-
 
 def map_to_unicode(s):
     '''
@@ -133,12 +110,16 @@ def import_csv(item):
     (f_csv, f_csv_out, target_column, merge_columns) = item
     has_checked_keys = False
 
+    if not merge_columns:
+        raise ValueError("merge_columns must not be empty")
+
     with open(f_csv_out, 'w') as FOUT:
         CSV_HANDLE = None
         total_rows = 0
 
         for row in tqdm(csv_iterator(f_csv)):
-            row["_ref"] = _ref_counter.next()
+
+            output = {"_ref":_ref_counter.next()}
 
             if not has_checked_keys:
                 for key in merge_columns:
@@ -147,10 +128,9 @@ def import_csv(item):
                         raise KeyError(msg.format(key, f_csv))
                 has_checked_keys = True
 
-            if merge_columns:
-                if target_column in row.keys():
-                    msg = "generated column {} already in csv file {}"
-                    raise KeyError(msg.format(target_column, f_csv))
+            if target_column in row.keys():
+                msg = "generated column {} already in csv file {}"
+                raise KeyError(msg.format(target_column, f_csv))
 
             text = []
             for key in merge_columns:
@@ -161,13 +141,13 @@ def import_csv(item):
                     val += '.'
                 text.append(val)
 
-            row[target_column] = '\n'.join(text).strip()
+            output[target_column] = '\n'.join(text).strip()            
 
             if CSV_HANDLE is None:
-                CSV_HANDLE = csv.DictWriter(FOUT, sorted(row.keys()))
+                CSV_HANDLE = csv.DictWriter(FOUT, sorted(output.keys()))
                 CSV_HANDLE.writeheader()
 
-            CSV_HANDLE.writerow(row)
+            CSV_HANDLE.writerow(output)
             total_rows += 1
 
         print("Imported {}, {} entries".format(f_csv, total_rows))
@@ -198,31 +178,6 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
         vals = (f_csv, f_csv_out, target_column, merge_columns)
         import_csv(vals)
 
-    '''
-    REMAINING_INPUT_FILES = []
-    for f in INPUT_FILES:
-        f_csv_out = os.path.join(d_out, os.path.basename(f))
-        if os.path.exists(f_csv_out):
-            print("{} already processed, skipping".format(f))
-            continue
-        REMAINING_INPUT_FILES.append((f,f_csv_out,target_column,merge_columns))
-
-    procs = [Process(target=import_csv,
-                     args=(x, _ref_counter))
-             for x in REMAINING_INPUT_FILES]
-
-    for p in procs: p.start()
-    for p in procs: p.join()
-    '''
-
-    # jobmap(import_csv, REMAINING_INPUT_FILES)#, FLAG_PARALLEL=_PARALLEL)
-    # map(import_csv, REMAINING_INPUT_FILES)
-
-    # import joblib
-    # with joblib.Parallel(-1) as MP:
-    #    func = joblib.delayed(import_csv)
-    #    MP(func(x, _ref_counter) for x in REMAINING_INPUT_FILES)
-
 
 def import_data_from_config(config):
     """
@@ -234,8 +189,7 @@ def import_data_from_config(config):
         config: a config file
     """
 
-    merge_columns = (config["import_data"]["merge_columns"]
-                     if "merge_columns" in config["import_data"] else [])
+    merge_columns = config["import_data"]["merge_columns"]
 
     if (not isinstance(merge_columns, list)):
         msg = "merge_columns (if used) must be a list"
@@ -244,7 +198,7 @@ def import_data_from_config(config):
     data_out = config["import_data"]["output_data_directory"]
     mkdir(data_out)
 
-    # Require `input_data_directories` to be a list
+    # Require 'input_data_directories' to be a list
     data_in_list = config["import_data"]["input_data_directories"]
     if (not isinstance(data_in_list, list)):
         msg = "input_data_directories must be a list"
