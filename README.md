@@ -54,3 +54,15 @@ This analysis will provide statistics and information on each cluster. Perhaps m
 This analysis also provides statistics on the cluster, including measures of how similar the documents in each cluster are.  This information is found in the file `cluster_desc.csv` in the `output_data_directory`. The `avg_centroid_distance` value measures the average distance of each document in the cluster from the cluster’s centroid. Similarly, the `intra_document_dispersion` value measures the average similarity of each document in the cluster to every other document in the cluster. The `dispersion_order`  attempts to re-arrange each cluster in an order that tries to reflect the inter document similarity. These statistics are informative, but they must be verified by human interpretation. They are a measure of how semantically similar documents are given the model’s training and the similarity of the portfolio—problems in the data can lead to problematic results.
 
 The analysis will also tab each document with the corresponding cluster. This information is found in the file `cluster_master_labels.csv` in `output_data_directory`.
+
+## License
+
+This project is in the public domain within the United States, and
+copyright and related rights in the work worldwide are waived through
+the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+
+
+## Contributors
+
++ [Travis Hoppe](https://github.com/thoppe)
++ [Harry Baker](https://github.com/HarryBaker)
