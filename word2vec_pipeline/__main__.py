@@ -55,11 +55,14 @@ def main():
         metacluster_from_config(config)
 
     if args["analyze"]:
-        import postprocessing.analyze_metaclusters as pam
 
         func = args["<target_function>"]
         if func == 'metacluster':
+            import postprocessing.analyze_metaclusters as pam
             pam.analyze_metacluster_from_config(config)
+        elif func == 'LIME':
+            import postprocessing.lime_explainer as le
+            le.explain_metaclusters(config)
         else:
             raise KeyError("Analyze Function {} not known".format(func))
 

@@ -49,6 +49,9 @@ def metacluster():
 def analyze_metaclusters():
     local("python word2vec_pipeline analyze metacluster")
 
+def LIME():
+    local("python word2vec_pipeline analyze LIME")
+
 
 def test():
     clean()
