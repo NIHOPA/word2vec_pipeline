@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from utils.data_utils import load_w2vec
-from utils.data_utils import save_h5, get_h5save_object
+from utils.os_utils import save_h5, get_h5save_object
 
 
 def L2_norm(doc_vec):

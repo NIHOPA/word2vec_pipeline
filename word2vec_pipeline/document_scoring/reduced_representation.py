@@ -1,6 +1,6 @@
 from sklearn.decomposition import IncrementalPCA
 from utils.data_utils import load_document_vectors
-from utils.data_utils import save_h5, get_h5save_object
+from utils.os_utils import save_h5, get_h5save_object
 
 
 class reduced_representation(object):

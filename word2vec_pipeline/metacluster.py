@@ -19,6 +19,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
+from utils.os_utils import touch_h5
 
 
 def subset_iterator(X, m, repeats=1):
@@ -254,7 +255,7 @@ def metacluster_from_config(config):
     if os.path.exists(f_h5):
         os.remove(f_h5)
 
-    h5 = uds.touch_h5(f_h5)
+    h5 = touch_h5(f_h5)
 
     # First compute the centroids
     C = CO.compute_centroid_set()

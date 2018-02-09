@@ -4,7 +4,7 @@ package_dir = "word2vec_pipeline"
 
 
 def deploy():
-    local("flake8 --ignore=E501,F821 word2vec_pipeline tests")
+    local("flake8 word2vec_pipeline")
     # local("nosetests -vs")
     # local("aspell check README.md")
     # local("check-manifest")
@@ -64,7 +64,9 @@ def test():
 
     metacluster()
     analyze_metaclusters()
+    
     predict()
+    LIME()
 
     # cluster()
 
