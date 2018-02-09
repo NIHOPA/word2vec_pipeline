@@ -15,6 +15,9 @@ from tqdm import tqdm
 
 import nlpre
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
 _ref_counter = itertools.count()
@@ -101,7 +104,7 @@ def import_csv(item):
         CSV_HANDLE = None
         total_rows = 0
 
-        for row in tqdm(csv_iterator(f_csv)):
+        for row in csv_iterator(f_csv):
 
             output = {"_ref": _ref_counter.next()}
 
@@ -134,7 +137,7 @@ def import_csv(item):
             CSV_HANDLE.writerow(output)
             total_rows += 1
 
-        print("Imported {}, {} entries".format(f_csv, total_rows))
+        logger.info("Imported {}, {} entries".format(f_csv, total_rows))
 
 
 def import_directory_csv(d_in, d_out, target_column, merge_columns):
@@ -154,7 +157,7 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
     INPUT_FILES = grab_files("*.csv", d_in)
 
     if not INPUT_FILES:
-        print("No matching CSV files found, exiting")
+        logger.warning("No matching CSV files found, exiting")
         exit(2)
 
     for f_csv in INPUT_FILES:

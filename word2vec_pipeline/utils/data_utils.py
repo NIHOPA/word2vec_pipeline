@@ -13,6 +13,8 @@ import joblib
 import simple_config
 from os_utils import grab_files, load_h5_file
 
+import logging
+logger = logging.getLogger(__name__)
 
 def load_dispersion_data():
     '''
@@ -21,7 +23,6 @@ def load_dispersion_data():
     Returns:
          Dispersion data found in file determined by the config file.
     '''
-    print("Loading dispersion data")
 
     config_post = simple_config().load["postprocessing"]
 
@@ -29,6 +30,8 @@ def load_dispersion_data():
         config_post["output_data_directory"],
         "cluster_dispersion.h5")
 
+    logger.info("Loading dispersion data {}".format(f_h5))
+    
     return load_h5_file(f_h5)
 
 
@@ -56,7 +59,7 @@ def load_ORG_data(extra_columns=None):
     '''
     DOCUMENTATION_UNKNOWN
     '''
-    print("Loading import data")
+    logger.info("Loading original data")
 
     cols = []
 

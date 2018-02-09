@@ -7,7 +7,8 @@ h5 files.
 import os
 import glob
 import h5py
-
+import logging
+logger = logging.getLogger(__name__)
 
 def mkdir(directory):
     '''
@@ -21,7 +22,7 @@ def mkdir(directory):
         os.makedirs(directory)
 
 
-def grab_files(pattern, directory="", verbose=True):
+def grab_files(pattern, directory=""):
     '''
     Function to return all files found in a given directory
 
@@ -33,9 +34,8 @@ def grab_files(pattern, directory="", verbose=True):
     g_pattern = os.path.join(directory, pattern)
     FILES = sorted(glob.glob(g_pattern))
 
-    if verbose:
-        msg = "Found {} files to import in {}."
-        print((msg.format(len(FILES), directory)))
+    msg = "Found {} files to import in directory {}."
+    logger.info((msg.format(len(FILES), directory)))
 
     return sorted(FILES)
 
