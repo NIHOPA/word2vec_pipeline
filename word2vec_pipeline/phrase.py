@@ -12,6 +12,12 @@ import collections
 import nlpre
 import os
 
+import logging
+logger = logging.getLogger(__name__)
+
+# NLPre is too noisy at the info level
+logging.getLogger("nlpre").setLevel(logging.WARNING)
+
 parser_parenthetical = nlpre.identify_parenthetical_phrases()
 
 
@@ -46,17 +52,18 @@ def phrases_from_config(config):
     for result in ITR:
         ABR.update(result)
 
-    msg = "\n{} total abbrs found."
-    print(msg.format(len(ABR)))
+    logger.info("{} total abbrs found.".format(len(ABR)))
 
     # Merge abbreviations that are similar
-    print("Deduping abbr list.")
+    logger.debug("Deduping abbr list.")
     df = dedupe_abbr(ABR)
-    print("{} abbrs remain after deduping".format(len(df)))
+    logger.info("{} abbrs remain after deduping.".format(len(df)))
 
     # Output top phrase
-    print("Top 5 abbreviations")
-    print(df[:5])
+    logger.info("Top 5 abbreviations")
+    msg = "({}) {}, {}, {}"
+    for k, (_, row) in enumerate(df[:5].iterrows()):
+        logger.info(msg.format(k+1, row.name, row["abbr"], row["count"]))
 
     mkdir(output_dir)
     f_csv = os.path.join(output_dir,
