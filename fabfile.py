@@ -65,10 +65,8 @@ def test():
     metacluster()
     analyze_metaclusters()
     
-    predict()
     LIME()
-
-    # cluster()
+    predict()
 
 
 def clean():

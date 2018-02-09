@@ -19,6 +19,9 @@ from scipy.cluster import hierarchy
 
 import utils.data_utils as uds
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def _compute_centroid_dist(X, cx):
     '''
@@ -95,7 +98,7 @@ def analyze_metacluster_from_config(config):
     labels = np.unique(MC["meta_labels"])
 
     if config["compute_dispersion"]:
-        print("Computing intra-document dispersion.")
+        logger.info("Computing intra-document dispersion.")
         dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
 
         # Compute the linkage and the order
@@ -146,7 +149,7 @@ def analyze_metacluster_from_config(config):
     f_csv = os.path.join(save_dest, "cluster_desc.csv")
     df.to_csv(f_csv, index_label="cluster_id")
 
-    print("Computing master-label spreadsheets.")
+    logger.info("Computing master-label spreadsheets.")
     cluster_lookup = dict(zip(df.index, df.dispersion_order.values))
     ORG["cluster_id"] = MC["meta_labels"]
     ORG["dispersion_order"] = -1
@@ -163,21 +166,7 @@ def analyze_metacluster_from_config(config):
     f_csv = os.path.join(save_dest, "cluster_master_labels.csv")
     ORG.to_csv(f_csv, index=False)
 
-    # df = df.sort_values("cluster_id")
-    print(df)
-
-    '''
-    # We don't need to save the values anymore
-    f_h5_save = os.path.join(save_dest, "cluster_dispersion.h5")
-
-    with h5py.File(f_h5_save, 'w') as h5_save:
-        h5_save["dispersion"] = dist
-        h5_save["cluster_id"] = df.cluster_id
-        h5_save["counts"] = df.counts
-        h5_save["dispersion_order"] = df.dispersion_order
-        h5_save["linkage"] = linkage
-    '''
-
+    print(df)  # Output the result to stdout
 
 if __name__ == "__main__" and __package__ is None:
 

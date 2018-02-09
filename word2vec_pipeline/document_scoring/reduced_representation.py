@@ -2,6 +2,8 @@ from sklearn.decomposition import IncrementalPCA
 from utils.data_utils import load_document_vectors
 from utils.os_utils import save_h5, get_h5save_object
 
+import logging
+logger = logging.getLogger(__name__)
 
 class reduced_representation(object):
 
@@ -12,7 +14,7 @@ class reduced_representation(object):
         clf = IncrementalPCA(n_components=n_components)
 
         msg = "Performing PCA on {}, ({})->({})"
-        print(msg.format(method, V.shape[1], n_components))
+        logger.info(msg.format(method, V.shape[1], n_components))
         VX = clf.fit_transform(V)
 
         data = {

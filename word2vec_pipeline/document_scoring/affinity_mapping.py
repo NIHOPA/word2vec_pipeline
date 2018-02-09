@@ -15,6 +15,9 @@ from sklearn.decomposition import SparseCoder
 from utils.parallel_utils import jobmap
 from utils.data_utils import load_w2vec
 
+import logging
+logger = logging.getLogger(__name__)
+
 damping = None
 M = None
 sparse_coder = None
@@ -29,7 +32,7 @@ def compute_local_affinity(V):
     DV = cdist(V, V, metric='cosine')
     z_labels = cluster.fit_predict(DV)
 
-    # print "{} unique labels found".format(np.unique(z_labels).shape)
+    # logger.info("{} unique labels found".format(np.unique(z_labels).shape))
     return V, z_labels
 
 
@@ -109,7 +112,7 @@ class affinity_mapping(corpus_iterator):
 
         func = compute_affinity
         ITR = jobmap(func, self, self.PARALLEL)
-        print("Computing affinity propagation")
+        logger.info("Computing affinity propagation")
 
         for result in tqdm.tqdm(ITR):
             self.save(config, result)
@@ -220,13 +223,12 @@ class affinity_grouping(corpus_iterator):
         INPUT_ITR = self.iterator_batch(self._iterator_mean_cluster_vectors())
         Z = self.cluster_affinity_states(INPUT_ITR, size=self.cluster_n)
 
-        print("Initial affinity grouping", Z.shape)
-        # print self.vocab_n, self.cluster_n
+        logger.info("Initial affinity grouping {}".format(Z.shape))
 
         INPUT_ITR = self.iterator_batch(Z)
         Z2 = self.cluster_affinity_states(INPUT_ITR, size=len(Z))
 
-        print("Final affinity size", len(Z2))
+        logger.info("Final affinity size {}".format(len(Z2))
         self.save(config, Z2)
 
         '''
@@ -318,7 +320,7 @@ class affinity_scoring(affinity_mapping):
 
         doc_data = []
 
-        print("Computing document affinity scoring")
+        logger.info("Computing document affinity scoring")
         for result in ITR:
             doc_data.append(result)
 
@@ -331,7 +333,7 @@ class affinity_scoring(affinity_mapping):
 
         method = "affinity"
 
-        print("Saving the scored documents")
+        logger.info("Saving the scored documents")
         f_db = config["document_scores"]["f_db"]
 
         # Create the h5 file if it doesn't exist
@@ -347,7 +349,7 @@ class affinity_scoring(affinity_mapping):
 
             g = h5.require_group(method)
             V = np.array(data_group["V"].tolist())
-            print("Saving", name, method, V.shape)
+            logger.info("Saving {} {} {}".format(name, method, V.shape))
 
             if name in g:
                 del g[name]

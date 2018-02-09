@@ -18,8 +18,8 @@ Usage:
 
 from docopt import docopt
 import simple_config
-# import logging
-# logging.basicConfig(level=logging.INFO)
+import logging
+logging.basicConfig(level=logging.INFO)
 
 
 def main():

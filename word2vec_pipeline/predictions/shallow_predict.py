@@ -9,6 +9,8 @@ import sklearn.ensemble
 from utils.parallel_utils import jobmap
 from imblearn.over_sampling import SMOTE
 
+import logging
+logger = logging.getLogger(__name__)
 
 def clf_extratree_predictor(item):
     (clf_args, idx, X, y, use_SMOTE) = item
@@ -50,11 +52,11 @@ def categorical_predict(
 
     label_n = np.unique(y).shape[0]
     # msg = "[{}] number of unique entries in [y {}]: {}"
-    # print msg.format(method_name, X.shape, label_n)
+    # logger.info(msg.format(method_name, X.shape, label_n))
 
     use_SMOTE = use_SMOTE
     if use_SMOTE:
-        print("  Adjusting class balance using SMOTE")
+        logger.info("  Adjusting class balance using SMOTE")
 
     clf_args = {
         "n_jobs": -1 if use_PARALLEL else 1,

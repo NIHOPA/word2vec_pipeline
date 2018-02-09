@@ -66,7 +66,6 @@ class CSV_database_iterator(object):
             include_filename: boolean, a flag to save the documentation
                location in imported document
         '''
-
         self.F_CSV = sorted(F_CSV)
         self.col = target_column
 
@@ -133,7 +132,7 @@ class CSV_database_iterator(object):
 
 def text_iterator(
     F_CSV=None,
-    progress_bar=True,
+    progress_bar=False,
 ):
     '''
     Returns a generator that loops the indicated files,
@@ -161,4 +160,4 @@ def get_section_filenames(section='parse'):
 
     config = simple_config.load()
     input_data_dir = config[section]["output_data_directory"]
-    return grab_files("*.csv", input_data_dir, verbose=False)
+    return grab_files("*.csv", input_data_dir)

@@ -24,6 +24,9 @@ import os
 import joblib
 from tqdm import tqdm
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 M = ds.score_unique()
 explainer = LimeTextExplainer()
@@ -121,7 +124,7 @@ def explain_metaclusters(config):
         if i >= j:
             continue
 
-        print("Computing LIME for clusters {} and {}".format(i, j))
+        logger.info("Computing LIME for clusters {} and {}".format(i, j))
 
         labels_i = labels == i
         labels_j = labels == j

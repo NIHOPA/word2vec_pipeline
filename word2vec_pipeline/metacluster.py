@@ -21,6 +21,9 @@ from scipy.cluster import hierarchy
 import utils.data_utils as uds
 from utils.os_utils import touch_h5
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def subset_iterator(X, m, repeats=1):
     '''
@@ -183,7 +186,7 @@ class cluster_object(object):
             return h5[name][:]
 
     def compute_meta_centroid_set(self, C):
-        print("Intermediate clusters", C.shape)
+        logger.info("Intermediate clusters {}".format(C.shape))
 
         # By eye, it looks like the top 60%-80% of the
         # remaining clusters are stable...
@@ -210,12 +213,14 @@ class cluster_object(object):
         n_clusters = meta_clusters.shape[0]
 
         msg = "Assigning {} labels over {} documents."
-        print(msg.format(n_clusters, self.N))
+        logger.info(msg.format(n_clusters, self.N))
 
         dist = cdist(self.docv, meta_clusters, metric='cosine')
         labels = np.argmin(dist, axis=1)
 
-        print("Label distribution: ", collections.Counter(labels))
+        logger.info("Label distribution: {}".format(
+            collections.Counter(labels)))
+        
         return labels
 
     def docv_centroid_spread(self):
@@ -327,7 +332,7 @@ if __name__ == "__main__":
     plt = sns.plt
 
     fig = plt.figure(figsize=(9,9))
-    print "Plotting tSNE"
+    logger.info("Plotting tSNE")
     colors = sns.color_palette("hls", C.cluster_n)
 
     for i in C._label_iter:
@@ -341,7 +346,7 @@ if __name__ == "__main__":
 
 
     fig = plt.figure(figsize=(12,12))
-    print "Plotting heatmap"
+    logger.info("Plotting heatmap")
     df = pd.DataFrame(C.S, index=C.labels,columns=C.labels)
     labeltick = int(len(df)/50)
 
