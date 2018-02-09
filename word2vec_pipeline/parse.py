@@ -12,14 +12,16 @@ import nlpre
 
 from utils.parallel_utils import jobmap
 
+import logging
+logger = logging.getLogger(__name__)
+
+# NLPre is too noisy at the info level
+logging.getLogger("nlpre").setLevel(logging.WARNING)
+
 _global_batch_size = 500
 
 # This must be global for parallel to work properly
 parser_functions = []
-
-# import logging
-# nlpre.logger.setLevel(logging.INFO)
-
 
 def dispatcher(row, target_column):
     """
