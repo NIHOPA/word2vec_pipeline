@@ -29,13 +29,12 @@ def grab_files(pattern, directory=""):
     Args:
         pattern (str): Identify the proper files to grab
         directory (str): Points to the location of the directory
-        verbose (bool): If True, print description of importation process
     '''
     g_pattern = os.path.join(directory, pattern)
     FILES = sorted(glob.glob(g_pattern))
 
     msg = "Found {} files to import in directory {}."
-    logger.info((msg.format(len(FILES), directory)))
+    logger.debug((msg.format(len(FILES), directory)))
 
     return sorted(FILES)
 

@@ -11,6 +11,8 @@ from predictions import categorical_predict
 
 import seaborn as sns
 
+import logging
+logger = logging.getLogger(__name__)
 
 def predict_from_config(config):
 
@@ -43,7 +45,7 @@ def predict_from_config(config):
     for (method, cat_col) in ITR:
 
         text = "Predicting [{}] [{}:{}]"
-        print(text.format(method, cat_col, pred_col))
+        logger.info(text.format(method, cat_col, pred_col))
 
         DV = uds.load_document_vectors(method)
         X = DV["docv"]
@@ -55,8 +57,8 @@ def predict_from_config(config):
         counts = np.array(collections.Counter(Y).values(), dtype=float)
         counts /= counts.sum()
 
-        # print(" Class balance for catergorical prediction:
-        # {}".format(counts))
+        msg = " Class balance for categorical prediction: {}"
+        logger.info(msg.format(counts))
 
         # Determine the baseline prediction
         y_counts = collections.Counter(Y).values()
@@ -73,7 +75,7 @@ def predict_from_config(config):
         )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
-        print(text.format(scores.mean(), F1.mean(), baseline_score))
+        logger.info(text.format(scores.mean(), F1.mean(), baseline_score))
 
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
@@ -91,7 +93,7 @@ def predict_from_config(config):
         method = "meta"
 
         text = "Predicting [{}] [{}:{}]"
-        print(text.format(method, cat_col, pred_col))
+        logger.info(text.format(method, cat_col, pred_col))
 
         scores, F1, errors, pred, dfs = categorical_predict(
             X=X_META,
@@ -102,7 +104,7 @@ def predict_from_config(config):
         )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
-        print(text.format(scores.mean(), F1.mean(), baseline_score))
+        logger.info(text.format(scores.mean(), F1.mean(), baseline_score))
 
         PREDICTIONS[method] = pred
         ERROR_MATRIX[method] = errors
@@ -138,7 +140,7 @@ def predict_from_config(config):
 
         df[na][nb] = idx.sum()
 
-    print(df)
+    print(df) # Output result to stdout
 
     sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
     plt.yticks(rotation=0)

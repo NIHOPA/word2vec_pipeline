@@ -10,6 +10,8 @@ from utils.os_utils import mkdir
 import document_scoring as ds
 import utils.db_utils as db
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _load_model(name, config):
     # Load any kwargs in the config file
@@ -30,7 +32,7 @@ def score_from_config(global_config):
     for name in config["count_commands"]:
 
         model, kwargs = _load_model(name, config)
-        print("Starting mapreduce {}".format(model.function_name))
+        logger.info("Starting mapreduce {}".format(model.function_name))
         map(model, db.text_iterator())
         model.save(**kwargs)
 
@@ -43,7 +45,7 @@ def score_from_config(global_config):
         model, kwargs = _load_model(name, config)
         f_db = os.path.join(kwargs["output_data_directory"], kwargs["f_db"])
 
-        print("Starting score model {}".format(model.method))
+        logger.info("Starting score model {}".format(model.method))
 
         for f_csv in db.get_section_filenames('parse'):
             data = {}

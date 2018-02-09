@@ -11,8 +11,6 @@ import itertools
 
 from utils.os_utils import mkdir, grab_files
 from utils.parallel_utils import jobmap
-from tqdm import tqdm
-
 import nlpre
 
 import logging

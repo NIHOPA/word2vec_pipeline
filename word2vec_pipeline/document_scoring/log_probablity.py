@@ -72,7 +72,7 @@ class document_log_probability(corpus_iterator):
         return a.dot(b)
 
     def create_partition_function(self, f_w2v, f_h5):
-        print("Building the partition function")
+        # Build the partition function
 
         # Load the model from disk
         M = load_w2vec()

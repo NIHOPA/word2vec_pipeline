@@ -13,6 +13,9 @@ import pandas as pd
 from utils.data_utils import load_w2vec
 from utils.os_utils import save_h5, get_h5save_object
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def L2_norm(doc_vec):
     '''
@@ -32,7 +35,7 @@ def L2_norm(doc_vec):
     if doc_vec.any():
         assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
     else:
-        print("Warning L2 norm not satisifed (zero-vector returned)")
+        logger.warning("Warning L2 norm not satisifed (0-vector returned)")
         doc_vec = np.zeros(doc_vec.shape)
 
     return doc_vec
@@ -82,7 +85,7 @@ class generic_document_score(object):
 
                 if not self.check_word_vector(word):
                     msg = "Negative weight word '{}' not found in dictionary"
-                    print(msg.format(word))
+                    logger.warning(msg.format(word))
                     continue
 
                 vec = self.get_word_vector(word)

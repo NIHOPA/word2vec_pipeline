@@ -5,7 +5,6 @@ This uses the gensim to build the embeddings.
 
 from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
-from tqdm import tqdm
 
 import psutil
 CPU_CORES = max(4, psutil.cpu_count())
@@ -17,14 +16,11 @@ class iterator_factory(object):
         self.func = func
         self.args = args
         self.kwargs = kwargs
-        self.counter = tqdm(total=total)
 
     def __iter__(self):
-        # print "Starting iteration {}".format(self.count)
         ITR = self.func(*self.args, **self.kwargs)
         for x in ITR:
             yield x
-        self.counter.update()
 
 
 class w2v_embedding(corpus_iterator):
@@ -78,7 +74,6 @@ class w2v_embedding(corpus_iterator):
         )
 
     def compute(self, target_column='text'):
-        print("Learning the vocabulary")
 
         ITR = iterator_factory(self.sentence_iterator,
                                total=self.epoch_n + 1,
@@ -86,18 +81,15 @@ class w2v_embedding(corpus_iterator):
 
         self.clf.build_vocab(ITR)
 
-        print("{} words in vocabulary".format(len(self.clf.wv.index2word)))
-        print("Training the features")
-
+        # Train the features
         self.clf.train(
             ITR,
             total_examples=self.clf.corpus_count,
             epochs=self.clf.iter,
         )
 
-        print("Reducing the features")
+        # Reduce the features
         self.clf.init_sims(replace=True)
 
     def save(self, f_db):
-        print("Saving the features")
         self.clf.save(f_db)

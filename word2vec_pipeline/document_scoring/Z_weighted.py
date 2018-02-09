@@ -27,9 +27,6 @@ class score_Z_weighted(score_unique_IDF, document_log_probability):
 
         self.weights = {}
 
-        # min_val = np.array(self.Z.values()).min()
-        # print min_val
-
         for key, val in self.Z.items():
             z = np.exp(min(self.threshold, val) / self.kT)
             self.weights[key] = z
