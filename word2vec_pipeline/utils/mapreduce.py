@@ -1,7 +1,3 @@
-import gensim.models.doc2vec
-
-LabeledSentence = gensim.models.doc2vec.LabeledSentence
-
 
 class corpus_iterator(object):
 
@@ -24,6 +20,11 @@ class corpus_iterator(object):
             yield unicode(text).split()
 
     def labelized_sentence_iterator(self):
+        
+        import gensim.models.doc2vec
+        LabeledSentence = gensim.models.doc2vec.LabeledSentence
+        raise ValueError("doc2vec not implemented yet")
+
         # Useful for doc2vec
 
         for item in self:
