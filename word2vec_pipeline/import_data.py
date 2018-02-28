@@ -109,12 +109,12 @@ def import_csv(item):
             if not has_checked_keys:
                 for key in merge_columns:
                     if key not in row.keys():
-                        msg = "column {} not in csv file {}"
+                        msg = "Column **{}** not in csv file {}"
                         raise KeyError(msg.format(key, f_csv))
                 has_checked_keys = True
 
             if target_column in row.keys():
-                msg = "generated column {} already in csv file {}"
+                msg = "Generated column **{}** already in csv file {}"
                 raise KeyError(msg.format(target_column, f_csv))
 
             text = []
