@@ -1,11 +1,24 @@
-# w2v pipeline
+# word2vec pipeline
 
-The word2vec pipeline is a research and exploration pipeline designed to analyze grants, publication abstracts, and other biomedical corpora. However, it can also be applied to other corpora of natural language.
-While not designed for production, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
+Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
+While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
-Everything is run by the file [config.ini](config.ini), the defaults should help guide a new project. Each step of the pipe in run by the corresponding bracketed section of the config file: for instance, the parameters that affect w2v embedding are found in the [embedding] section.
 
-The pipeline is all run from the files downloaded from the w2v repository. Each step of the pipeline has it's own command associated with it which needs to be run in the command line. The commands, in order are `import_data`, `parse`, `embed`, `score`, `predict`, `metacluster`, and `analyze`.
+Pipeline parameters and options for word2vec are run through the [configuration file](config.ini), the defaults are accessible for guiding new projects.
+Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the `embed` section.
+Within each step, output data is stored in the `output_data_directory` folder (referred to in each step as the `output folder`). 
+Files downloaded from the word2vec repository were used to generate the corresponding pipeline. Each step of the pipeline, and their corresponding functions, are listed in the table below:
+
+| Pipeline Step   | Function |
+| --------------- | -------- |
+|import_data      | Imports documents and concatenates text fields |
+|phrase           | Assigns single definitions to abbreviated words or phrases|
+|parse            | Removes non-contextual language|
+|embed            | Assigns numerical weights to the words |
+|score            | Assigns numerical weights to the documents |
+|predict          | Predicts input features from the document vectors |
+|metacluster      | Separates the data into clusters based on the embedding |
+|analyze          | Provides statistical data for each cluster |
 
 ### Import Data
 
