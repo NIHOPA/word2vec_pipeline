@@ -194,18 +194,20 @@ The `subcluster_repeats` variable determines how many times the clustering algor
 This step of the pipeline has multiple options: `analyze metacluster` and `analyze LIME`.
 
 The analyze metacluster step returns additional document and cluster information.
-Using the analyze command, each cluster is assigned labels based on their semantic content. 
-The average distance of each document within a cluster from the centroid can be determined using the `avg_centroid_distance` option. 
+Under this command, the labels for each document are assigned to the cluster.
+The labels assigned to each document should capture broad themes of semantic content.
 Cluster and document statistics can be used for comparing average document similarity as well as inter-document similarity. 
 The output of this command is determined by the variable `output_data_directory`.
 Document analysis data for corresponding clusters are stored in the `cluster_master_labels.csv`.
-Cluster statistics, including document similarity, can be acquired in the `cluster_desc.csv` file in the  output data folder. 
+Cluster statistics, including document similarity, can be acquired in the `cluster_desc.csv` file in the  output data folder.
+
 These statistics are informative, but must be verified by human interpretation. 
 This information is a measure of document semantic similarity given the model's training and the similarity of the portfolio-data quality issues, therefore, will impact the outcome of this algorithm.
+The average distance of each document within a cluster from the centroid can is reported under the column `avg_centroid_distance`.
 If `compute_dispersion` is True, the output contains a column labeled `intra_document_dispersion` that measures the average document similarity. 
 `dispersion_order` attempts to re-arrange each cluster in an order to reflect inter-document similarity.
 
-The LIME algorithm can be run over the meta-clusters that are close, though be aware that this may take a awhile to compute.
+The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-clusters that are close, though be aware that this may take a awhile to compute.
 LIME attempts to differentiate words between the two close metaclusters.
 Results are stored in `results/cluster_LIME.csv`.
 
@@ -222,21 +224,6 @@ Results are stored in `results/cluster_LIME.csv`.
         n_lime_features = 50
         n_estimators = 50
 ```
-
----------------------
-
-
-The command `analyze metacluster` can return additional information on each document and cluster. The output of this command is determined by the variable `output_data_directory` under `[postprocessing]`.
-
-This analysis will provide statistics and information on each cluster. Perhaps most importantly, this step will automatically label the semantic content represented by each cluster, by identifying the words that are the most similar to the cluster's centroid. The cluster is represented in multidimensional vector space by this cluster—this step calculates which words trained in the word2vec vocabulary are closest to this centroid.
-
-This analysis also provides statistics on the cluster, including measures of how similar the documents in each cluster are.  This information is found in the file `cluster_desc.csv` in the `output_data_directory`. The `avg_centroid_distance` value measures the average distance of each document in the cluster from the cluster's centroid. Similarly, the `intra_document_dispersion` value measures the average similarity of each document in the cluster to every other document in the cluster. The `dispersion_order`  attempts to re-arrange each cluster in an order that tries to reflect the inter document similarity. These statistics are informative, but they must be verified by human interpretation. They are a measure of how semantically similar documents are given the model's training and the similarity of the portfolio—problems in the data can lead to problematic results.
-
-The analysis will also tab each document with the corresponding cluster. This information is found in the file `cluster_master_labels.csv` in `output_data_directory`.
-
-----
-
-The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-clusters that are close, though this takes awhile. This will tell you the words that differentiate the two clusters according to a simple random forest fit between the two. Results are stored in `results/cluster_LIME.csv`.
 
 ### [Predict](#predict)
 
