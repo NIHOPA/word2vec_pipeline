@@ -29,7 +29,6 @@ Text processing requires csv documents containing labeled headers for each secti
     input_data_directories = datasets,
     merge_columns = title, abstract, "specific aims"
     output_data_directory = data_import
-	data_type = csv
 ```
 
 To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets`. 
@@ -42,7 +41,7 @@ The merged column text can be found in the `import_data` output folder.
 ### [Phrase](#phrase)
 
 Abbreviated terms and phrases within the dataset can be replaced by single definitions using the `phrase` step. 
-The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the `phrase:output_data_directory` folder
+The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the `output_data_directory` folder in the file `f_abbreviations`.
 
 ``` python
 [phrase]
@@ -55,7 +54,7 @@ The resulting file displays abbreviated terms and phrases as well as their preva
 Concatenated document fields within the pipeline can be parsed for word2vec embedding. 
 Stripping the text of stop words, punctuation, errors, and content lacking semantic information can be performed using the [NLPre](https://github.com/NIHOPA/NLPre) library. 
 The NLPre library is a (pre)-processing library capable of smoothing data inconsistencies. 
-Parsed documents are automatically sent to the `parse:output_data_directory`.
+Parsed documents are automatically sent to the `output_data_directory`.
 
 ``` python
 [parse]
@@ -90,7 +89,6 @@ This is the eponymous word2vec step.
 
     input_data_directory  = data_parsed
     output_data_directory = data_embeddings
-    
     embedding_commands    = w2v_embedding,
 
     [[w2v_embedding]]
@@ -120,7 +118,7 @@ The `count_commands` subsection determines the weights assigned to each word wit
 At least one method must be listed under `score_commands`, the most common is `unique_IDF`.
 A full description of each score command can be found in the table below.
 These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space. 
-Scored data is stored in the `score:output_data_directory` folder. 
+Scored data is stored in the `output_data_directory` folder. 
 Due to size restrictions, output of this document scoring is stored in a HDF5 file.
 
 Each of the scoring functions assume a bag-of-words model; they each add up the contribution of every word and renormalize the vector to have unit length. As an example, assume your document only has two words "cat" which appears twice and "dog" which appears only once. Let their word vectors be v1, v2 and their IDF scores from `count_commands` be f1 and f2.
@@ -192,7 +190,7 @@ If `use_SMOTE` is True, over- and under-samples the minority and majority classe
 A meta-estimator is used if `use_meta` is True, combining all the scoring methods under `meta_methods`.
 The final output stored under `data_predict`, and `extra_columns` from the original dataset are copied over for convenience.
 
-```
+``` python
 [predict]
     categorical_columns = journal,
 
