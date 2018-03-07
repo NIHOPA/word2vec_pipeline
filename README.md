@@ -25,7 +25,7 @@ Files downloaded from the word2vec repository were used to generate the correspo
 `import_data` does not perform any processing; its purpose is assigning each document a unique reference ID `_ref id` and concatenating specified fields. 
 Text processing requires csv documents containing labeled headers for each section be imported into the pipeline and given a unique reference ID. 
 
-``` markdown
+``` python
 [import_data]
 (A) input_data_directories = datasets,
     data_type = csv
@@ -33,14 +33,15 @@ Text processing requires csv documents containing labeled headers for each secti
 (C) output_data_directory  = data_import
 ```
 
-*`import_data` process*
-+ A) Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder.
-+ B) concatenate separate columns of text by using the "merge_columns" command.
-+ C) collect your data from the output folder.
+**`import_data` process**
++ Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder.
++ Concatenate separate columns of text by using the "merge_columns" command.
++ Collect your data from the output folder.
 
 To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets` (A). 
 As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: (merge_columns = title, abstract, "specific aims") would create a new "text" column combining each document's title, abstract, and specific aims into a single text field that can then be parsed. 
-"specific aims" needs to be quoted because it is two words (B). The merged column text can be found in the `import_data` output folder (C).
+"specific aims" needs to be quoted because it is two words (B), and case matters ("abstract" is not the same as "Abstract").
+The merged column text can be found in the `import_data` output folder (C).
 
 
 ### Phrase
