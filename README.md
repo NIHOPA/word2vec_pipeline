@@ -15,9 +15,9 @@ Each step of the pipeline, and their corresponding functions, are listed in the 
 [parse](#parse)             | Removes non-contextual language
 [embed](#embed)             | Assigns numerical weights to the words 
 [score](#score)             | Assigns numerical weights to the documents 
-[predict](#predict)         | Predicts input features from the document vectors 
 [metacluster](#metacluster) | Separates the data into clusters based on the embedding 
 [analyze](#analyze)         | Provides statistical data for each cluster 
+[predict](#predict)         | Predicts input features from the document vectors 
 
 ### [Import Data](#import-data)
 
@@ -161,8 +161,6 @@ To speed up the scoring process, word2vec embedding models from previous runs ca
 ```
 
 
-### [Predict](#predict)
-
 ### [Metacluster](#metacluster)
 
 Using the document scores, the pipeline can create clusters that can be used to interpret the dataset. These clusters will identify which documents are most similar to each other, based on the model created in by the embedding's understanding of language. The variables under `[metacluster]` determine the size and parameters of this clustering, and the output of the clusters are determined by the `output_data_directory`.  The centroid of each cluster will be located there. The variable `score` method determines which scoring method will be used to create the clusters. The variable `subcluster_m` determines the distance threshhold for documents to be assigned to the same cluster. The variable `subcluster_kn` determines how many distinct clusters are made by the algorithm. The variable `subcluster_pcut` determines what percentage of clusters made are discarded as being too dissimilar. This helps to filter out garbage clusters. With  subcluster_kn = 32 and  subcluster_pcut = .8, 32 clusters will be formed, but documents will only be assigned to 32 * .8 ~= 25 total clusters. The variable `subcluster_repeats` determines how many times the clustering algorithm will be performed.
@@ -182,6 +180,35 @@ The analysis will also tab each document with the corresponding cluster. This in
 ----
 
 The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-clusters that are close, though this takes awhile. This will tell you the words that differentiate the two clusters according to a simple random forest fit between the two. Results are stored in `results/cluster_LIME.csv`.
+
+### [Predict](#predict)
+
+
+A portion of the original dataset can be run in the pipeline to see if it can accurately predict the categories for the columns under `categorical_columns`.
+The data is fit against the document vectors found in [`score`](#score) step using a random forest with `n_estimators` trees.
+To robustly test the accuracy of the model, it is repeated using the number in `cross_validation_folds`.
+
+If `use_reduced` is True, the data are fit using the PCA reduced vectors, otherwise the full document vectors are used.
+`use_SMOTE` over- and under- samples the minority and majority classes so that the training data is evenly balanced using the [SMOTE](https://www.jair.org/media/953/live-953-2037-jair.pdf) algorithm. 
+A meta-estimator is used if `use_meta` is True, combining all the scoring methods under `meta_methods`.
+In the final output stored under `data_predict`, `extra_columns` from the original dataset are copied over for convenience.
+
+```
+[predict]
+    categorical_columns = journal,
+
+    n_estimators = 200
+    cross_validation_folds = 12
+  
+    use_SMOTE = False
+    use_reduced = True
+    use_meta = True
+  
+    meta_methods = unique_IDF,
+
+    output_data_directory = data_predict
+    extra_columns = journal,title,
+```
 
 ## License
 
