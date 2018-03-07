@@ -161,9 +161,34 @@ To speed up the scoring process, word2vec embedding models from previous runs ca
 
 ### [Metacluster](#metacluster)
 
-Using the document scores, the pipeline can create clusters that can be used to interpret the dataset. These clusters will identify which documents are most similar to each other, based on the model created in by the embedding's understanding of language. The variables under `[metacluster]` determine the size and parameters of this clustering, and the output of the clusters are determined by the `output_data_directory`.  The centroid of each cluster will be located there. The variable `score` method determines which scoring method will be used to create the clusters. The variable `subcluster_m` determines the distance threshhold for documents to be assigned to the same cluster. The variable `subcluster_kn` determines how many distinct clusters are made by the algorithm. The variable `subcluster_pcut` determines what percentage of clusters made are discarded as being too dissimilar. This helps to filter out garbage clusters. With  subcluster_kn = 32 and  subcluster_pcut = .8, 32 clusters will be formed, but documents will only be assigned to 32 * .8 ~= 25 total clusters. The variable `subcluster_repeats` determines how many times the clustering algorithm will be performed.
+Document score outputs can be used to create interpretive clustering algorithms.
+Document similarity, based on the embedding outputs, can be analyzed by cluster size and proximity. 
 
-A note on clustering: this step is called "Metaclustering" because it uses random sampling to speed up the process of clustering. The original algorithm uses spectral clustering to form clustering, which is too computational expensive to run on large datasets.
+Since document vectors are not distributed according to the assumptions under k-means, spectral clustering is prefered.
+However, spectral clustering is too computationally expensive to run on large datasets, 
+so we perform "metaclustering" using random sampling of subsets of the data. 
+
+The parameters of the metacluster step can be adjusted depending on the analysis.
+Each subcluster has size `subcluster_m`, the total number of subclusters generated is `subcluster_kn`, 
+and the percentage of clusters discarded due to dissimilarity is `subcluster_pcut`. 
+
+For example, if `subcluster_kn = 32` and `subcluster_pcut = .8` documents will only be assigned to 32 * .8 = 25 total clusters. 
+The `subcluster_repeats` variable determines how many times the clustering algorithm will be performed.
+
+``` python
+[metacluster]
+
+    score_method = unique_IDF
+
+    subcluster_m = 1000
+    subcluster_kn = 15
+
+    subcluster_pcut = 0.80
+    subcluster_repeats = 1
+
+    output_data_directory = data_clustering
+    f_centroids = meta_cluster_centroids.h5
+```
 
 ### [Analyze](#analyze)
 
