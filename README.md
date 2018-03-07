@@ -191,6 +191,41 @@ The `subcluster_repeats` variable determines how many times the clustering algor
 
 ### [Analyze](#analyze)
 
+This step of the pipeline has multiple options: `analyze metacluster` and `analyze LIME`.
+
+The analyze metacluster step returns additional document and cluster information.
+Using the analyze command, each cluster is assigned labels based on their semantic content. 
+The average distance of each document within a cluster from the centroid can be determined using the `avg_centroid_distance` option. 
+Cluster and document statistics can be used for comparing average document similarity as well as inter-document similarity. 
+The output of this command is determined by the variable `output_data_directory`.
+Document analysis data for corresponding clusters are stored in the `cluster_master_labels.csv`.
+Cluster statistics, including document similarity, can be acquired in the `cluster_desc.csv` file in the  output data folder. 
+These statistics are informative, but must be verified by human interpretation. 
+This information is a measure of document semantic similarity given the model's training and the similarity of the portfolio-data quality issues, therefore, will impact the outcome of this algorithm.
+If `compute_dispersion` is True, the output contains a column labeled `intra_document_dispersion` that measures the average document similarity. 
+`dispersion_order` attempts to re-arrange each cluster in an order to reflect inter-document similarity.
+
+The LIME algorithm can be run over the meta-clusters that are close, though be aware that this may take a awhile to compute.
+LIME attempts to differentiate words between the two close metaclusters.
+Results are stored in `results/cluster_LIME.csv`.
+
+``` python
+[postprocessing]
+    compute_dispersion = True
+    output_data_directory = results
+    master_columns = PMID, title
+
+    [[LIME_explainer]]
+        metacluster_cosine_minsim = 0.6
+        score_method = unique_IDF
+        n_lime_samples = 25 # Make this higher for more accuracy
+        n_lime_features = 50
+        n_estimators = 50
+```
+
+---------------------
+
+
 The command `analyze metacluster` can return additional information on each document and cluster. The output of this command is determined by the variable `output_data_directory` under `[postprocessing]`.
 
 This analysis will provide statistics and information on each cluster. Perhaps most importantly, this step will automatically label the semantic content represented by each cluster, by identifying the words that are the most similar to the cluster's centroid. The cluster is represented in multidimensional vector space by this cluster—this step calculates which words trained in the word2vec vocabulary are closest to this centroid.
