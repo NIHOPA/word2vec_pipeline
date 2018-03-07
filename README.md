@@ -26,20 +26,21 @@ Text processing requires csv documents containing labeled headers for each secti
 
 ``` python
 [import_data]
-(A) input_data_directories = datasets,
-    data_type = csv
-(B) merge_columns = title, abstract, "specific aims"
-(C) output_data_directory = data_import
+    input_data_directories = datasets,
+    merge_columns = title, abstract, "specific aims"
+    output_data_directory = data_import
+	data_type = csv
 ```
 
-+ Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder.
 + Concatenate separate columns of text by using the "merge_columns" command.
 + Collect your data from the output folder.
 
-To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets` (A). 
-As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: (merge_columns = title, abstract, "specific aims") would create a new "text" column combining each document's title, abstract, and specific aims into a single text field that can then be parsed. 
-"specific aims" needs to be quoted because it is two words (B), and case matters ("abstract" is not the same as "Abstract").
-The merged column text can be found in the `import_data` output folder (C).
+To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets`. 
+As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: 
+`merge_columns = title, abstract, "specific aims"` 
+would create a new text column combining each document's title, abstract, and specific aims into a single text field that can then be parsed. 
+"specific aims" needs to be quoted because it is two words, and case matters ("abstract" is not the same as "Abstract").
+The merged column text can be found in the `import_data` output folder.
 
 ### [Phrase](#phrase)
 
