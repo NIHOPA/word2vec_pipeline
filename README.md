@@ -163,8 +163,8 @@ To speed up the scoring process, word2vec embedding models from previous runs ca
 
 Document score outputs can be used to create interpretive clustering algorithms.
 Document similarity, based on the embedding outputs, can be analyzed by cluster size and proximity. 
-
-Since document vectors are not distributed according to the assumptions under k-means, spectral clustering is prefered.
+Document vectors are pulled from only one scoring method, specified under `score_method`.
+Since document vectors are not distributed according to the assumptions under k-means, spectral clustering is preferred.
 However, spectral clustering is too computationally expensive to run on large datasets, 
 so we perform "metaclustering" using random sampling of subsets of the data. 
 
@@ -173,16 +173,15 @@ Each subcluster has size `subcluster_m`, the total number of subclusters generat
 and the percentage of clusters discarded due to dissimilarity is `subcluster_pcut`. 
 
 For example, if `subcluster_kn = 32` and `subcluster_pcut = .8` documents will only be assigned to 32 * .8 = 25 total clusters. 
-The `subcluster_repeats` variable determines how many times the clustering algorithm will be performed.
+The `subcluster_repeats` variable determines how many times the clustering algorithm will be performed.
+
 
 ``` python
 [metacluster]
-
     score_method = unique_IDF
 
     subcluster_m = 1000
     subcluster_kn = 15
-
     subcluster_pcut = 0.80
     subcluster_repeats = 1
 
