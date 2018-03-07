@@ -25,7 +25,7 @@ Files downloaded from the word2vec repository were used to generate the correspo
 `import_data` does not perform any processing; its purpose is assigning each document a unique reference ID `_ref id` and concatenating specified fields. 
 Text processing requires csv documents containing labeled headers for each section be imported into the pipeline and given a unique reference ID. 
 
-```
+``` markdown
 [import_data]
 (A) input_data_directories = datasets,
     data_type = csv
@@ -33,25 +33,15 @@ Text processing requires csv documents containing labeled headers for each secti
 (C) output_data_directory  = data_import
 ```
 
-### `import_data` process: 
-+ A) Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder, 
-+ B) concatenate separate columns of text by using the "merge_columns" command
+*`import_data` process*
++ A) Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder.
++ B) concatenate separate columns of text by using the "merge_columns" command.
 + C) collect your data from the output folder.
 
-To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets` (Figure 1A). 
+To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets` (A). 
 As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: (merge_columns = title, abstract, "specific aims") would create a new "text" column combining each document's title, abstract, and specific aims into a single text field that can then be parsed. 
-"specific aims" needs to be quoted because it is two words (Figure 1B). The merged column text can be found in the `import_data` output folder (Figure 1C).
+"specific aims" needs to be quoted because it is two words (B). The merged column text can be found in the `import_data` output folder (C).
 
-
-----------------
-
-In order to process the text, each document must first be imported into the pipeline and tagged with a unique reference id. The documents are imported as a csv file with labeled headers for each column, with one document per row (ie, it would be of the form. For this step the user must create a folder that is identified under the variable `input_data_directories` in the `[import_data]` section of the config file. The default name for this is `datasets`. Since the word2vec pipeline can only process one field for each document, the `import data` step also allows you to concatenate different fields into a single field: for instance, in config, the step:
-
-    merge_columns = title, abstract, "Specific Aims"
-
-would create a new "text" column that combines each document's title, abstract, and specific aims into a single text field that can then be parsed. "Specific Aims" needs to be quoted because it is two words.
-
-This step does not perform any processing, it merely gives each document a unique `_ref` id and concatenates the designated fields. The imported data is put into the folder specified by the variable `output_data_directory` in the config file, which is automatically created by the pipeline.
 
 ### Phrase
 
