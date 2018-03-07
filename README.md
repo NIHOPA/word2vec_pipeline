@@ -263,5 +263,6 @@ the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/pub
 
 ## Contributors
 
-+ [Travis Hoppe](https://github.com/thoppe)
-+ [Harry Baker](https://github.com/HarryBaker)
+[Travis Hoppe](https://github.com/thoppe), 
+[Harry Baker](https://github.com/HarryBaker), 
+[Abbey Zuehlke](https://www.linkedin.com/in/abbey-zuehlke-971b725a/)
