@@ -125,19 +125,19 @@ These scoring measures create 300 dimensional vectors for each document, which r
 Scored data is stored in the `score:output_data_directory` folder. 
 Due to size restrictions, output of this document scoring is stored in a HDF5 file.
 
-Each of the scoring functions assume a bag-of-words model; they each add up the contribution of every word and renormalize the vector to have unit length. As an example, assume your document only has two words "cat" which appears twice and "dog" which appears only once. Let their word vectors be v1, v2 and their IDF scores from `count_commands` be idf1 and idf2.
+Each of the scoring functions assume a bag-of-words model; they each add up the contribution of every word and renormalize the vector to have unit length. As an example, assume your document only has two words "cat" which appears twice and "dog" which appears only once. Let their word vectors be v1, v2 and their IDF scores from `count_commands` be f1 and f2.
 
 | Scoring Method | Function | Formula |
 | ---- | ---- | ---- |
-| `simple` | Adds the word vectors | 2*v1 + v2
+| `simple` | Adds the word vectors | 2\*v1 + v2
 | `unique` | Adds the word vectors only once | v1 + v2
-| `simple_IDF` | Adds the word vectors weighted by IDF | 2*v1*idf1 + v2*idf2
-| `unique_IDF` | Adds the word vectors weighted by IDF only once | v1*idf1 + v2*idf2
+| `simple_IDF` | Adds the word vectors weighted by IDF | 2\*v1\*f1 + v2\*f2
+| `unique_IDF` | Adds the word vectors weighted by IDF only once | v1\*f1 + v2\*f2
 
 Principal component analysis (PCA) dimensionality reduction can be applied to these 300-dimensional vectors to identify which are the most influential, the default dimension to reduce to is 25. 
 The default number is specified by `n_components` under `score:reduced_representation`.
 Document scores are determined based gensim word2vec model created by the [embed](#embed) step. 
-To speed up the scoring process, appropriate word2vec models from previous runs can be reused to score other documents. 
+To speed up the scoring process, word2vec embedding models from previous runs can be reused to score other documents. 
 
 ``` python
 [score]
