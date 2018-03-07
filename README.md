@@ -1,74 +1,268 @@
-# w2v pipeline
+# word2vec pipeline
 
-The word2vec pipeline is a research and exploration pipeline designed to analyze grants, publication abstracts, and other biomedical corpora. However, it can also be applied to other corpora of natural language.
-While not designed for production, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
+Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
+While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
-Everything is run by the file [config.ini](config.ini), the defaults should help guide a new project. Each step of the pipe in run by the corresponding bracketed section of the config file: for instance, the parameters that affect w2v embedding are found in the [embedding] section.
+Pipeline parameters and options for word2vec are run through the [configuration file](config.ini), the defaults are accessible for guiding new projects.
+Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the [embed](#embed) section.
+Within each step, output data is stored in the `output_data_directory` folder.
+Each step of the pipeline, and their corresponding functions, are listed in the table below:
 
-The pipeline is all run from the files downloaded from the w2v repository. Each step of the pipeline has it's own command associated with it which needs to be run in the command line. The commands, in order are `import_data`, `parse`, `embed`, `score`, `predict`, `metacluster`, and `analyze`.
+| Pipeline Step             | Function |
+| ------------------------- | -------- |
+[import_data](#import-data) | Imports documents and concatenates text fields 
+[phrase](#phrase)           | Assigns single definitions to abbreviated words or phrases
+[parse](#parse)             | Removes non-contextual language
+[embed](#embed)             | Assigns numerical weights to the words 
+[score](#score)             | Assigns numerical weights to the documents 
+[metacluster](#metacluster) | Separates the data into clusters based on the embedding 
+[analyze](#analyze)         | Provides statistical data for each cluster 
+[predict](#predict)         | Predicts input features from the document vectors 
 
-### Import Data
+### [Import Data](#import-data)
 
-In order to process the text, each document must first be imported into the pipeline and tagged with a unique reference id. The documents are imported as a csv file with labeled headers for each column, with one document per row (ie, it would be of the form. For this step the user must create a folder that is identified under the variable `input_data_directories` in the `[import_data]` section of the config file. The default name for this is `datasets`. Since the word2vec pipeline can only process one field for each document, the `import data` step also allows you to concatenate different fields into a single field: for instance, in config, the step:
+`import_data` does not perform any processing; its purpose is assigning each document a unique reference ID `_ref id` and concatenating specified fields. 
+Text processing requires csv documents containing labeled headers for each section be imported into the pipeline and given a unique reference ID. 
 
-    merge_columns = title, abstract, "Specific Aims"
+``` python
+[import_data]
+    input_data_directories = datasets,
+    merge_columns = title, abstract, "specific aims"
+    output_data_directory = data_import
+```
 
-would create a new "text" column that combines each document's title, abstract, and specific aims into a single text field that can then be parsed. "Specific Aims" needs to be quoted because it is two words.
+To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets`. 
+As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: 
+`merge_columns = title, abstract, "specific aims"` 
+would create a new text column combining each document's title, abstract, and specific aims into a single text field that can then be parsed. 
+"specific aims" needs to be quoted because it is two words, and case matters ("abstract" is not the same as "Abstract").
+The merged column text can be found in the `import_data` output folder.
 
-This step does not perform any processing, it merely gives each document a unique `_ref` id and concatenates the designated fields. The imported data is put into the folder specified by the variable `output_data_directory` in the config file, which is automatically created by the pipeline.
+### [Phrase](#phrase)
 
-### Phrase
+Abbreviated terms and phrases within the dataset can be replaced by single definitions using the `phrase` step. 
+The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the `output_data_directory` folder in the file `f_abbreviations`.
 
-### Parse
+``` python
+[phrase]
+    output_data_directory = data_document_scores/
+    f_abbreviations = abbreviations.csv
+```
 
-Once the designated fields have been concatenated into a single text field, the pipeline can parse the text to preprocess it for word2vec embedding. We want to strip the text of stopwords, grammar, errors, and words that don't provide semantic information. There are several modules in the NLPre library, which can be read about it's own ReadMe. The NLPre library will fix minor OCR parsing errors, remove punctuation, identify acronyms, replace common phrases with single tokens, and removes parts of speech that don't contribute to semantic analysis. The parsed documents will be then sent to a folder specified by `output_data_directory` under `[parse]` in the config, which is created automatically by the pipeline.
+### [Parse](#parse)
 
-### Embed
+Concatenated document fields within the pipeline can be parsed for word2vec embedding. 
+Stripping the text of stop words, punctuation, errors, and content lacking semantic information can be performed using the [NLPre](https://github.com/NIHOPA/NLPre) library. 
+The NLPre library is a (pre)-processing library capable of smoothing data inconsistencies. 
+Parsed documents are automatically sent to the `output_data_directory`.
 
-This step actually creates a gensim word2vec model based on the pre-processed text. You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
+``` python
+[parse]
 
-This teaches the model language using the data that was imported to the pipeline—because of this, the model requires enough documents to train on accurately. This step will create a gensim word2vec model in the folder designated by `output_data_directory` under `[embeddings]`, and can be accessed using the gensim library. This model is what is used to score the documents in the portfolio and create word vectors for each of them.
+    output_table = parsed
+    output_data_directory = data_parsed
 
-### Score
+    pipeline = dedash, titlecaps, replace_acronyms, separated_parenthesis, replace_from_dictionary, token_replacement, decaps_text, pos_tokenizer
 
-This is possibly the most important step of the entire pipeline, because it is what actually scores each document and creates word vectors for them. These word vectors can then be used to compare similarity across each document. These scores are found in folder specified by the  `output_data_directory` variable under `[score]` in the config file. The output of this document scoring is stored in a h5 file due to the size of the information. The methods used to score each document is determined in the `globaldata_commands` under `[score]` in the config. This determines the weighing of each word when creating scores for the documents. Documents are scored by several methods, currently you can use `locality_hash`, `unique_TF`, `simple_TF`, `simple`, and `unique`. The "simple" scores does not do any weighing based on word frequency, while the "unique" score only counts unique occurrences of each word when scoring documents. These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space.
+    [[replace_from_dictionary]]
+        prefix = 'MeSH_'
+	
+    [[replace_acronyms]]
+        prefix = 'PHRASE_'
 
-This step also runs PCA dimensionality reduction on these 300 dimensional vectors, to identify which are the most influential N many dimension. The default dimension to reduce to is 25 dimensions, which is determined by the `n_components` variable under `[[reduced_representation]]` in `[score]`.
+    [[separated_parenthesis]]
+        # Only keep long parenthetical content
+        min_keep_length = 10
 
-In the document score h5 file, documents are not listed by their Appl ID, or even their reference number. Rather, each document appears in the order of its reference number. That is, the 5th entry in the PCA reduced directory of the h5 file corresponds with the word vector of the document with _ref number 5. The user must develop code to match these word vectors to the title of the original documents.
+    [[pos_tokenizer]]
+        POS_blacklist = connector, cardinal, pronoun, symbol, punctuation, modal_verb, adverb, verb, w_word, adjective
+```
 
-These scores are determined based on the word2vec model created using the gensim library. However, you do not need to use the same documents used to create the word2vec model to score documents. If you have an appropriate word2vec model from a previous run, you can reuse it to score other documents. This is helpful, because scoring takes a long time when using a large amount of documents, so having models pre-made can help you save time by skipping this step.
 
-### Predict
+### [Embed](#embed)
 
-### Metacluster
+The embed step of the pipeline scans the pre-processed text and creates word vectors by assigning numerical weights according to their distributed representation.
+This is the eponymous word2vec step.
 
-Using the document scores, the pipeline can create clusters that can be used to interpret the dataset. These clusters will identify which documents are most similar to each other, based on the model created in by the embedding's understanding of language. The variables under `[metacluster]` determine the size and parameters of this clustering, and the output of the clusters are determined by the `output_data_directory`.  The centroid of each cluster will be located there. The variable `score` method determines which scoring method will be used to create the clusters. The variable `subcluster_m` determines the distance threshhold for documents to be assigned to the same cluster. The variable `subcluster_kn` determines how many distinct clusters are made by the algorithm. The variable `subcluster_pcut` determines what percentage of clusters made are discarded as being too dissimilar. This helps to filter out garbage clusters. With  subcluster_kn = 32 and  subcluster_pcut = .8, 32 clusters will be formed, but documents will only be assigned to 32 * .8 ~= 25 total clusters. The variable `subcluster_repeats` determines how many times the clustering algorithm will be performed.
+``` python
+[embed]
 
-A note on clustering: this step is called "Metaclustering" because it uses random sampling to speed up the process of clustering. The original algorithm uses spectral clustering to form clustering, which is too computational expensive to run on large datasets.
+    input_data_directory  = data_parsed
+    output_data_directory = data_embeddings
+    embedding_commands    = w2v_embedding,
 
-### Analyze
+    [[w2v_embedding]]
+        f_db = w2v.gensim
+        skip_gram = 0
+        hierarchical_softmax = 1
+        epoch_n = 30
+        window = 5
+        negative = 0
+        sample = 1e-5
+        size = 300
+        min_count = 10
+```
 
-The command `analyze metacluster` can return additional information on each document and cluster. The output of this command is determined by the variable `output_data_directory` under `[postprocessing]`.
+Modifications can be made to this step to tailor it for individual analyses. 
+Common adjustments include changes to the `window`, `size`, and `min_count` options.
+The `window` setting refers to the size of the frame used to scan the text, `size` represents the number of vectors generated, and `min_count` is the number of times a word must appear before it is recognized as a term by the algorithm. 
+The output gensim data is then stored in the `data_embeddings` output folder under the filename `f_db`.
+The stored data can be accessed using the gensim library.
+The leanred vecotrs can be utilized for other machine learning tasks such as unsupervised clustering or predictions; therefore, this process requires enough document information for accurate training. 
+You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
 
-This analysis will provide statistics and information on each cluster. Perhaps most importantly, this step will automatically label the semantic content represented by each cluster, by identifying the words that are the most similar to the cluster's centroid. The cluster is represented in multidimensional vector space by this cluster—this step calculates which words trained in the word2vec vocabulary are closest to this centroid.
+### [Score](#score)
 
-This analysis also provides statistics on the cluster, including measures of how similar the documents in each cluster are.  This information is found in the file `cluster_desc.csv` in the `output_data_directory`. The `avg_centroid_distance` value measures the average distance of each document in the cluster from the cluster's centroid. Similarly, the `intra_document_dispersion` value measures the average similarity of each document in the cluster to every other document in the cluster. The `dispersion_order`  attempts to re-arrange each cluster in an order that tries to reflect the inter document similarity. These statistics are informative, but they must be verified by human interpretation. They are a measure of how semantically similar documents are given the model's training and the similarity of the portfolio—problems in the data can lead to problematic results.
+Using the score step, word vectors are generated for each document's embedded text to compare similarity across the entire dataset. 
+The `count_commands` subsection determines the weights assigned to each word within a document. 
+At least one method must be listed under `score_commands`, the most common is `unique_IDF`.
+A full description of each score command can be found in the table below.
+These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space. 
+Scored data is stored in the `output_data_directory` folder. 
+Due to size restrictions, output of this document scoring is stored in a HDF5 file.
 
-The analysis will also tab each document with the corresponding cluster. This information is found in the file `cluster_master_labels.csv` in `output_data_directory`.
+Each of the scoring functions assume a bag-of-words model; they each add up the contribution of every word and renormalize the vector to have unit length. As an example, assume your document only has two words "cat" which appears twice and "dog" which appears only once. Let their word vectors be v1, v2 and their IDF scores from `count_commands` be f1 and f2.
 
-----
+| Scoring Method | Function | Formula |
+| ---- | ---- | ---- |
+| `simple` | Adds the word vectors | 2\*v1 + v2
+| `unique` | Adds the word vectors only once | v1 + v2
+| `simple_IDF` | Adds the word vectors weighted by IDF | 2\*v1\*f1 + v2\*f2
+| `unique_IDF` | Adds the word vectors weighted by IDF only once | v1\*f1 + v2\*f2
 
-The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-clusters that are close, though this takes awhile. This will tell you the words that differentiate the two clusters according to a simple random forest fit between the two. Results are stored in `results/cluster_LIME.csv`.
+Principal component analysis (PCA) dimensionality reduction can be applied to these 300-dimensional vectors to identify which are the most influential, the default dimension to reduce to is 25. 
+The default number is specified by `n_components` under `score:reduced_representation`.
+Document scores are determined based gensim word2vec model created by the [embed](#embed) step. 
+To speed up the scoring process, word2vec embedding models from previous runs can be reused to score other documents. 
+
+``` python
+[score]
+    output_data_directory = data_document_scores
+    f_db  = document_scores.h5
+    compute_reduced_representation = True
+    count_commands = term_document_frequency, term_frequency, 
+    score_commands = score_unique_IDF, score_simple,
+
+    [[negative_weights]]
+        # Sample negative weights, adjust as needed
+        understand = 0.15
+        scientific = 0.25
+
+    [[reduced_representation]]
+        n_components = 25
+
+    [[term_frequency]]
+        f_db = TF.csv
+
+    [[term_document_frequency]]
+        f_db = TDF.csv
+```
+
+
+### [Metacluster](#metacluster)
+
+Document score outputs can be used to create interpretive clustering algorithms.
+Document similarity, based on the embedding outputs, can be analyzed by cluster size and proximity. 
+Document vectors are pulled from only one scoring method, specified under `score_method`.
+Since document vectors are not distributed according to the assumptions under k-means, spectral clustering is preferred.
+However, spectral clustering is too computationally expensive to run on large datasets, 
+so we perform "metaclustering" using random sampling of subsets of the data. 
+
+The parameters of the metacluster step can be adjusted depending on the analysis.
+Each subcluster has size `subcluster_m`, the total number of subclusters generated is `subcluster_kn`, 
+and the percentage of clusters discarded due to dissimilarity is `subcluster_pcut`. 
+
+For example, if `subcluster_kn = 32` and `subcluster_pcut = .8` documents will only be assigned to 32 * .8 = 25 total clusters. 
+The `subcluster_repeats` variable determines how many times the clustering algorithm will be performed.
+
+
+``` python
+[metacluster]
+    score_method = unique_IDF
+
+    subcluster_m = 1000
+    subcluster_kn = 15
+    subcluster_pcut = 0.80
+    subcluster_repeats = 1
+
+    output_data_directory = data_clustering
+    f_centroids = meta_cluster_centroids.h5
+```
+
+### [Analyze](#analyze)
+
+This step of the pipeline has multiple options: `analyze metacluster` and `analyze LIME`.
+
+The analyze metacluster step returns additional document and cluster information.
+Under this command, the labels for each document are assigned to the cluster.
+The labels assigned to each document should capture broad themes of semantic content.
+Cluster and document statistics can be used for comparing average document similarity as well as inter-document similarity. 
+The output of this command is determined by the variable `output_data_directory`.
+Document analysis data for corresponding clusters are stored in the `cluster_master_labels.csv`.
+Cluster statistics, including document similarity, can be acquired in the `cluster_desc.csv` file in the  output data folder.
+
+These statistics are informative, but must be verified by human interpretation. 
+This information is a measure of document semantic similarity given the model's training and the similarity of the portfolio-data quality issues, therefore, will impact the outcome of this algorithm.
+The average distance of each document within a cluster from the centroid can is reported under the column `avg_centroid_distance`.
+If `compute_dispersion` is True, the output contains a column labeled `intra_document_dispersion` that measures the average document similarity. 
+`dispersion_order` attempts to re-arrange each cluster in an order to reflect inter-document similarity.
+
+The analyze LIME step attempts to differentiate words between all pairs of close metaclusters.
+[LIME](https://github.com/marcotcr/lime) is often informative, but be aware that this may take a awhile to compute.
+Results are stored in `results/cluster_LIME.csv`.
+Metaclusters are considered "close" if the cosine similarity between their centroids is greater than `metacluster_cosine_minsim`.
+
+``` python
+[postprocessing]
+    compute_dispersion = True
+    output_data_directory = results
+    master_columns = PMID, title
+
+    [[LIME_explainer]]
+        metacluster_cosine_minsim = 0.6
+        score_method = unique_IDF
+        n_lime_samples = 25 # Make this higher for more accuracy
+        n_lime_features = 50
+        n_estimators = 50
+```
+
+### [Predict](#predict)
+
+The predict step tries to learn a model to accurately predict the categories for the columns under `categorical_columns`.
+The data is fit against the document vectors found in [`score`](#score) step using a random forest with `n_estimators` trees.
+To robustly test the accuracy of the model, it is repeated using the number in `cross_validation_folds`.
+
+If `use_reduced` is True, the data are fit using the PCA reduced vectors, otherwise the full document vectors are used.
+If `use_SMOTE` is True, over- and under-samples the minority and majority classes so that the training data is evenly balanced using the [SMOTE](https://www.jair.org/media/953/live-953-2037-jair.pdf) algorithm. 
+A meta-estimator is used if `use_meta` is True, combining all the scoring methods under `meta_methods`.
+The final output stored under `data_predict`, and `extra_columns` from the original dataset are copied over for convenience.
+
+``` python
+[predict]
+    categorical_columns = journal,
+
+    n_estimators = 200
+    cross_validation_folds = 12
+  
+    use_SMOTE = False
+    use_reduced = True
+    use_meta = True
+  
+    meta_methods = unique_IDF,
+
+    output_data_directory = data_predict
+    extra_columns = journal, title,
+```
 
 ## License
 
-This project is in the public domain within the United States, and
-copyright and related rights in the work worldwide are waived through
-the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+This project is in the public domain within the United States, and copyright 
+and related rights in the work worldwide are waived through the 
+[CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
 
 
 ## Contributors
 
-+ [Travis Hoppe](https://github.com/thoppe)
-+ [Harry Baker](https://github.com/HarryBaker)
+[Travis Hoppe](https://github.com/thoppe), 
+[Harry Baker](https://github.com/HarryBaker), 
+[Abbey Zuehlke](https://www.linkedin.com/in/abbey-zuehlke-971b725a/)
