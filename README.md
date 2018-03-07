@@ -32,9 +32,6 @@ Text processing requires csv documents containing labeled headers for each secti
 	data_type = csv
 ```
 
-+ Concatenate separate columns of text by using the "merge_columns" command.
-+ Collect your data from the output folder.
-
 To properly save the imported document, create a new data folder that can be recognized by the `input_data_directories` section, currently the field is set to recognize folders entitled `datasets`. 
 As the word2vec pipeline is limited to processing one field for each document, the `import_data` step requires different fields be concatenated into one; for instance, the step: 
 `merge_columns = title, abstract, "specific aims"` 
