@@ -5,8 +5,8 @@ While this repository is primarily a research platform, it is used internally wi
 
 Pipeline parameters and options for word2vec are run through the [configuration file](config.ini), the defaults are accessible for guiding new projects.
 Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the [embed](#embed) section.
-Within each step, output data is stored in the `output_data_directory` folder (referred to in each step as the `output folder`). 
-Files downloaded from the word2vec repository were used to generate the corresponding pipeline. Each step of the pipeline, and their corresponding functions, are listed in the table below:
+Within each step, output data is stored in the `output_data_directory` folder.
+Each step of the pipeline, and their corresponding functions, are listed in the table below:
 
 | Pipeline Step             | Function |
 | ------------------------- | -------- |
@@ -117,13 +117,51 @@ You can read more about word2vec embedding [here](https://rare-technologies.com/
 
 ### [Score](#score)
 
-This is possibly the most important step of the entire pipeline, because it is what actually scores each document and creates word vectors for them. These word vectors can then be used to compare similarity across each document. These scores are found in folder specified by the  `output_data_directory` variable under `[score]` in the config file. The output of this document scoring is stored in a h5 file due to the size of the information. The methods used to score each document is determined in the `globaldata_commands` under `[score]` in the config. This determines the weighing of each word when creating scores for the documents. Documents are scored by several methods, currently you can use `locality_hash`, `unique_TF`, `simple_TF`, `simple`, and `unique`. The "simple" scores does not do any weighing based on word frequency, while the "unique" score only counts unique occurrences of each word when scoring documents. These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space.
+Using the score step, word vectors are generated for each document's embedded text to compare similarity across the entire dataset. 
+The `count_commands` subsection determines the weights assigned to each word within a document. 
+At least one method must be listed under `score_commands`, the most common is `unique_IDF`.
+A full description of each score command can be found in the table below.
+These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space. 
+Scored data is stored in the `score:output_data_directory` folder. 
+Due to size restrictions, output of this document scoring is stored in a HDF5 file.
 
-This step also runs PCA dimensionality reduction on these 300 dimensional vectors, to identify which are the most influential N many dimension. The default dimension to reduce to is 25 dimensions, which is determined by the `n_components` variable under `[[reduced_representation]]` in `[score]`.
+Each of the scoring functions assume a bag-of-words model; they each add up the contribution of every word and renormalize the vector to have unit length. As an example, assume your document only has two words "cat" which appears twice and "dog" which appears only once. Let their word vectors be v1, v2 and their IDF scores from `count_commands` be idf1 and idf2.
 
-In the document score h5 file, documents are not listed by their Appl ID, or even their reference number. Rather, each document appears in the order of its reference number. That is, the 5th entry in the PCA reduced directory of the h5 file corresponds with the word vector of the document with _ref number 5. The user must develop code to match these word vectors to the title of the original documents.
+| Scoring Method | Function | Formula |
+| ---- | ---- | ---- |
+| `simple` | Adds the word vectors | 2*v1 + v2
+| `unique` | Adds the word vectors only once | v1 + v2
+| `simple_IDF` | Adds the word vectors weighted by IDF | 2*v1*idf1 + v2*idf2
+| `unique_IDF` | Adds the word vectors weighted by IDF only once | v1*idf1 + v2*idf2
 
-These scores are determined based on the word2vec model created using the gensim library. However, you do not need to use the same documents used to create the word2vec model to score documents. If you have an appropriate word2vec model from a previous run, you can reuse it to score other documents. This is helpful, because scoring takes a long time when using a large amount of documents, so having models pre-made can help you save time by skipping this step.
+Principal component analysis (PCA) dimensionality reduction can be applied to these 300-dimensional vectors to identify which are the most influential, the default dimension to reduce to is 25. 
+The default number is specified by `n_components` under `score:reduced_representation`.
+Document scores are determined based gensim word2vec model created by the [embed](#embed) step. 
+To speed up the scoring process, appropriate word2vec models from previous runs can be reused to score other documents. 
+
+``` python
+[score]
+    output_data_directory = data_document_scores
+    f_db  = document_scores.h5
+    compute_reduced_representation = True
+    count_commands = term_document_frequency, term_frequency, 
+    score_commands = score_unique_IDF, score_simple,
+
+    [[negative_weights]]
+        # Sample negative weights, adjust as needed
+        understand = 0.15
+        scientific = 0.25
+
+    [[reduced_representation]]
+        n_components = 25
+
+    [[term_frequency]]
+        f_db = TF.csv
+
+    [[term_document_frequency]]
+        f_db = TDF.csv
+```
+
 
 ### [Predict](#predict)
 
