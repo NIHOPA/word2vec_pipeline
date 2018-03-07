@@ -11,7 +11,7 @@ Files downloaded from the word2vec repository were used to generate the correspo
 
 | Pipeline Step   | Function |
 | --------------- | -------- |
-import_data      | Imports documents and concatenates text fields 
+[import_data](#import-data) | Imports documents and concatenates text fields 
 phrase           | Assigns single definitions to abbreviated words or phrases
 parse            | Removes non-contextual language
 embed            | Assigns numerical weights to the words 
