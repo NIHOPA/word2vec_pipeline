@@ -207,9 +207,10 @@ The average distance of each document within a cluster from the centroid can is 
 If `compute_dispersion` is True, the output contains a column labeled `intra_document_dispersion` that measures the average document similarity. 
 `dispersion_order` attempts to re-arrange each cluster in an order to reflect inter-document similarity.
 
-The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-clusters that are close, though be aware that this may take a awhile to compute.
-LIME attempts to differentiate words between the two close metaclusters.
+The analyze LIME step attempts to differentiate words between all pairs of close metaclusters.
+[LIME](https://github.com/marcotcr/lime) is often informative, but be aware that this may take a awhile to compute.
 Results are stored in `results/cluster_LIME.csv`.
+Metaclusters are considered "close" if the cosine similarity between their centroids is greater than `metacluster_cosine_minsim`.
 
 ``` python
 [postprocessing]
