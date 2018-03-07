@@ -84,9 +84,36 @@ Parsed documents are automatically sent to the `parse:output_data_directory`.
 
 ### [Embed](#embed)
 
-This step actually creates a gensim word2vec model based on the pre-processed text. You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
+The embed step of the pipeline scans the pre-processed text and creates word vectors by assigning numerical weights according to their distributed representation.
+This is the eponymous word2vec step.
 
-This teaches the model language using the data that was imported to the pipeline—because of this, the model requires enough documents to train on accurately. This step will create a gensim word2vec model in the folder designated by `output_data_directory` under `[embeddings]`, and can be accessed using the gensim library. This model is what is used to score the documents in the portfolio and create word vectors for each of them.
+``` python
+[embed]
+
+    input_data_directory  = data_parsed
+    output_data_directory = data_embeddings
+    
+    embedding_commands    = w2v_embedding,
+
+    [[w2v_embedding]]
+        f_db = w2v.gensim
+        skip_gram = 0
+        hierarchical_softmax = 1
+        epoch_n = 30
+        window = 5
+        negative = 0
+        sample = 1e-5
+        size = 300
+        min_count = 10
+```
+
+Modifications can be made to this step to tailor it for individual analyses. 
+Common adjustments include changes to the `window`, `size`, and `min_count` options.
+The `window` setting refers to the size of the frame used to scan the text, `size` represents the number of vectors generated, and `min_count` is the number of times a word must appear before it is recognized as a term by the algorithm. 
+The output gensim data is then stored in the `data_embeddings` output folder under the filename `f_db`.
+The stored data can be accessed using the gensim library.
+The leanred vecotrs can be utilized for other machine learning tasks such as unsupervised clustering or predictions; therefore, this process requires enough document information for accurate training. 
+You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
 
 ### [Score](#score)
 
