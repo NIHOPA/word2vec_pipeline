@@ -183,15 +183,14 @@ The [LIME](https://github.com/marcotcr/lime) algorithm can be run over the meta-
 
 ### [Predict](#predict)
 
-
-A portion of the original dataset can be run in the pipeline to see if it can accurately predict the categories for the columns under `categorical_columns`.
+The predict step tries to learn a model to accurately predict the categories for the columns under `categorical_columns`.
 The data is fit against the document vectors found in [`score`](#score) step using a random forest with `n_estimators` trees.
 To robustly test the accuracy of the model, it is repeated using the number in `cross_validation_folds`.
 
 If `use_reduced` is True, the data are fit using the PCA reduced vectors, otherwise the full document vectors are used.
-`use_SMOTE` over- and under- samples the minority and majority classes so that the training data is evenly balanced using the [SMOTE](https://www.jair.org/media/953/live-953-2037-jair.pdf) algorithm. 
+If `use_SMOTE` is True, over- and under-samples the minority and majority classes so that the training data is evenly balanced using the [SMOTE](https://www.jair.org/media/953/live-953-2037-jair.pdf) algorithm. 
 A meta-estimator is used if `use_meta` is True, combining all the scoring methods under `meta_methods`.
-In the final output stored under `data_predict`, `extra_columns` from the original dataset are copied over for convenience.
+The final output stored under `data_predict`, and `extra_columns` from the original dataset are copied over for convenience.
 
 ```
 [predict]
@@ -207,7 +206,7 @@ In the final output stored under `data_predict`, `extra_columns` from the origin
     meta_methods = unique_IDF,
 
     output_data_directory = data_predict
-    extra_columns = journal,title,
+    extra_columns = journal, title,
 ```
 
 ## License
