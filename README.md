@@ -12,13 +12,13 @@ Files downloaded from the word2vec repository were used to generate the correspo
 | Pipeline Step   | Function |
 | --------------- | -------- |
 [import_data](#import-data) | Imports documents and concatenates text fields 
-phrase           | Assigns single definitions to abbreviated words or phrases
-parse            | Removes non-contextual language
-embed            | Assigns numerical weights to the words 
-score            | Assigns numerical weights to the documents 
-predict          | Predicts input features from the document vectors 
-metacluster      | Separates the data into clusters based on the embedding 
-analyze          | Provides statistical data for each cluster 
+[phrase](#phrase)           | Assigns single definitions to abbreviated words or phrases
+[parse](#parse)            | Removes non-contextual language
+[embed](#embed)            | Assigns numerical weights to the words 
+[score](#score)            | Assigns numerical weights to the documents 
+[predict](#predict)          | Predicts input features from the document vectors 
+[metacluster](#metacluster)      | Separates the data into clusters based on the embedding 
+[analyze](#analyze)          | Provides statistical data for each cluster 
 
 ### [Import Data](#import-data)
 
@@ -30,10 +30,9 @@ Text processing requires csv documents containing labeled headers for each secti
 (A) input_data_directories = datasets,
     data_type = csv
 (B) merge_columns = title, abstract, "specific aims"
-(C) output_data_directory  = data_import
+(C) output_data_directory = data_import
 ```
 
-**`import_data` process**
 + Create a new folder entitled "datasets" and move csv documents with labeled headers into the folder.
 + Concatenate separate columns of text by using the "merge_columns" command.
 + Collect your data from the output folder.
@@ -43,20 +42,21 @@ As the word2vec pipeline is limited to processing one field for each document, t
 "specific aims" needs to be quoted because it is two words (B), and case matters ("abstract" is not the same as "Abstract").
 The merged column text can be found in the `import_data` output folder (C).
 
+### [Phrase](#phrase)
 
-### Phrase
+Abbreviated terms and phrases within the dataset can be replaced by single definitions using the [phrase] step. The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the [phrase] output folder
 
-### Parse
+### [Parse](#parse)
 
 Once the designated fields have been concatenated into a single text field, the pipeline can parse the text to preprocess it for word2vec embedding. We want to strip the text of stopwords, grammar, errors, and words that don't provide semantic information. There are several modules in the NLPre library, which can be read about it's own ReadMe. The NLPre library will fix minor OCR parsing errors, remove punctuation, identify acronyms, replace common phrases with single tokens, and removes parts of speech that don't contribute to semantic analysis. The parsed documents will be then sent to a folder specified by `output_data_directory` under `[parse]` in the config, which is created automatically by the pipeline.
 
-### Embed
+### [Embed](#embed)
 
 This step actually creates a gensim word2vec model based on the pre-processed text. You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
 
 This teaches the model language using the data that was imported to the pipeline—because of this, the model requires enough documents to train on accurately. This step will create a gensim word2vec model in the folder designated by `output_data_directory` under `[embeddings]`, and can be accessed using the gensim library. This model is what is used to score the documents in the portfolio and create word vectors for each of them.
 
-### Score
+### [Score](#score)
 
 This is possibly the most important step of the entire pipeline, because it is what actually scores each document and creates word vectors for them. These word vectors can then be used to compare similarity across each document. These scores are found in folder specified by the  `output_data_directory` variable under `[score]` in the config file. The output of this document scoring is stored in a h5 file due to the size of the information. The methods used to score each document is determined in the `globaldata_commands` under `[score]` in the config. This determines the weighing of each word when creating scores for the documents. Documents are scored by several methods, currently you can use `locality_hash`, `unique_TF`, `simple_TF`, `simple`, and `unique`. The "simple" scores does not do any weighing based on word frequency, while the "unique" score only counts unique occurrences of each word when scoring documents. These scoring measures create 300 dimensional vectors for each document, which represents their position in word2vec space.
 
@@ -66,15 +66,15 @@ In the document score h5 file, documents are not listed by their Appl ID, or eve
 
 These scores are determined based on the word2vec model created using the gensim library. However, you do not need to use the same documents used to create the word2vec model to score documents. If you have an appropriate word2vec model from a previous run, you can reuse it to score other documents. This is helpful, because scoring takes a long time when using a large amount of documents, so having models pre-made can help you save time by skipping this step.
 
-### Predict
+### [Predict](#predict)
 
-### Metacluster
+### [Metacluster](#metacluster)
 
 Using the document scores, the pipeline can create clusters that can be used to interpret the dataset. These clusters will identify which documents are most similar to each other, based on the model created in by the embedding's understanding of language. The variables under `[metacluster]` determine the size and parameters of this clustering, and the output of the clusters are determined by the `output_data_directory`.  The centroid of each cluster will be located there. The variable `score` method determines which scoring method will be used to create the clusters. The variable `subcluster_m` determines the distance threshhold for documents to be assigned to the same cluster. The variable `subcluster_kn` determines how many distinct clusters are made by the algorithm. The variable `subcluster_pcut` determines what percentage of clusters made are discarded as being too dissimilar. This helps to filter out garbage clusters. With  subcluster_kn = 32 and  subcluster_pcut = .8, 32 clusters will be formed, but documents will only be assigned to 32 * .8 ~= 25 total clusters. The variable `subcluster_repeats` determines how many times the clustering algorithm will be performed.
 
 A note on clustering: this step is called "Metaclustering" because it uses random sampling to speed up the process of clustering. The original algorithm uses spectral clustering to form clustering, which is too computational expensive to run on large datasets.
 
-### Analyze
+### [Analyze](#analyze)
 
 The command `analyze metacluster` can return additional information on each document and cluster. The output of this command is determined by the variable `output_data_directory` under `[postprocessing]`.
 
