@@ -11,16 +11,16 @@ Files downloaded from the word2vec repository were used to generate the correspo
 
 | Pipeline Step   | Function |
 | --------------- | -------- |
-|import_data      | Imports documents and concatenates text fields |
-|phrase           | Assigns single definitions to abbreviated words or phrases|
-|parse            | Removes non-contextual language|
-|embed            | Assigns numerical weights to the words |
-|score            | Assigns numerical weights to the documents |
-|predict          | Predicts input features from the document vectors |
-|metacluster      | Separates the data into clusters based on the embedding |
-|analyze          | Provides statistical data for each cluster |
+import_data      | Imports documents and concatenates text fields 
+phrase           | Assigns single definitions to abbreviated words or phrases
+parse            | Removes non-contextual language
+embed            | Assigns numerical weights to the words 
+score            | Assigns numerical weights to the documents 
+predict          | Predicts input features from the document vectors 
+metacluster      | Separates the data into clusters based on the embedding 
+analyze          | Provides statistical data for each cluster 
 
-### Import Data
+### [Import Data](#import-data)
 
 `import_data` does not perform any processing; its purpose is assigning each document a unique reference ID `_ref id` and concatenating specified fields. 
 Text processing requires csv documents containing labeled headers for each section be imported into the pipeline and given a unique reference ID. 
