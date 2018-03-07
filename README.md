@@ -54,7 +54,33 @@ The resulting file displays abbreviated terms and phrases as well as their preva
 
 ### [Parse](#parse)
 
-Once the designated fields have been concatenated into a single text field, the pipeline can parse the text to preprocess it for word2vec embedding. We want to strip the text of stopwords, grammar, errors, and words that don't provide semantic information. There are several modules in the NLPre library, which can be read about it's own ReadMe. The NLPre library will fix minor OCR parsing errors, remove punctuation, identify acronyms, replace common phrases with single tokens, and removes parts of speech that don't contribute to semantic analysis. The parsed documents will be then sent to a folder specified by `output_data_directory` under `[parse]` in the config, which is created automatically by the pipeline.
+Concatenated document fields within the pipeline can be parsed for word2vec embedding. 
+Stripping the text of stop words, punctuation, errors, and content lacking semantic information can be performed using the [NLPre](https://github.com/NIHOPA/NLPre) library. 
+The NLPre library is a (pre)-processing library capable of smoothing data inconsistencies. 
+Parsed documents are automatically sent to the `parse:output_data_directory`.
+
+``` python
+[parse]
+
+    output_table = parsed
+    output_data_directory = data_parsed
+
+    pipeline = dedash, titlecaps, replace_acronyms, separated_parenthesis, replace_from_dictionary, token_replacement, decaps_text, pos_tokenizer
+
+    [[replace_from_dictionary]]
+		prefix = 'MeSH_'
+	
+    [[replace_acronyms]]
+		prefix = 'PHRASE_'
+
+    [[separated_parenthesis]]
+		# Only keep long parenthetical content
+		min_keep_length = 10
+
+    [[pos_tokenizer]]
+        POS_blacklist = connector, cardinal, pronoun, symbol, punctuation, modal_verb, adverb, verb, w_word, adjective
+```
+
 
 ### [Embed](#embed)
 
