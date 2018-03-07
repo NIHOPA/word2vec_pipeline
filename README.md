@@ -3,22 +3,21 @@
 Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
 While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
-
 Pipeline parameters and options for word2vec are run through the [configuration file](config.ini), the defaults are accessible for guiding new projects.
-Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the `embed` section.
+Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the [embed](#embed) section.
 Within each step, output data is stored in the `output_data_directory` folder (referred to in each step as the `output folder`). 
 Files downloaded from the word2vec repository were used to generate the corresponding pipeline. Each step of the pipeline, and their corresponding functions, are listed in the table below:
 
-| Pipeline Step   | Function |
-| --------------- | -------- |
+| Pipeline Step             | Function |
+| ------------------------- | -------- |
 [import_data](#import-data) | Imports documents and concatenates text fields 
 [phrase](#phrase)           | Assigns single definitions to abbreviated words or phrases
-[parse](#parse)            | Removes non-contextual language
-[embed](#embed)            | Assigns numerical weights to the words 
-[score](#score)            | Assigns numerical weights to the documents 
-[predict](#predict)          | Predicts input features from the document vectors 
-[metacluster](#metacluster)      | Separates the data into clusters based on the embedding 
-[analyze](#analyze)          | Provides statistical data for each cluster 
+[parse](#parse)             | Removes non-contextual language
+[embed](#embed)             | Assigns numerical weights to the words 
+[score](#score)             | Assigns numerical weights to the documents 
+[predict](#predict)         | Predicts input features from the document vectors 
+[metacluster](#metacluster) | Separates the data into clusters based on the embedding 
+[analyze](#analyze)         | Provides statistical data for each cluster 
 
 ### [Import Data](#import-data)
 
@@ -44,7 +43,14 @@ The merged column text can be found in the `import_data` output folder (C).
 
 ### [Phrase](#phrase)
 
-Abbreviated terms and phrases within the dataset can be replaced by single definitions using the [phrase] step. The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the [phrase] output folder
+Abbreviated terms and phrases within the dataset can be replaced by single definitions using the `phrase` step. 
+The resulting file displays abbreviated terms and phrases as well as their prevalence within the dataset; this information is stored in the `phrase:output_data_directory` folder
+
+``` python
+[phrase]
+    output_data_directory = data_document_scores/
+    f_abbreviations = abbreviations.csv
+```
 
 ### [Parse](#parse)
 
