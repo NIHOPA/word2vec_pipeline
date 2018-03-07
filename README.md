@@ -68,14 +68,14 @@ Parsed documents are automatically sent to the `parse:output_data_directory`.
     pipeline = dedash, titlecaps, replace_acronyms, separated_parenthesis, replace_from_dictionary, token_replacement, decaps_text, pos_tokenizer
 
     [[replace_from_dictionary]]
-		prefix = 'MeSH_'
+        prefix = 'MeSH_'
 	
     [[replace_acronyms]]
-		prefix = 'PHRASE_'
+        prefix = 'PHRASE_'
 
     [[separated_parenthesis]]
-		# Only keep long parenthetical content
-		min_keep_length = 10
+        # Only keep long parenthetical content
+        min_keep_length = 10
 
     [[pos_tokenizer]]
         POS_blacklist = connector, cardinal, pronoun, symbol, punctuation, modal_verb, adverb, verb, w_word, adjective
