@@ -20,7 +20,6 @@ def CSV_list_columns(f_csv):
     Returns:
         return tuple(reader.next()): DOCUMENTATION_UNKNOWN
     """
-
     if not os.path.exists(f_csv):
         msg = "File not found {}".format(f_csv)
         raise IOError(msg)
@@ -72,6 +71,11 @@ class CSV_database_iterator(object):
         # Raise Exception if column is missing in a CSV
         if self.col is not None:
             for f in F_CSV:
+
+                # If a file is empty, skip it
+                if os.stat(f).st_size == 0:
+                    continue
+                
                 f_cols = CSV_list_columns(f)
                 if self.col not in f_cols:
                     msg = "Missing column {} in {}"
