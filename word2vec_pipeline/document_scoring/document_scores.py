@@ -270,3 +270,35 @@ class score_unique_IDF(IDF_document_score):
         idf = self.get_IDF_weights(tokens)
 
         return L2_norm(((idf * n) * W.T).sum(axis=1))
+
+class score_IDF_common_component_removal(score_unique_IDF):
+    method = "IDF_common_component_removal"
+
+    def __call__(self, text):
+        tokens = set(self.get_tokens_from_text(text))
+        if not tokens:
+            return self._empty_vector()
+
+        W = self.get_word_vectors(tokens)
+        n = self.get_negative_word_weights(tokens)
+        idf = self.get_IDF_weights(tokens)
+
+        # If there is only one vector, no need to compute PCA
+        if len(tokens) > 1:
+            
+            # Center the data and subtract out the common discouse vector
+            mu = np.mean(W, axis=0)
+            W -= mu
+
+            u,s,vh = np.linalg.svd(W, full_matrices=False)
+
+            # Remove the most common contribution
+            s[0] = 0
+
+            W = np.dot(u, np.dot(np.diag(s), vh))
+            W += mu
+
+        # Return the values as normal        
+        return L2_norm(((idf * n) * W.T).sum(axis=1))
+
+    
