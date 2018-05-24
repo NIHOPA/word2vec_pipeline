@@ -74,6 +74,7 @@ def analyze_metacluster_from_config(config):
 
     score_method = config["metacluster"]["score_method"]
     config = config["postprocessing"]
+    topn_words_returned = config["topn_words_returned"]
 
     save_dest = config['output_data_directory']
     os.system('mkdir -p {}'.format(save_dest))
@@ -126,7 +127,8 @@ def analyze_metacluster_from_config(config):
             item["intra_document_dispersion"] = -1
 
         # Compute closest words to the centroid
-        desc = ' '.join(zip(*model.wv.similar_by_vector(cx))[0])
+        desc = ' '.join(zip(*model.wv.similar_by_vector(
+            cx, topn=topn_words_returned))[0])
         item["word2vec_description"] = desc
 
         data.append(item)
