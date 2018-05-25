@@ -143,8 +143,8 @@ To speed up the scoring process, word2vec embedding models from previous runs ca
     count_commands = term_document_frequency, term_frequency, 
     score_commands = score_unique_IDF, score_simple,
 
-    [[negative_weights]]
-        # Sample negative weights, adjust as needed
+    [[downsample_weights]]
+        # Downsampling weights, adjust as needed
         understand = 0.15
         scientific = 0.25
 

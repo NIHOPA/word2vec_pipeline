@@ -61,11 +61,11 @@ class generic_document_score(object):
     '''
 
     def __init__(self,
-                 negative_weights=None,
+                 downsample_weights=None,
                  *args, **kwargs):
         '''
         Initialize the class, loading the word2vec model. If any words are
-        given negative_weights then they are applied here.
+        given a downsample weight then they are applied here.
 
         Args:
             *args: DOCUMENTATION_UNKNOWN
@@ -79,26 +79,21 @@ class generic_document_score(object):
         self.shape = self.M.wv.syn0.shape
         self.vocab = dict(zip(self.M.wv.index2word, xrange(self.shape[0])))
 
-        if negative_weights:
+        self.DSW = np.ones(shape=len(self.vocab), dtype=float)
 
-            NV = []
-            for word, weight in negative_weights.items():
+        for word, weight in downsample_weights.items():
 
-                if not self.check_word_vector(word):
-                    msg = "Negative weight word '{}' not found in dictionary"
-                    logger.warning(msg.format(word))
-                    continue
+            if not self.check_word_vector(word):
+                msg = "Downsample word '{}' not found in dictionary"
+                logger.warning(msg.format(word))
+                continue
 
-                vec = self.get_word_vector(word)
-                scale = np.exp(-float(weight) * self.M.wv.syn0.dot(vec))
+            vec = self.get_word_vector(word)
+            scale = np.exp(-float(weight)/1. * self.M.wv.syn0.dot(vec))
+            scale = np.clip(scale, 0, 1)
 
-                # Don't oversample, max out weights to unity
-                scale[scale > 1] = 1.0
-                NV.append(scale)
-            self.negative_weights = np.array(NV).T.sum(axis=1)
+            self.DSW *= scale
 
-        else:
-            self.negative_weights = np.ones(len(self.vocab), dtype=float)
 
         # Make sure nothing has been set yet
         self.V = self._ref = None
@@ -113,17 +108,14 @@ class generic_document_score(object):
     def get_word_vector(self, word):
         return self.M[word].astype(np.float64)
 
-    def get_negative_word_weight(self, word):
-        return self.negative_weights[self.vocab[word]]
-
     def get_word_vectors(self, ws):
         return np.array([self.get_word_vector(w) for w in ws])
 
-    def get_negative_word_weights(self, ws):
-        return np.array([self.get_negative_word_weight(w) for w in ws])
+    def get_downsample_word_weights(self, ws):
+        return np.array([self.DSW[self.vocab[w]] for w in ws])
 
-    def get_counts(self, ws):
-        return np.array([ws[w] for w in ws])
+    def get_counts(self, counter_object, keys):
+        return np.array([counter_object[x] for x in keys])
 
     def get_tokens_from_text(self, text):
         tokens = text.split()
@@ -167,6 +159,28 @@ class generic_document_score(object):
         save_h5(gx, "V", V)
         save_h5(gx, "_ref", _refs)
 
+    def compute_vectors(
+            self,
+            tokens,
+            need_counts=False,
+            need_IDF=False,
+    ):
+        
+        token_counter = token_counts(tokens)
+        words = list(token_counter)
+        item = {'words':words}
+
+        item['n'] = self.get_downsample_word_weights(words)
+        item['W'] = self.get_word_vectors(words)
+
+        if need_counts:
+            item["C"] = self.get_counts(token_counter, words)
+
+        if need_IDF:
+            item["idf"] = self.get_IDF_weights(words)
+            
+        return item
+
 
 # ----------------------------------------------------------------------------
 
@@ -206,6 +220,7 @@ class IDF_document_score(generic_document_score):
     def get_IDF_weights(self, ws):
         return np.array([self.get_IDF_weight(w) for w in ws])
 
+
 # ----------------------------------------------------------------------------
 
 
@@ -217,12 +232,9 @@ class score_simple(generic_document_score):
         if not tokens:
             return self._empty_vector()
 
-        counts = token_counts(tokens)
-
-        W = self.get_word_vectors(counts)
-        n = self.get_negative_word_weights(counts)
-        C = self.get_counts(counts)
-
+        v = self.compute_vectors(tokens, need_counts=True)
+        C, n, W = v['C'], v['n'], v['W']
+        
         return L2_norm(((C * n) * W.T).sum(axis=1))
 
 
@@ -230,13 +242,13 @@ class score_unique(generic_document_score):
     method = 'unique'
 
     def __call__(self, text):
-        tokens = set(self.get_tokens_from_text(text))
+        tokens = self.get_tokens_from_text(text)
         if not tokens:
             return self._empty_vector()
 
-        W = self.get_word_vectors(tokens)
-        n = self.get_negative_word_weights(tokens)
-
+        v = self.compute_vectors(tokens)
+        n, W = v['n'], v['W']
+        
         return L2_norm((n * W.T).sum(axis=1))
 
 
@@ -248,12 +260,8 @@ class score_simple_IDF(IDF_document_score):
         if not tokens:
             return self._empty_vector()
 
-        counts = token_counts(tokens)
-
-        W = self.get_word_vectors(counts)
-        n = self.get_negative_word_weights(counts)
-        C = self.get_counts(counts)
-        idf = self.get_IDF_weights(counts)
+        v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
+        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
 
         return L2_norm(((idf * C * n) * W.T).sum(axis=1))
 
@@ -266,16 +274,14 @@ class score_unique_IDF(IDF_document_score):
         if not tokens:
             return self._empty_vector()
 
-        W = self.get_word_vectors(tokens)
-        n = self.get_negative_word_weights(tokens)
-        idf = self.get_IDF_weights(tokens)
+        v = self.compute_vectors(tokens, need_IDF=True)
+        n, W, idf = v['n'], v['W'], v['idf']
 
         return L2_norm(((idf * n) * W.T).sum(axis=1))
 
 class score_IDF_common_component_removal(score_unique_IDF):
     method = "IDF_common_component_removal"
     
-
     def __call__(self, text):
         '''
         Adapts one of the ideas from the paper "A SIMPLE BUT TOUGH-TO-BEAT 
@@ -292,11 +298,10 @@ class score_IDF_common_component_removal(score_unique_IDF):
         if not tokens:
             return self._empty_vector()
 
-        W = self.get_word_vectors(tokens)
-        n = self.get_negative_word_weights(tokens)
-        idf = self.get_IDF_weights(tokens)
+        v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
+        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
 
-        WX = idf*W.T / n
+        WX = (n*idf)*W.T / C
 
         # If there is only one vector, no need to compute PCA
         if len(tokens) > 1:
