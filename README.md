@@ -129,6 +129,7 @@ Each of the scoring functions assume a bag-of-words model; they each add up the 
 | `unique` | Adds the word vectors only once | v1 + v2
 | `simple_IDF` | Adds the word vectors weighted by IDF | 2\*v1\*f1 + v2\*f2
 | `unique_IDF` | Adds the word vectors weighted by IDF only once | v1\*f1 + v2\*f2
+| `score_IDF_common_component_removal` | Same as simple IDF, but removes the first principal component per doc
 
 Principal component analysis (PCA) dimensionality reduction can be applied to these 300-dimensional vectors to identify which are the most influential, the default dimension to reduce to is 25. 
 The default number is specified by `n_components` under `score:reduced_representation`.
