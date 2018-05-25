@@ -134,6 +134,9 @@ Principal component analysis (PCA) dimensionality reduction can be applied to th
 The default number is specified by `n_components` under `score:reduced_representation`.
 Document scores are determined based gensim word2vec model created by the [embed](#embed) step. 
 To speed up the scoring process, word2vec embedding models from previous runs can be reused to score other documents. 
+To use a set of approximate "stop-words", adjust the values for `downsample_weights`. 
+For each word downsampled, a Gaussian is expanded around the center word (ci) and all words (cj) are downsampled by a factor of exp(-alpha*(ci.cj)), where alpha is the weight. 
+Words are never upsampled, as the value above is clipped at unity. A warning will be issued if a downsampled word is not in the embedding.
 
 ``` python
 [score]
@@ -145,7 +148,7 @@ To speed up the scoring process, word2vec embedding models from previous runs ca
 
     [[downsample_weights]]
         # Downsampling weights, adjust as needed
-        understand = 0.15
+        understand = 0.50
         scientific = 0.25
 
     [[reduced_representation]]
