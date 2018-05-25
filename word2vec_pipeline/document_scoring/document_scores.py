@@ -9,6 +9,7 @@ import collections
 import os
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import TruncatedSVD
 
 from utils.data_utils import load_w2vec
 from utils.os_utils import save_h5, get_h5save_object
@@ -270,3 +271,39 @@ class score_unique_IDF(IDF_document_score):
         idf = self.get_IDF_weights(tokens)
 
         return L2_norm(((idf * n) * W.T).sum(axis=1))
+
+class score_IDF_common_component_removal(score_unique_IDF):
+    method = "IDF_common_component_removal"
+    
+
+    def __call__(self, text):
+        '''
+        Adapts one of the ideas from the paper "A SIMPLE BUT TOUGH-TO-BEAT 
+        BASELINE FOR SENTENCE EMBEDDINGS", 
+
+        https://openreview.net/forum?id=SyK00v5xx
+
+        by subtracting off the main principal component from the data.
+        
+        https://github.com/PrincetonML/SIF/blob/master/src/SIF_embedding.py
+        '''
+        
+        tokens = set(self.get_tokens_from_text(text))
+        if not tokens:
+            return self._empty_vector()
+
+        W = self.get_word_vectors(tokens)
+        n = self.get_negative_word_weights(tokens)
+        idf = self.get_IDF_weights(tokens)
+
+        WX = idf*W.T / n
+
+        # If there is only one vector, no need to compute PCA
+        if len(tokens) > 1:
+
+            # Do not center the data, subtract out the common discouse vector
+            clf = TruncatedSVD(n_components=1, n_iter=7, random_state=0)
+            u = clf.fit(WX).components_
+            WX -= WX.dot(u.T)*u
+
+        return L2_norm(WX.sum(axis=1))
