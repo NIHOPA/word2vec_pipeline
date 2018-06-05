@@ -108,7 +108,7 @@ Common adjustments include changes to the `window`, `size`, and `min_count` opti
 The `window` setting refers to the size of the frame used to scan the text, `size` represents the number of vectors generated, and `min_count` is the number of times a word must appear before it is recognized as a term by the algorithm. 
 The output gensim data is then stored in the `data_embeddings` output folder under the filename `f_db`.
 The stored data can be accessed using the gensim library.
-The leanred vecotrs can be utilized for other machine learning tasks such as unsupervised clustering or predictions; therefore, this process requires enough document information for accurate training. 
+The learned vectors can be utilized for other machine learning tasks such as unsupervised clustering or predictions; therefore, this process requires enough document information for accurate training. 
 You can read more about word2vec embedding [here](https://rare-technologies.com/word2vec-tutorial/).
 
 ### [Score](#score)
