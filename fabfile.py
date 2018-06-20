@@ -1,78 +1,75 @@
-from invoke import run as local
-from invoke import task
+from fabric.api import local
 
 package_dir = "word2vec_pipeline"
 
-@task
-def deploy(c=None):
+
+def deploy():
     local("flake8 word2vec_pipeline")
     # local("nosetests -vs")
     # local("aspell check README.md")
     # local("check-manifest")
 
 
-@task
-def pep(c=None):
+def pep():
     local("autopep8 . -aaa --in-place --recursive --jobs=0")
 
-@task
-def import_data(c=None):
+
+def import_data():
     local("python word2vec_pipeline import_data")
 
-@task
-def phrase(c=None):
+
+def phrase():
     local("python word2vec_pipeline phrase")
 
-@task
-def parse(c=None):
+
+def parse():
     local("python word2vec_pipeline parse")
 
-@task
-def embed(c=None):
+
+def embed():
     local("python word2vec_pipeline embed")
 
-@task
-def score(c=None):
+
+def score():
     local("python word2vec_pipeline score")
 
-@task
-def predict(c=None):
+
+def predict():
     local("python word2vec_pipeline predict")
 
-@task
-def cluster(c=None):
+
+def cluster():
     local("python word2vec_pipeline cluster")
 
-@task
-def metacluster(c=None):
+
+def metacluster():
     local("python word2vec_pipeline metacluster")
 
-@task
-def analyze_metaclusters(c=None):
+
+def analyze_metaclusters():
     local("python word2vec_pipeline analyze metacluster")
 
-@task
-def LIME(c=None):
+def LIME():
     local("python word2vec_pipeline analyze LIME")
 
-@task
-def test(c=None):
-    clean(c)
 
-    import_data(c)
-    phrase(c)
-    parse(c)
-    embed(c)
-    score(c)
+def test():
+    clean()
 
-    metacluster(c)
-    analyze_metaclusters(c)
+    import_data()
+    phrase()
+    parse()
+    embed()
+    score()
+
+    metacluster()
+    analyze_metaclusters()
     
-    LIME(c)
-    predict(c)
+    LIME()
+    predict()
 
-@task
-def clean(c=None):
+
+def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
     local('rm -rvf w2v.egg-info')

@@ -38,3 +38,6 @@ bounter
 
 # For CLI interface
 docopt
+
+# For testing
+fabric==1.14.0
