@@ -61,7 +61,9 @@ class generic_document_score(object):
     '''
 
     def __init__(self,
+                 output_data_directory=None,
                  downsample_weights=None,
+                 discriminating_weight=None,
                  *args, **kwargs):
         '''
         Initialize the class, loading the word2vec model. If any words are
@@ -97,6 +99,24 @@ class generic_document_score(object):
 
         # Make sure nothing has been set yet
         self.V = self._ref = None
+
+        
+        weight = discriminating_weight
+        self.DIS = {}
+        
+        if weight:
+            self.f_csv_dis = os.path.join(
+                output_data_directory,
+                kwargs["discriminating_counter"]["f_db"],
+            )
+            assert(os.path.exists(self.f_csv_dis))
+
+            dis = pd.read_csv(self.f_csv_dis)
+
+            # Apply the weight and build a lookup dictionary
+            self.DIS = dict(zip(
+                dis["word"].values,
+                dis["discriminating_factor"].values**weight))
 
     def _empty_vector(self):
         return np.zeros((self.shape[1],), dtype=float)
@@ -172,14 +192,24 @@ class generic_document_score(object):
 
         item['n'] = self.get_downsample_word_weights(words)
         item['W'] = self.get_word_vectors(words)
-
+        item['dis'] = self.get_DIS_weights(words)
+        
         if need_counts:
             item["C"] = self.get_counts(token_counter, words)
 
         if need_IDF:
             item["idf"] = self.get_IDF_weights(words)
-            
+
         return item
+
+    def get_DIS_weight(self, w):
+        if w in self.DIS:
+            return self.DIS[w]
+        else:
+            return 1.0
+
+    def get_DIS_weights(self, ws):
+        return np.array([self.get_DIS_weight(w) for w in ws])
 
 
 # ----------------------------------------------------------------------------
@@ -233,9 +263,9 @@ class score_simple(generic_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True)
-        C, n, W = v['C'], v['n'], v['W']
-        
-        return L2_norm(((C * n) * W.T).sum(axis=1))
+        C, n, W, d = v['C'], v['n'], v['W'], v['dis']
+
+        return L2_norm(((C * n * d) * W.T).sum(axis=1))
 
 
 class score_unique(generic_document_score):
@@ -247,9 +277,9 @@ class score_unique(generic_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens)
-        n, W = v['n'], v['W']
+        n, W, d = v['n'], v['W'], v['dis']
         
-        return L2_norm((n * W.T).sum(axis=1))
+        return L2_norm((n * d * W.T).sum(axis=1))
 
 
 class score_simple_IDF(IDF_document_score):
@@ -261,9 +291,9 @@ class score_simple_IDF(IDF_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
-        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
+        C, n, W, idf, d = v['C'], v['n'], v['W'], v['idf'], v['dis']
 
-        return L2_norm(((idf * C * n) * W.T).sum(axis=1))
+        return L2_norm(((idf * C * n * d) * W.T).sum(axis=1))
 
 
 class score_unique_IDF(IDF_document_score):
@@ -275,9 +305,9 @@ class score_unique_IDF(IDF_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_IDF=True)
-        n, W, idf = v['n'], v['W'], v['idf']
+        n, W, idf, d = v['n'], v['W'], v['idf'], v['dis']
 
-        return L2_norm(((idf * n) * W.T).sum(axis=1))
+        return L2_norm(((idf * n * d) * W.T).sum(axis=1))
 
 class score_IDF_common_component_removal(score_unique_IDF):
     method = "IDF_common_component_removal"
@@ -299,9 +329,9 @@ class score_IDF_common_component_removal(score_unique_IDF):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
-        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
+        C, n, W, idf, d = v['C'], v['n'], v['W'], v['idf'], v['dis']
 
-        WX = (n*idf)*W.T / C
+        WX = (d*n*idf)*W.T / C
 
         # If there is only one vector, no need to compute PCA
         if len(tokens) > 1:

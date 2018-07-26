@@ -5,6 +5,7 @@
 # from .affinity_mapping import affinity_scoring
 
 from .term_frequency import term_frequency, term_document_frequency
+from .term_frequency import discriminating_counter
 from .document_scores import score_simple, score_unique
 from .document_scores import score_simple_IDF, score_unique_IDF
 from .document_scores import score_IDF_common_component_removal
