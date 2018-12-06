@@ -18,7 +18,7 @@ psutil
 configobj
 
 # For reporting and status bars
-tqdm
+tqdm==4.19.9
 
 # For plotting
 seaborn
