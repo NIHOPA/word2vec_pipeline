@@ -3,6 +3,17 @@
 Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
 While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
+When installing from a new environment the following may be useful:
+
+```
+	pyenv install 2.7.11
+	pyenv local 2.7.11
+	pip install pip -U	
+	pip install setuptools -U
+	pip install -r requirements.txt
+```
+
+
 Pipeline parameters and options for word2vec are run through the [configuration file](config.ini), the defaults are accessible for guiding new projects.
 Bracketed sections within the config file outline each step of the word2vec pipeline; for instance, the parameters that affect word2vec embedding are found in the [embed](#embed) section.
 Within each step, output data is stored in the `output_data_directory` folder.
