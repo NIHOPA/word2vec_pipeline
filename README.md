@@ -6,6 +6,7 @@ While this repository is primarily a research platform, it is used internally wi
 When installing from a new environment the following may be useful:
 
 ```
+	sudo apt install libssl1.0* # For Ubuntu 18.04
 	pyenv install 2.7.11
 	pyenv local 2.7.11
 	pip install pip -U	
