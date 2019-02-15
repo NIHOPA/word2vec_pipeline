@@ -7,8 +7,11 @@ import tqdm
 import simple_config
 import csv
 import os
+import sys
 from os_utils import grab_files
 
+# Fix for pathological csv files
+csv.field_size_limit(sys.maxsize)
 
 def CSV_list_columns(f_csv):
     """
