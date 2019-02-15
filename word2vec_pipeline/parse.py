@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 # NLPre is too noisy at the info level
 logging.getLogger("nlpre").setLevel(logging.WARNING)
 
+# Fix for pathological csv files
+csv.field_size_limit(sys.maxsize)
+_ref_counter = itertools.count()
+
 _global_batch_size = 500
 
 # This must be global for parallel to work properly
