@@ -8,6 +8,7 @@ import os
 from utils.os_utils import mkdir, grab_files
 import utils.db_utils as db_utils
 import csv
+import sys
 import nlpre
 
 from utils.parallel_utils import jobmap
@@ -20,7 +21,6 @@ logging.getLogger("nlpre").setLevel(logging.WARNING)
 
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)
-_ref_counter = itertools.count()
 
 _global_batch_size = 500
 
