@@ -19,6 +19,14 @@ Usage:
 from docopt import docopt
 import simple_config
 import logging
+import sys
+
+
+_python_version = sys.version_info
+if _python_version < (3,):
+    raise ValueError(
+        "Pipeline now requires python 3, you have", _python_version
+    )
 
 logging.basicConfig(level=logging.INFO)
 

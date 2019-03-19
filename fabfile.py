@@ -2,8 +2,8 @@ from fabric.api import local
 
 
 def lint():
-    local(f"black -l 80 fabfile.py embedding_pipeline/")
-    local(f"flake8 embedding_pipeline/ --ignore=E501,E203,W503")
+    local("black -l 80 fabfile.py embedding_pipeline/")
+    local("flake8 embedding_pipeline/ --ignore=E501,E203,W503")
 
 
 def import_data():
