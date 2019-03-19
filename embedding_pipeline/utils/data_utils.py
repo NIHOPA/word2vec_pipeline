@@ -9,11 +9,10 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
+import logging
 
 import simple_config
-from os_utils import grab_files, load_h5_file
-
-import logging
+from .os_utils import grab_files, load_h5_file
 
 logger = logging.getLogger(__name__)
 

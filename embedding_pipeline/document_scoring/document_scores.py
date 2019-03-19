@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 
-from utils.data_utils import load_w2vec
-from utils.os_utils import save_h5, get_h5save_object
+from .utils.data_utils import load_w2vec
+from .utils.os_utils import save_h5, get_h5save_object
 
 import logging
 
@@ -77,7 +77,7 @@ class generic_document_score(object):
 
         # Build the dictionary, and a mapping from word2index
         self.shape = self.M.wv.syn0.shape
-        self.vocab = dict(zip(self.M.wv.index2word, xrange(self.shape[0])))
+        self.vocab = dict(zip(self.M.wv.index2word, range(self.shape[0])))
 
         self.DSW = np.ones(shape=len(self.vocab), dtype=float)
 

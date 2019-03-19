@@ -44,7 +44,7 @@ class term_frequency(frequency_counter):
 
         text = row["text"]
 
-        tokens = unicode(text).split()
+        tokens = text.split()
         self.TF.update(tokens)
         self.TF.update(["__pipeline_document_counter"])
 
@@ -68,7 +68,7 @@ class term_document_frequency(frequency_counter):
         text = row["text"]
 
         # For document frequency keep only the unique items
-        tokens = set(unicode(text).split())
+        tokens = set(text.split())
 
         self.TF.update(tokens)
         self.TF.update(["__pipeline_document_counter"])

@@ -1,14 +1,14 @@
 # Standard numerical libraries
 #numpy
-#scipy
+sklearn
+scipy
 pandas
 h5py
 
 # NLP core libraries
 gensim==3.7.1
 nlpre>=2.0.3
-#flashtext
-#unidecode
+bounter
 
 # Figures out how many cores on machine (for parallel)
 psutil
@@ -33,7 +33,7 @@ joblib==0.11.0
 
 # TO explain variables in predictions
 #lime
-#bounter
+
 
 # For CLI interface
 docopt
