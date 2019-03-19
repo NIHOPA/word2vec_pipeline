@@ -62,7 +62,7 @@ class CSV_database_iterator(object):
         """
         self.F_CSV = sorted(F_CSV)
         self.col = target_column
-        
+
         self.progress_bar = tqdm.tqdm() if progress_bar else None
         self.include_filename = include_filename
 
@@ -78,7 +78,6 @@ class CSV_database_iterator(object):
                 if self.col not in f_cols:
                     msg = "Missing column {} in {}"
                     raise SyntaxError(msg.format(target_column, f))
-
 
     def _update_progress_bar(self):
         if self.progress_bar is not None:

@@ -1,10 +1,11 @@
 from fabric.api import local
 
+
 def lint():
     local(f"black -l 80 fabfile.py embedding_pipeline/")
     local(f"flake8 embedding_pipeline/ --ignore=E501,E203,W503")
 
-    
+
 def import_data():
     local("python embedding_pipeline/ import_data")
 
@@ -56,14 +57,15 @@ def test():
 
     metacluster()
     analyze_metaclusters()
-    
-    LIME()
+
     predict()
+
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
-    local('rm -rvf w2v.egg-info')
+    local("rm -rvf w2v.egg-info")
     local(
         "rm -rf data_import data_parsed data_document_scores "
-        "data_clustering data_embeddings data_predict results")
+        "data_clustering data_embeddings data_predict results"
+    )

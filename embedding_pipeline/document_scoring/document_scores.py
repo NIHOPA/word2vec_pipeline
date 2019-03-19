@@ -276,13 +276,12 @@ class score_IDF_common_component_removal(score_unique_IDF):
 
     def __call__(self, text):
         """
-        Adapts one of the ideas from the paper "A SIMPLE BUT TOUGH-TO-BEAT 
-        BASELINE FOR SENTENCE EMBEDDINGS", 
+        Adapts one of the ideas from the paper "A SIMPLE BUT TOUGH-TO-BEAT
+        BASELINE FOR SENTENCE EMBEDDINGS",
 
         https://openreview.net/forum?id=SyK00v5xx
 
         by subtracting off the main principal component from the data.
-        
         https://github.com/PrincetonML/SIF/blob/master/src/SIF_embedding.py
         """
 

@@ -3,7 +3,7 @@ Identifies phrases from abbreivations for documents in the pipeline.
 Saves the result to disk for use with other parsers.
 """
 
-#from utils.os_utils import grab_files, mkdir
+# from utils.os_utils import grab_files, mkdir
 
 from utils.parallel_utils import jobmap
 import utils.db_utils as db_utils
@@ -49,8 +49,9 @@ def phrases_from_config(config):
     ABBR = collections.Counter()
 
     INPUT_ITR = db_utils.CSV_database_iterator(
-        F_CSV, target_column, progress_bar=True)
-    
+        F_CSV, target_column, progress_bar=True
+    )
+
     ITR = jobmap(func_parenthetical, INPUT_ITR, _PARALLEL, col=target_column)
 
     for result in ITR:

@@ -48,7 +48,7 @@ def score_from_config(global_config):
         f_db = os.path.join(kwargs["output_data_directory"], kwargs["f_db"])
 
         logger.info("Starting score model {}".format(model.method))
-        
+
         for f_csv in db.get_section_filenames("parse"):
             data = {}
             for row in db.text_iterator([f_csv]):

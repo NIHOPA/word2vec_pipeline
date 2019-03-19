@@ -75,12 +75,11 @@ def load_phrase_database(f_abbreviations):
 
 def parse_from_config(config):
     global _global_batch_size
-    
+
     _PARALLEL = config.as_bool("_PARALLEL")
 
     if not _PARALLEL:
         _global_batch_size = 1
-
 
     import_config = config["import_data"]
     parse_config = config["parse"]
