@@ -8,7 +8,7 @@ Usage:
   word2vec_pipeline score
   word2vec_pipeline predict
   word2vec_pipeline metacluster
-  word2vec_pipeline analyze (<target_function>)
+  word2vec_pipeline analyze
 
   The code that is run by each command is found in the filename in current
   directory that corresponds to each command. The function
@@ -64,17 +64,14 @@ def main():
 
     if args["analyze"]:
 
-        func = args["<target_function>"]
-        if func == "metacluster":
-            import postprocessing.analyze_metaclusters as pam
-
-            pam.analyze_metacluster_from_config(config)
-        elif func == "LIME":
-            import postprocessing.lime_explainer as le
-
-            le.explain_metaclusters(config)
-        else:
-            raise KeyError("Analyze Function {} not known".format(func))
+        import postprocessing.analyze_metaclusters as pam
+        pam.analyze_metacluster_from_config(config)
+        
+        #elif func == "LIME":
+        #    import postprocessing.lime_explainer as le
+        #le.explain_metaclusters(config)
+        #else:
+        #    raise KeyError("Analyze Function {} not known".format(func))
 
 
 if __name__ == "__main__":

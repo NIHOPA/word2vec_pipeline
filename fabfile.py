@@ -1,14 +1,10 @@
 from fabric.api import local
 
 def lint():
-    local(f"black -l 80 embedding_pipeline/")
+    local(f"black -l 80 fabfile.py embedding_pipeline/")
     local(f"flake8 embedding_pipeline/ --ignore=E501,E203,W503")
 
-
-def pep():
-    local("autopep8 . -aaa --in-place --recursive --jobs=0")
-
-
+    
 def import_data():
     local("python embedding_pipeline/ import_data")
 
@@ -41,8 +37,8 @@ def metacluster():
     local("python embedding_pipeline/ metacluster")
 
 
-def analyze_metaclusters():
-    local("python embedding_pipeline/ analyze metacluster")
+def analyze():
+    local("python embedding_pipeline/ analyze")
 
 
 def LIME():
