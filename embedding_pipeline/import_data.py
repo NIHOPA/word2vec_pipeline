@@ -10,8 +10,6 @@ import os
 import itertools
 
 from utils.os_utils import mkdir, grab_files
-from utils.parallel_utils import jobmap
-import nlpre
 
 import logging
 logger = logging.getLogger(__name__)
@@ -20,42 +18,11 @@ logger = logging.getLogger(__name__)
 csv.field_size_limit(sys.maxsize)
 _ref_counter = itertools.count()
 
-parser_unicode = nlpre.unidecoder()
-
-
-def map_to_unicode(s):
-    '''
-    Convert input string to unicode.
-
-    Args:
-        s: an input string document
-
-    Returns
-        s: a copy of the input string in unicode
-    '''
-    # Helper function to fix input format
-    s = str(s)
-    return s.decode('utf-8', errors='replace')
-
-
-def clean_row(row):
-    '''
-    Maps all keys through a unicode and unidecode fixer.
-
-    Args:
-        row: a row of text
-
-    Returns:
-        row: the same row of text converted to unicode
-    '''
-    for key, val in row.iteritems():
-        row[key] = parser_unicode(map_to_unicode(val))
-    return row
-
 
 def csv_iterator(f_csv, clean=True, _PARALLEL=False):
     '''
     Creates an iterator over a CSV file, optionally cleans it.
+    Reads in file using utf-8 encoding.
 
     Args
         f_csv (str): Filename of the csv to open and iterate over
@@ -63,22 +30,11 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
         PARALLEL (bool): Set whether the iterator should be run in parallel
     '''
 
-    with open(f_csv) as FIN:
+    with open(f_csv, encoding='utf-8') as FIN:
         CSV = csv.DictReader(FIN)
-
-        if clean and _PARALLEL:
-            CSV = jobmap(clean_row, CSV, FLAG_PARALLEL=_PARALLEL)
-        elif clean and not _PARALLEL:
-            CSV = itertools.imap(clean_row, CSV)
-
-        try:
-            for row in CSV:
-                yield row
-        except Exception:
-            pass
-
-# Any reason it takes a list as an input, instead of the 4 parameters?
-
+        
+        for row in CSV:
+            yield row
 
 def import_csv(item):
     """
@@ -104,7 +60,7 @@ def import_csv(item):
 
         for row in csv_iterator(f_csv):
 
-            output = {"_ref": _ref_counter.next()}
+            output = {"_ref": next(_ref_counter)}
 
             if not has_checked_keys:
                 for key in merge_columns:

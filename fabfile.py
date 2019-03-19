@@ -1,9 +1,9 @@
 from fabric.api import local
 
-package_dir = "word2vec_pipeline"
+package_dir = "embedding_pipeline/"
 
 def deploy():
-    local("flake8 word2vec_pipeline")
+    local("flake8 embedding_pipeline/")
     # local("nosetests -vs")
     # local("aspell check README.md")
     # local("check-manifest")
@@ -15,43 +15,43 @@ def pep():
 
 
 def import_data():
-    local("python word2vec_pipeline import_data")
+    local("python embedding_pipeline/ import_data")
 
 
 def phrase():
-    local("python word2vec_pipeline phrase")
+    local("python embedding_pipeline/ phrase")
 
 
 def parse():
-    local("python word2vec_pipeline parse")
+    local("python embedding_pipeline/ parse")
 
 
 def embed():
-    local("python word2vec_pipeline embed")
+    local("python embedding_pipeline/ embed")
 
 
 def score():
-    local("python word2vec_pipeline score")
+    local("python embedding_pipeline/ score")
 
 
 def predict():
-    local("python word2vec_pipeline predict")
+    local("python embedding_pipeline/ predict")
 
 
 def cluster():
-    local("python word2vec_pipeline cluster")
+    local("python embedding_pipeline/ cluster")
 
 
 def metacluster():
-    local("python word2vec_pipeline metacluster")
+    local("python embedding_pipeline/ metacluster")
 
 
 def analyze_metaclusters():
-    local("python word2vec_pipeline analyze metacluster")
+    local("python embedding_pipeline/ analyze metacluster")
 
 
 def LIME():
-    local("python word2vec_pipeline analyze LIME")
+    local("python embedding_pipeline/ analyze LIME")
 
 
 def test():

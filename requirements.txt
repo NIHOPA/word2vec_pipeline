@@ -2,11 +2,11 @@
 #numpy
 #scipy
 #pandas
-#h5py
+h5py
 
 # NLP core libraries
-gensim>=3.3.0
-nlpre>=2.0.0
+#gensim>=3.3.0
+nlpre>=2.0.2
 #flashtext
 #unidecode
 
@@ -14,16 +14,16 @@ nlpre>=2.0.0
 #psutil
 
 # For loading configuration files
-#configobj
+configobj
 
 # For reporting and status bars
-#tqdm==4.19.9
+tqdm==4.19.9
 
 # For plotting
 #seaborn
 
 # Replaces pythons multiprocessing
-#joblib==0.11.0
+joblib==0.11.0
 
 # For locality hashing
 #nearpy
@@ -36,5 +36,5 @@ nlpre>=2.0.0
 #bounter
 
 # For CLI interface
-#docopt
-#fabric==1.14.0
+docopt
+Fabric3
