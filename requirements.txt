@@ -1,40 +1,40 @@
 # Standard numerical libraries
-numpy
-scipy
-pandas
-h5py
+#numpy
+#scipy
+#pandas
+#h5py
 
 # NLP core libraries
 gensim>=3.3.0
 nlpre>=2.0.0
-flashtext
-unidecode
+#flashtext
+#unidecode
 
 # Figures out how many cores on machine (for parallel)
-psutil
+#psutil
 
 # For loading configuration files
-configobj
+#configobj
 
 # For reporting and status bars
-tqdm==4.19.9
+#tqdm==4.19.9
 
 # For plotting
-seaborn
+#seaborn
 
 # Replaces pythons multiprocessing
-joblib==0.11.0
+#joblib==0.11.0
 
 # For locality hashing
-nearpy
+#nearpy
 
 # For SMOTE
-imbalanced-learn
+#imbalanced-learn
 
 # TO explain variables in predictions
-lime
-bounter
+#lime
+#bounter
 
 # For CLI interface
-docopt
-fabric==1.14.0
+#docopt
+#fabric==1.14.0

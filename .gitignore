@@ -1,3 +1,6 @@
+# pyenv
+.python-version
+
 # Generated files
 data_embeddings/*
 data_parsed/*
