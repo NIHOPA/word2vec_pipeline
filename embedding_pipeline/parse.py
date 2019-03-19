@@ -45,8 +45,8 @@ def dispatcher(row, target_column):
 
     text = row[target_column] if target_column in row else None
 
-    for f in parser_functions:
-        text = unicode(f(text))
+    for func in parser_functions:
+        text = func(text)
 
     row[target_column] = text
     return row
@@ -74,8 +74,13 @@ def load_phrase_database(f_abbreviations):
 
 
 def parse_from_config(config):
-
+    global _global_batch_size
+    
     _PARALLEL = config.as_bool("_PARALLEL")
+
+    if not _PARALLEL:
+        _global_batch_size = 1
+
 
     import_config = config["import_data"]
     parse_config = config["parse"]
@@ -102,6 +107,7 @@ def parse_from_config(config):
             ABBR = load_phrase_database(f_abbr)
             kwargs["counter"] = ABBR
 
+        logger.info(f"Loading {obj}")
         parser_functions.append(obj(**kwargs))
 
     col = config["target_column"]

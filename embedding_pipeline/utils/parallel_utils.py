@@ -22,7 +22,7 @@ def grouper(itr, n):
     block = []
     while True:
         try:
-            block.append(itr.next())
+            block.append(next(itr))
         except StopIteration:
             break
         if len(block) == n:
