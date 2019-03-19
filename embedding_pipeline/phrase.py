@@ -54,7 +54,6 @@ def phrases_from_config(config):
     ITR = jobmap(func_parenthetical, INPUT_ITR, _PARALLEL, col=target_column)
 
     for result in ITR:
-        print(result)
         ABBR.update(result)
 
     logger.info("{} total abbrs found.".format(len(ABBR)))
