@@ -4,11 +4,11 @@ process of parsing these files.
 """
 
 import tqdm
-import simple_config
 import csv
 import os
 import sys
 from .os_utils import grab_files
+import simple_config
 
 # Fix for pathological csv files
 csv.field_size_limit(sys.maxsize)

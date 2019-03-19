@@ -132,10 +132,9 @@ def get_score_methods():
     if not os.path.exists(f_h5):
         raise FileNotFoundError(f_h5)
 
-    
     with h5py.File(f_h5, "r") as h5:
         keys = list(h5.keys())
-        
+
     return keys
 
 

@@ -47,9 +47,9 @@ def predict_from_config(config):
     X_META = []
 
     cfg = config["predict"]
-    #cfg["_PARALLEL"] = config["_PARALLEL"]
+    # cfg["_PARALLEL"] = config["_PARALLEL"]
     cfg["_PARALLEL"] = False
-    
+
     df_scores = None
 
     for (method, cat_col) in ITR:

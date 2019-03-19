@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 
-from .utils.data_utils import load_w2vec
-from .utils.os_utils import save_h5, get_h5save_object
+from utils.data_utils import load_w2vec
+from utils.os_utils import save_h5, get_h5save_object
 
 import logging
 
