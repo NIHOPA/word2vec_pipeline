@@ -3,15 +3,12 @@
 Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
 While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
-When installing from a new environment the following may be useful:
+The word2vec pipeline is now **requires** python 3. When installing from a new environment the following may be useful
 
 ```
-	sudo apt install libssl1.0* # For Ubuntu 18.04
-	pyenv install 2.7.11
-	pyenv local 2.7.11
-	pip install pip -U	
-	pip install setuptools -U
-	pip install -r requirements.txt
+sudo apt install libssl1.0* # For Ubuntu 18.04
+pip install pip setuptools -U	
+pip install -r requirements.txt
 ```
 
 
@@ -71,23 +68,22 @@ Parsed documents are automatically sent to the `output_data_directory`.
 ``` python
 [parse]
 
-    output_table = parsed
     output_data_directory = data_parsed
-
-    pipeline = dedash, titlecaps, replace_acronyms, separated_parenthesis, replace_from_dictionary, token_replacement, decaps_text, pos_tokenizer
+    pipeline = unidecoder, dedash, titlecaps, replace_acronyms, separated_parenthesis, replace_from_dictionary, token_replacement, decaps_text, pos_tokenizer
 
     [[replace_from_dictionary]]
-        prefix = 'MeSH_'
+	suffix = '_MeSH'
 	
     [[replace_acronyms]]
-        prefix = 'PHRASE_'
+	suffix = 'ABBR'
 
-    [[separated_parenthesis]]
+   [[separated_parenthesis]]
         # Only keep long parenthetical content
-        min_keep_length = 10
+	min_keep_length=10
 
     [[pos_tokenizer]]
-        POS_blacklist = connector, cardinal, pronoun, symbol, punctuation, modal_verb, adverb, verb, w_word, adjective
+        POS_blacklist = 'pronoun', 'verb', 'adjective', 'punctuation', 'possessive', 'symbol', 'cardinal', 'connector', 'adverb', 'unknown'
+
 ```
 
 
