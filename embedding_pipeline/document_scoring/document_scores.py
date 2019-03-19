@@ -15,11 +15,12 @@ from utils.data_utils import load_w2vec
 from utils.os_utils import save_h5, get_h5save_object
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def L2_norm(doc_vec):
-    '''
+    """
     Renormalize document vector onto the hypersphere.
 
     Args:
@@ -27,14 +28,14 @@ def L2_norm(doc_vec):
 
     Returns:
         doc_vec: Normalized document vector
-    '''
+    """
 
     # Renormalize onto the hypersphere
     doc_vec /= np.linalg.norm(doc_vec)
 
     # Sanity check, L2 norm and set to zeros if not
     if doc_vec.any():
-        assert(np.isclose(1.0, np.linalg.norm(doc_vec)))
+        assert np.isclose(1.0, np.linalg.norm(doc_vec))
     else:
         logger.warning("Warning L2 norm not satisifed (0-vector returned)")
         doc_vec = np.zeros(doc_vec.shape)
@@ -43,34 +44,33 @@ def L2_norm(doc_vec):
 
 
 def token_counts(tokens, size_mb=1):
-    '''
+    """
     Returns a count for the number of times a token appears in a list.
     bounter is slower here since we aren't counting a large enough corpus.
-    '''
+    """
     return collections.Counter(tokens)
 
 
 # ----------------------------------------------------------------------------
 
+
 class generic_document_score(object):
 
-    '''
+    """
     Class to score documents with word2vec model, using scoring method
     specified. Each scoring method has its own class associated with it
     that inherits generic_document_score()
-    '''
+    """
 
-    def __init__(self,
-                 downsample_weights=None,
-                 *args, **kwargs):
-        '''
+    def __init__(self, downsample_weights=None, *args, **kwargs):
+        """
         Initialize the class, loading the word2vec model. If any words are
         given a downsample weight then they are applied here.
 
         Args:
             *args: DOCUMENTATION_UNKNOWN
             **kwargs: DOCUMENTATION_UNKNOWN
-        '''
+        """
 
         # Load the model from disk
         self.M = load_w2vec()
@@ -89,11 +89,10 @@ class generic_document_score(object):
                 continue
 
             vec = self.get_word_vector(word)
-            scale = np.exp(-float(weight)/1. * self.M.wv.syn0.dot(vec))
+            scale = np.exp(-float(weight) / 1.0 * self.M.wv.syn0.dot(vec))
             scale = np.clip(scale, 0, 1)
 
             self.DSW *= scale
-
 
         # Make sure nothing has been set yet
         self.V = self._ref = None
@@ -132,23 +131,18 @@ class generic_document_score(object):
     def __call__(self, text):
         raise NotImplementedError
 
-    def save(
-            self,
-            data,
-            f_csv,
-            f_db,
-    ):
-        '''
+    def save(self, data, f_csv, f_db):
+        """
         Takes in a (data) dictionary of _ref:doc_vec and saves it to an
         h5 file.  Save only to the basename of the file (f_csv), saves to
         (f_db).
-        '''
+        """
 
         _refs = sorted(data.keys())
         V = np.array([data[r] for r in _refs])
 
         # Sanity check, should not have any NaNs
-        assert(not np.isnan(V).any())
+        assert not np.isnan(V).any()
 
         # Set the size explictly as a sanity check
         size_n, dim_V = V.shape
@@ -159,26 +153,21 @@ class generic_document_score(object):
         save_h5(gx, "V", V)
         save_h5(gx, "_ref", _refs)
 
-    def compute_vectors(
-            self,
-            tokens,
-            need_counts=False,
-            need_IDF=False,
-    ):
-        
+    def compute_vectors(self, tokens, need_counts=False, need_IDF=False):
+
         token_counter = token_counts(tokens)
         words = list(token_counter)
-        item = {'words':words}
+        item = {"words": words}
 
-        item['n'] = self.get_downsample_word_weights(words)
-        item['W'] = self.get_word_vectors(words)
+        item["n"] = self.get_downsample_word_weights(words)
+        item["W"] = self.get_word_vectors(words)
 
         if need_counts:
             item["C"] = self.get_counts(token_counter, words)
 
         if need_IDF:
             item["idf"] = self.get_IDF_weights(words)
-            
+
         return item
 
 
@@ -186,20 +175,22 @@ class generic_document_score(object):
 
 
 class IDF_document_score(generic_document_score):
-
-    def __init__(self,
-                 output_data_directory=None,
-                 term_document_frequency=None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        output_data_directory=None,
+        term_document_frequency=None,
+        *args,
+        **kwargs
+    ):
 
         super(IDF_document_score, self).__init__(
-            output_data_directory=output_data_directory, *args, **kwargs)
+            output_data_directory=output_data_directory, *args, **kwargs
+        )
 
-        assert(term_document_frequency is not None)
+        assert term_document_frequency is not None
 
         f_csv = os.path.join(
-            output_data_directory,
-            term_document_frequency["f_db"],
+            output_data_directory, term_document_frequency["f_db"]
         )
 
         IDF = pd.read_csv(f_csv)
@@ -233,13 +224,13 @@ class score_simple(generic_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True)
-        C, n, W = v['C'], v['n'], v['W']
-        
+        C, n, W = v["C"], v["n"], v["W"]
+
         return L2_norm(((C * n) * W.T).sum(axis=1))
 
 
 class score_unique(generic_document_score):
-    method = 'unique'
+    method = "unique"
 
     def __call__(self, text):
         tokens = self.get_tokens_from_text(text)
@@ -247,8 +238,8 @@ class score_unique(generic_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens)
-        n, W = v['n'], v['W']
-        
+        n, W = v["n"], v["W"]
+
         return L2_norm((n * W.T).sum(axis=1))
 
 
@@ -261,7 +252,7 @@ class score_simple_IDF(IDF_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
-        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
+        C, n, W, idf = v["C"], v["n"], v["W"], v["idf"]
 
         return L2_norm(((idf * C * n) * W.T).sum(axis=1))
 
@@ -275,15 +266,16 @@ class score_unique_IDF(IDF_document_score):
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_IDF=True)
-        n, W, idf = v['n'], v['W'], v['idf']
+        n, W, idf = v["n"], v["W"], v["idf"]
 
         return L2_norm(((idf * n) * W.T).sum(axis=1))
 
+
 class score_IDF_common_component_removal(score_unique_IDF):
     method = "IDF_common_component_removal"
-    
+
     def __call__(self, text):
-        '''
+        """
         Adapts one of the ideas from the paper "A SIMPLE BUT TOUGH-TO-BEAT 
         BASELINE FOR SENTENCE EMBEDDINGS", 
 
@@ -292,16 +284,16 @@ class score_IDF_common_component_removal(score_unique_IDF):
         by subtracting off the main principal component from the data.
         
         https://github.com/PrincetonML/SIF/blob/master/src/SIF_embedding.py
-        '''
-        
+        """
+
         tokens = set(self.get_tokens_from_text(text))
         if not tokens:
             return self._empty_vector()
 
         v = self.compute_vectors(tokens, need_counts=True, need_IDF=True)
-        C, n, W, idf = v['C'], v['n'], v['W'], v['idf']
+        C, n, W, idf = v["C"], v["n"], v["W"], v["idf"]
 
-        WX = (n*idf)*W.T / C
+        WX = (n * idf) * W.T / C
 
         # If there is only one vector, no need to compute PCA
         if len(tokens) > 1:
@@ -309,6 +301,6 @@ class score_IDF_common_component_removal(score_unique_IDF):
             # Do not center the data, subtract out the common discouse vector
             clf = TruncatedSVD(n_components=1, n_iter=7, random_state=0)
             u = clf.fit(WX).components_
-            WX -= WX.dot(u.T)*u
+            WX -= WX.dot(u.T) * u
 
         return L2_norm(WX.sum(axis=1))

@@ -1,7 +1,7 @@
 # Standard numerical libraries
 #numpy
 #scipy
-#pandas
+pandas
 h5py
 
 # NLP core libraries

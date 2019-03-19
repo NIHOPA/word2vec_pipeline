@@ -22,11 +22,12 @@ import utils.data_utils as uds
 from utils.os_utils import touch_h5
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def subset_iterator(X, m, repeats=1):
-    '''
+    """
     Iterates over array X in chunks of m, repeat number of times.
     Each time the order of the repeat is randomly generated.
 
@@ -34,7 +35,7 @@ def subset_iterator(X, m, repeats=1):
         X (numpy array): Input data
         m (int): Number of each elements in a chunk
         repeats (int): Number of time to iterate over input data
-    '''
+    """
 
     N, dim = X.shape
     progress = tqdm(total=repeats * int(N / m))
@@ -51,7 +52,7 @@ def subset_iterator(X, m, repeats=1):
 
 
 def cosine_affinity(X):
-    '''
+    """
     Computes cosine affinity and fixes rounding errors that sometimes give
     negative distance values.
 
@@ -60,7 +61,7 @@ def cosine_affinity(X):
 
     Returns:
          S: a float of pairwise similarity values
-    '''
+    """
 
     epsilon = 1e-8
     S = cosine_similarity(X)
@@ -68,15 +69,15 @@ def cosine_affinity(X):
     S += 1 + epsilon
 
     # Sanity checks
-    assert(not (S < 0).any())
-    assert(not np.isnan(S).any())
-    assert(not np.isinf(S).any())
+    assert not (S < 0).any()
+    assert not np.isnan(S).any()
+    assert not np.isinf(S).any()
 
     return S
 
 
 def docv_centroid_order_idx(meta_clusters):
-    '''
+    """
     Determine a more appropriate order for each meta cluster based
     on their pairwise similarity.
 
@@ -85,11 +86,12 @@ def docv_centroid_order_idx(meta_clusters):
 
     Returns:
         d_idx: an array of ordered meta clusters
-    '''
+    """
 
     # Compute the linkage and the order
-    linkage = hierarchy.linkage(meta_clusters,
-                                metric='cosine', method='average')
+    linkage = hierarchy.linkage(
+        meta_clusters, metric="cosine", method="average"
+    )
     d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
     return d_idx
@@ -97,9 +99,9 @@ def docv_centroid_order_idx(meta_clusters):
 
 class cluster_object(object):
 
-    '''
+    """
     Helper class to represent all the constitute parts of a clustering
-    '''
+    """
 
     def __init__(self):
 
@@ -111,11 +113,10 @@ class cluster_object(object):
         self.subcluster_kn = int(config["subcluster_kn"])
 
         self.f_h5_centroids = os.path.join(
-            config["output_data_directory"],
-            config["f_centroids"],
+            config["output_data_directory"], config["f_centroids"]
         )
 
-        score_method = config['score_method']
+        score_method = config["score_method"]
         DV = uds.load_document_vectors(score_method)
         self._ref = DV["_refs"]
         self.docv = DV["docv"]
@@ -123,30 +124,25 @@ class cluster_object(object):
         self.N, self.dim = self.docv.shape
 
     def compute_centroid_set(self):
-        '''
+        """
         Compute each cluster's centroid
 
         Return:
             np.vstack(C): a numpy array of cluster centroids
-        '''
+        """
 
         INPUT_ITR = subset_iterator(
-            X=self.docv,
-            m=self.subcluster_m,
-            repeats=self.subcluster_repeats,
+            X=self.docv, m=self.subcluster_m, repeats=self.subcluster_repeats
         )
 
         kn = self.subcluster_kn
-        clf = SpectralClustering(
-            n_clusters=kn,
-            affinity="precomputed",
-        )
+        clf = SpectralClustering(n_clusters=kn, affinity="precomputed")
 
         C = []
 
         for X in INPUT_ITR:
             # Remove any rows that have zero vectors
-            bad_row_idx = ((X**2).sum(axis=1) == 0)
+            bad_row_idx = (X ** 2).sum(axis=1) == 0
 
             X = X[~bad_row_idx]
             A = cosine_affinity(X)
@@ -171,7 +167,7 @@ class cluster_object(object):
         return np.vstack(C)
 
     def load_centroid_dataset(self, name):
-        '''
+        """
         Loads information about the centroids from the h5 file
         they are saved in.
 
@@ -180,9 +176,9 @@ class cluster_object(object):
 
         Returns:
             h5[name][:]: a directory in an h5 file
-        '''
+        """
 
-        with h5py.File(self.f_h5_centroids, 'r') as h5:
+        with h5py.File(self.f_h5_centroids, "r") as h5:
             return h5[name][:]
 
     def compute_meta_centroid_set(self, C):
@@ -215,12 +211,13 @@ class cluster_object(object):
         msg = "Assigning {} labels over {} documents."
         logger.info(msg.format(n_clusters, self.N))
 
-        dist = cdist(self.docv, meta_clusters, metric='cosine')
+        dist = cdist(self.docv, meta_clusters, metric="cosine")
         labels = np.argmin(dist, axis=1)
 
-        logger.info("Label distribution: {}".format(
-            collections.Counter(labels)))
-        
+        logger.info(
+            "Label distribution: {}".format(collections.Counter(labels))
+        )
+
         return labels
 
     def docv_centroid_spread(self):
@@ -242,16 +239,16 @@ class cluster_object(object):
 
 
 def metacluster_from_config(config):
-    '''
+    """
     Imports the parameters for creating metaclusters from the config file,
     and then creates metaclusters
 
     Args:
         config: config file
-    '''
+    """
 
-    config = config['metacluster']
-    os.system('mkdir -p {}'.format(config['output_data_directory']))
+    config = config["metacluster"]
+    os.system("mkdir -p {}".format(config["output_data_directory"]))
 
     CO = cluster_object()
     f_h5 = CO.f_h5_centroids
@@ -290,7 +287,7 @@ if __name__ == "__main__":
 #
 #
 
-'''
+"""
     def reorder(self,idx):
         self.X = self.X[idx]
         self.S = self.S[idx][:,idx]
@@ -354,9 +351,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     #plt.savefig("clustering_{}.png".format(n_clusters))
     plt.show()
-'''
+"""
 
-'''
+"""
 # Example of how to save strings in h5py
 
         if dtype in [str, unicode]:
@@ -364,4 +361,4 @@ if __name__ == "__main__":
             h5.require_dataset(name, shape=result.shape, dtype=dt)
             for i, x in enumerate(result):
                 h5[name][i] = x
-'''
+"""

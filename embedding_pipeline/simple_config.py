@@ -7,6 +7,7 @@ from configobj import ConfigObj
 from validate import Validator, VdtTypeError
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +23,7 @@ def validate_errors(errors, name_stack=None):
         name_stack = []
 
     for key, item in errors.items():
-        stack = name_stack + [key, ]
+        stack = name_stack + [key]
 
         # If item is True, then object validated
         if item:
@@ -30,7 +31,7 @@ def validate_errors(errors, name_stack=None):
 
         # If item is a known typeError report it
         if isinstance(item, VdtTypeError):
-            logging.warning("ConfigError: {} {}".format('/'.join(stack), item))
+            logging.warning("ConfigError: {} {}".format("/".join(stack), item))
             is_error = True
 
         # If item is a dict, recurse into the config stack
@@ -49,7 +50,7 @@ def load(f_config="config.ini"):
 
     # The config spec should be located in the same directory as simple_config
     local_path = os.path.dirname(os.path.realpath(__file__))
-    f_config_spec = os.path.join(local_path, 'config_validation.ini')
+    f_config_spec = os.path.join(local_path, "config_validation.ini")
 
     config = ConfigObj(f_config, configspec=f_config_spec)
 
@@ -62,7 +63,7 @@ def load(f_config="config.ini"):
     return config
 
     # Loading a subset is depreciated since type checking isn't done.
-    '''
+    """
     # Load all the global keys
     output = ConfigObj()
 
@@ -74,4 +75,4 @@ def load(f_config="config.ini"):
     output.update(config[subset])
 
     return output
-    '''
+    """

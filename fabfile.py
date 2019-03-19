@@ -1,13 +1,8 @@
 from fabric.api import local
 
-package_dir = "embedding_pipeline/"
-
-def deploy():
-    local("flake8 embedding_pipeline/")
-    # local("nosetests -vs")
-    # local("aspell check README.md")
-    # local("check-manifest")
-
+def lint():
+    local(f"black -l 80 embedding_pipeline/")
+    local(f"flake8 embedding_pipeline/ --ignore=E501,E203,W503")
 
 
 def pep():

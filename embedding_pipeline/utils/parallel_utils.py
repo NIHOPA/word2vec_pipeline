@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 
 def grouper(itr, n):
-    '''
+    """
     Reads ahead n items on an iterator. On last pass returns a smaller
     list with the remaining items. Useful for batch processing in parallel.
 
@@ -17,7 +17,7 @@ def grouper(itr, n):
 
     Yields:
         list: A list of at least n items from the iterable
-    '''
+    """
 
     block = []
     while True:
@@ -33,9 +33,10 @@ def grouper(itr, n):
         yield block
 
 
-def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
-           *args, **kwargs):
-    '''
+def jobmap(
+    func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None, *args, **kwargs
+):
+    """
     Function to parallalize the operation of another function
     passed to it.
 
@@ -46,7 +47,7 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
         batch_size (int):
         args: additional arguments passed to the function
         kwargs: additional keyword arguments passed to the function
-    '''
+    """
 
     n_jobs = -1 if FLAG_PARALLEL else 1
     dfunc = joblib.delayed(func)
@@ -55,10 +56,9 @@ def jobmap(func, INPUT_ITR, FLAG_PARALLEL=False, batch_size=None,
 
         # Yield the whole thing if there isn't a batch_size
         if batch_size is None:
-            for z in MP(dfunc(x, *args, **kwargs)
-                        for x in INPUT_ITR):
+            for z in MP(dfunc(x, *args, **kwargs) for x in INPUT_ITR):
                 yield z
-            raise StopIteration
+            return
 
         ITR = iter(INPUT_ITR)
         progress_bar = tqdm()

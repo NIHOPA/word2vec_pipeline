@@ -25,6 +25,7 @@ import joblib
 from tqdm import tqdm
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,15 +39,14 @@ def _vectorizer(text_blocks):
 
 
 vectorizer = sklearn.preprocessing.FunctionTransformer(
-    _vectorizer, validate=False)
+    _vectorizer, validate=False
+)
 
 
 def _explain_text(text, P, num_features):
     global explainer
     exp = explainer.explain_instance(
-        text,
-        P.predict_proba,
-        num_features=num_features,
+        text, P.predict_proba, num_features=num_features
     )
     item = collections.Counter()
     for k, v in exp.as_list():
@@ -57,14 +57,10 @@ def _explain_text(text, P, num_features):
 def _compute_LIME(TEXT, Y, n_estimators, n_lime_features):
 
     clf = sklearn.ensemble.RandomForestClassifier(
-        n_estimators=n_estimators,
-        n_jobs=-1,
+        n_estimators=n_estimators, n_jobs=-1
     )
 
-    P = Pipeline([
-        ('word2vec', vectorizer),
-        ('randomforests', clf),
-    ])
+    P = Pipeline([("word2vec", vectorizer), ("randomforests", clf)])
 
     P.fit(TEXT, Y)
 
@@ -76,7 +72,7 @@ def _compute_LIME(TEXT, Y, n_estimators, n_lime_features):
         for c in MP(func(x, P, n_lime_features) for x in ITR):
             data.update(c)
 
-    df = pd.DataFrame.from_dict(data, orient='index').reset_index()
+    df = pd.DataFrame.from_dict(data, orient="index").reset_index()
     df = df.sort_values(0)
     df.columns = ["word", "score"]
     df.score /= len(TEXT)
@@ -108,15 +104,15 @@ def explain_metaclusters(config):
     labels = data["meta_labels"]
 
     # Find out which centroids are close, and find their index locations
-    C = cdist(centroids, centroids, metric='cosine')
-    cidx = np.where(C > float(args['metacluster_cosine_minsim']))
+    C = cdist(centroids, centroids, metric="cosine")
+    cidx = np.where(C > float(args["metacluster_cosine_minsim"]))
 
     n_lime_samples = int(args["n_lime_samples"])
     n_lime_features = int(args["n_lime_features"])
     n_estimators = int(args["n_estimators"])
 
     INPUT_ITR = udb.text_iterator()
-    ALL_TEXT = np.array([row['text'] for row in INPUT_ITR])
+    ALL_TEXT = np.array([row["text"] for row in INPUT_ITR])
 
     data = []
     for i, j in zip(*cidx):

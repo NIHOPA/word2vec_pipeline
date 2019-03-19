@@ -15,17 +15,17 @@ from utils.db_utils import text_iterator
 
 
 def embed_from_config(config):
-    '''
+    """
     Args:
         config (dict): Import parameters
-    '''
+    """
 
     # Only load options from the embedding section
-    target_column = config['target_column']
-    econfig = config['embed']
+    target_column = config["target_column"]
+    econfig = config["embed"]
 
     # Create any missing directories
-    d_out = econfig['output_data_directory']
+    d_out = econfig["output_data_directory"]
     mkdir(d_out)
 
     # Train each embedding model
@@ -41,12 +41,13 @@ def embed_from_config(config):
         model.set_iterator_function(text_iterator)
         model.compute(target_column)
 
-        f_save = os.path.join(d_out, kwargs[name]['f_db'])
+        f_save = os.path.join(d_out, kwargs[name]["f_db"])
         model.save(f_save)
 
 
 if __name__ == "__main__":
 
     import simple_config
+
     config = simple_config.load()
     embed_from_config(config)

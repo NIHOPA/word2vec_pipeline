@@ -14,6 +14,7 @@ import nlpre
 from utils.parallel_utils import jobmap
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # NLPre is too noisy at the info level
@@ -26,6 +27,7 @@ _global_batch_size = 500
 
 # This must be global for parallel to work properly
 parser_functions = []
+
 
 def dispatcher(row, target_column):
     """
@@ -51,7 +53,7 @@ def dispatcher(row, target_column):
 
 
 def load_phrase_database(f_abbreviations):
-    '''
+    """
     Load the dictionary of abbreviated steps created in the "import_data" step
 
     Args:
@@ -59,14 +61,14 @@ def load_phrase_database(f_abbreviations):
 
     Returns:
          A dictionary of abbreviations.
-    '''
+    """
 
     P = {}
-    with open(f_abbreviations, 'r') as FIN:
+    with open(f_abbreviations, "r") as FIN:
         CSV = csv.DictReader(FIN)
         for row in CSV:
-            key = (tuple(row['phrase'].split()), row['abbr'])
-            val = int(row['count'])
+            key = (tuple(row["phrase"].split()), row["abbr"])
+            val = int(row["count"])
             P[key] = val
     return P
 
@@ -95,7 +97,7 @@ def parse_from_config(config):
         if name == "replace_acronyms":
             f_abbr = os.path.join(
                 config["phrase_identification"]["output_data_directory"],
-                config["phrase_identification"]["f_abbreviations"]
+                config["phrase_identification"]["f_abbreviations"],
             )
             ABBR = load_phrase_database(f_abbr)
             kwargs["counter"] = ABBR
@@ -108,9 +110,13 @@ def parse_from_config(config):
     dfunc = db_utils.CSV_database_iterator
     INPUT_ITR = dfunc(F_CSV, col, include_filename=True, progress_bar=False)
 
-    ITR = jobmap(dispatcher, INPUT_ITR, _PARALLEL,
-                 batch_size=_global_batch_size,
-                 target_column=col,)
+    ITR = jobmap(
+        dispatcher,
+        INPUT_ITR,
+        _PARALLEL,
+        batch_size=_global_batch_size,
+        target_column=col,
+    )
 
     F_CSV_OUT = {}
     F_WRITERS = {}
@@ -122,9 +128,9 @@ def parse_from_config(config):
         if f not in F_CSV_OUT:
             f_csv_out = os.path.join(output_dir, os.path.basename(f))
 
-            F = open(f_csv_out, 'w')
+            F = open(f_csv_out, "w")
             F_CSV_OUT[f] = F
-            F_WRITERS[f] = csv.DictWriter(F, fieldnames=['_ref', col])
+            F_WRITERS[f] = csv.DictWriter(F, fieldnames=["_ref", col])
             F_WRITERS[f].writeheader()
 
         F_WRITERS[f].writerow(row)
@@ -137,5 +143,6 @@ def parse_from_config(config):
 if __name__ == "__main__":
 
     import simple_config
+
     config = simple_config.load()
     parse_from_config(config)

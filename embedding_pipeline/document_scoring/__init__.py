@@ -12,12 +12,12 @@ from .reduced_representation import reduced_representation
 
 
 __all__ = [
-    'term_frequency',
-    'term_document_frequency',
-    'score_simple',
-    'score_unique',
-    'score_simple_IDF',
-    'score_unique_IDF',
-    'score_IDF_common_component_removal',
-    'reduced_representation',
+    "term_frequency",
+    "term_document_frequency",
+    "score_simple",
+    "score_unique",
+    "score_simple_IDF",
+    "score_unique_IDF",
+    "score_IDF_common_component_removal",
+    "reduced_representation",
 ]

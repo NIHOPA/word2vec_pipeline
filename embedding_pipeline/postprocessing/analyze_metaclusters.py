@@ -20,22 +20,23 @@ from scipy.cluster import hierarchy
 import utils.data_utils as uds
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def _compute_centroid_dist(X, cx):
-    '''
+    """
     Find the average distance of all documents in a cluster to its centroid
         X: a document vector
         cx: a list of cluster centroids
     Returns
         a float similarity value
-    '''
-    return cdist(X, [cx, ], metric='cosine').mean()
+    """
+    return cdist(X, [cx], metric="cosine").mean()
 
 
 def _compute_dispersion_matrix(X, labels):
-    '''
+    """
     Find the intra-document dispersion of every document in a cluster.
 
     Args:
@@ -44,7 +45,7 @@ def _compute_dispersion_matrix(X, labels):
     Returns
         dist: a numpy array of the matrix of pairwise dispersion measures
               between each document in a cluster
-    '''
+    """
 
     n = len(np.unique(labels))
     dist = np.zeros((n, n))
@@ -52,9 +53,9 @@ def _compute_dispersion_matrix(X, labels):
     for i, j in tqdm(ITR):
 
         if i == j:
-            d = pdist(X[labels == i], metric='cosine')
+            d = pdist(X[labels == i], metric="cosine")
         else:
-            d = cdist(X[labels == i], X[labels == j], metric='cosine')
+            d = cdist(X[labels == i], X[labels == j], metric="cosine")
             # Only take upper diagonal (+diagonal elements)
             d = d[np.triu_indices(n=d.shape[0], m=d.shape[1], k=0)]
 
@@ -64,20 +65,20 @@ def _compute_dispersion_matrix(X, labels):
 
 
 def analyze_metacluster_from_config(config):
-    '''
+    """
     Does analysis on metaclusters to return descriptive information and
     statistics.
 
     Args:
         config: a config file
-    '''
+    """
 
     score_method = config["metacluster"]["score_method"]
     config = config["postprocessing"]
     topn_words_returned = config["topn_words_returned"]
 
-    save_dest = config['output_data_directory']
-    os.system('mkdir -p {}'.format(save_dest))
+    save_dest = config["output_data_directory"]
+    os.system("mkdir -p {}".format(save_dest))
 
     model = uds.load_w2vec()
     ORG = uds.load_ORG_data(config["master_columns"])
@@ -103,7 +104,7 @@ def analyze_metacluster_from_config(config):
         dist = _compute_dispersion_matrix(DV["docv"], MC["meta_labels"])
 
         # Compute the linkage and the order
-        linkage = hierarchy.linkage(dist, method='average')
+        linkage = hierarchy.linkage(dist, method="average")
         d_idx = hierarchy.dendrogram(linkage, no_plot=True)["leaves"]
 
     else:
@@ -127,8 +128,9 @@ def analyze_metacluster_from_config(config):
             item["intra_document_dispersion"] = -1
 
         # Compute closest words to the centroid
-        desc = ' '.join(zip(*model.wv.similar_by_vector(
-            cx, topn=topn_words_returned))[0])
+        desc = " ".join(
+            zip(*model.wv.similar_by_vector(cx, topn=topn_words_returned))[0]
+        )
         item["word2vec_description"] = desc
 
         data.append(item)
@@ -143,7 +145,7 @@ def analyze_metacluster_from_config(config):
         "counts",
         "avg_centroid_distance",
         "intra_document_dispersion",
-        "word2vec_description"
+        "word2vec_description",
     ]
 
     df = df[cols]
@@ -170,8 +172,10 @@ def analyze_metacluster_from_config(config):
 
     print(df)  # Output the result to stdout
 
+
 if __name__ == "__main__" and __package__ is None:
 
     import simple_config
+
     config = simple_config.load()
     analyze_metacluster_from_config(config)

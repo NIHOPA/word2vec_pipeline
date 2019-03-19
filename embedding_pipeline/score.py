@@ -11,7 +11,9 @@ import document_scoring as ds
 import utils.db_utils as db
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def _load_model(name, config):
     # Load any kwargs in the config file
@@ -47,16 +49,16 @@ def score_from_config(global_config):
 
         logger.info("Starting score model {}".format(model.method))
 
-        for f_csv in db.get_section_filenames('parse'):
+        for f_csv in db.get_section_filenames("parse"):
             data = {}
-            for row in db.text_iterator([f_csv, ]):
-                data[row["_ref"]] = model(row['text'])
+            for row in db.text_iterator([f_csv]):
+                data[row["_ref"]] = model(row["text"])
 
             model.save(data, f_csv, f_db)
 
         # If required, compute the reduced representation
         if kwargs["compute_reduced_representation"]:
-            nc = kwargs['reduced_representation']['n_components']
+            nc = kwargs["reduced_representation"]["n_components"]
             rdata = RREP.compute(model.method, n_components=nc)
             RREP.save(model.method, rdata, f_db)
 
@@ -64,5 +66,6 @@ def score_from_config(global_config):
 if __name__ == "__main__":
 
     import simple_config
+
     config = simple_config.load()
     score_from_config(config)

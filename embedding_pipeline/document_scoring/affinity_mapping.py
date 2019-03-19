@@ -16,6 +16,7 @@ from utils.parallel_utils import jobmap
 from utils.data_utils import load_w2vec
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 damping = None
@@ -29,7 +30,7 @@ def compute_local_affinity(V):
     cluster_args = {"damping": damping}
     cluster = cluster_clf(**cluster_args)
 
-    DV = cdist(V, V, metric='cosine')
+    DV = cdist(V, V, metric="cosine")
     z_labels = cluster.fit_predict(DV)
 
     # logger.info("{} unique labels found".format(np.unique(z_labels).shape))
@@ -47,15 +48,14 @@ def compute_affinity(item):
     collections.Counter(valid_tokens)
     labels = np.array(list(set(valid_tokens)))
 
-    token_clf_index = np.array([M.word2index[w]
-                                for w in labels])
+    token_clf_index = np.array([M.word2index[w] for w in labels])
 
     if not labels.size:
         msg = "Document has no valid tokens! This is problem."
         raise ValueError(msg)
 
     V = np.array([M[w] for w in labels])
-    DV = cdist(V, V, metric='cosine')
+    DV = cdist(V, V, metric="cosine")
 
     # Values are sometimes "slightly" less than zero due to rounding
     DV[DV < 0] = 0
@@ -67,16 +67,12 @@ def compute_affinity(item):
 
     data = {}
 
-    data = {
-        "token_clf_index": token_clf_index,
-        "y_labels": y_labels,
-    }
+    data = {"token_clf_index": token_clf_index, "y_labels": y_labels}
 
     return f_idx, f_sql, data
 
 
 class affinity_mapping(corpus_iterator):
-
     def __init__(self, *args, **kwargs):
         super(affinity_mapping, self).__init__(*args, **kwargs)
 
@@ -90,10 +86,10 @@ class affinity_mapping(corpus_iterator):
         self.damping = float(kwargs["damping"])
 
         if not os.path.exists(kwargs["f_affinity"]):
-            h5 = h5py.File(kwargs["f_affinity"], 'w')
+            h5 = h5py.File(kwargs["f_affinity"], "w")
             h5.close()
 
-        self.h5 = h5py.File(kwargs["f_affinity"], 'r+')
+        self.h5 = h5py.File(kwargs["f_affinity"], "r+")
 
         global damping, M
 
@@ -102,8 +98,9 @@ class affinity_mapping(corpus_iterator):
 
         self.vocab_n = len(M.wv.index2word)
 
-        M.word2index = dict([(w, i) for w, i in
-                             zip(M.wv.index2word, range(self.vocab_n))])
+        M.word2index = dict(
+            [(w, i) for w, i in zip(M.wv.index2word, range(self.vocab_n))]
+        )
 
         # Increment this as we find more clusters
         self.cluster_n = 0
@@ -127,7 +124,7 @@ class affinity_mapping(corpus_iterator):
 
         idx, f_sql, data = result
 
-        key = os.path.basename(f_sql) + '_' + str(idx)
+        key = os.path.basename(f_sql) + "_" + str(idx)
 
         g = self.h5.require_group("documents")
         g = self.h5["documents"].require_group(key)
@@ -139,11 +136,11 @@ class affinity_mapping(corpus_iterator):
 
         self.cluster_n += len(np.unique(data["y_labels"]))
 
+
 #
 
 
 class affinity_grouping(corpus_iterator):
-
     def __init__(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -153,7 +150,7 @@ class affinity_grouping(corpus_iterator):
         self._PARALLEL = ast.literal_eval(kwargs["_PARALLEL"])
 
         # Load the model from disk
-        self.h5 = h5py.File(kwargs["f_affinity"], 'r+')
+        self.h5 = h5py.File(kwargs["f_affinity"], "r+")
 
         # Capture the size of the vocabulary
         self.vocab_n = self.h5["documents"].attrs["vocab_n"]
@@ -178,8 +175,10 @@ class affinity_grouping(corpus_iterator):
             for i in np.unique(y_labels):
                 idx = i == y_labels
 
-                words = [self.M.wv.index2word[word_idx]
-                         for word_idx in token_idx[idx]]
+                words = [
+                    self.M.wv.index2word[word_idx]
+                    for word_idx in token_idx[idx]
+                ]
                 vec = np.array([self.M[w] for w in words])
                 vec = vec.mean(axis=0)
                 vec /= np.linalg.norm(vec)
@@ -228,10 +227,10 @@ class affinity_grouping(corpus_iterator):
         INPUT_ITR = self.iterator_batch(Z)
         Z2 = self.cluster_affinity_states(INPUT_ITR, size=len(Z))
 
-        logger.info("Final affinity size {}".format(len(Z2))
-        self.save(config, Z2)
+        # logger.info("Final affinity size {}".format(len(Z2))
+        # self.save(config, Z2)
 
-        '''
+        """
         import seaborn as sns
         plt = sns.plt
         DZ2 = cdist(Z2,Z2,metric='cosine')
@@ -243,7 +242,7 @@ class affinity_grouping(corpus_iterator):
         sns.heatmap(DZ,xticklabels=False, yticklabels=False,linewidths=0)
         #sns.plt.figure()
         sns.plt.show()
-        '''
+        """
 
         self.h5.close()
 
@@ -255,6 +254,7 @@ class affinity_grouping(corpus_iterator):
             del self.h5[name]
 
         self.h5[name] = result
+
 
 #
 
@@ -273,8 +273,7 @@ def compute_document_affinity(item):
     for i in np.unique(y_labels):
         idx = i == y_labels
 
-        words = [M.wv.index2word[word_idx]
-                 for word_idx in token_clf_index[idx]]
+        words = [M.wv.index2word[word_idx] for word_idx in token_clf_index[idx]]
         vec = np.array([M[w] for w in words])
         vec = vec.mean(axis=0)
         vec /= np.linalg.norm(vec)
@@ -299,7 +298,6 @@ def compute_document_affinity(item):
 
 
 class affinity_scoring(affinity_mapping):
-
     def __init__(self, *args, **kwargs):
         super(affinity_scoring, self).__init__(*args, **kwargs)
         self.A = self.h5["clustered_affinity"][:]
@@ -310,8 +308,9 @@ class affinity_scoring(affinity_mapping):
         global sparse_coder
         nzero = kwargs["n_nonzero_coeffs"]
 
-        sparse_coder = SparseCoder(self.A, split_sign=False,
-                                   transform_n_nonzero_coefs=nzero)
+        sparse_coder = SparseCoder(
+            self.A, split_sign=False, transform_n_nonzero_coefs=nzero
+        )
 
     def compute(self, config):
 
@@ -324,8 +323,7 @@ class affinity_scoring(affinity_mapping):
         for result in ITR:
             doc_data.append(result)
 
-        df = pd.DataFrame(data=doc_data,
-                          columns=["V", "idx", "f_sql"])
+        df = pd.DataFrame(data=doc_data, columns=["V", "idx", "f_sql"])
 
         self.save(config, df)
 
@@ -338,14 +336,14 @@ class affinity_scoring(affinity_mapping):
 
         # Create the h5 file if it doesn't exist
         if not os.path.exists(f_db):
-            h5 = h5py.File(f_db, 'w')
+            h5 = h5py.File(f_db, "w")
         else:
-            h5 = h5py.File(f_db, 'r+')
+            h5 = h5py.File(f_db, "r+")
 
         for key, data_group in df.groupby("f_sql"):
 
             # Save into the group of the base file name
-            name = '.'.join(os.path.basename(key).split('.')[:-1])
+            name = ".".join(os.path.basename(key).split(".")[:-1])
 
             g = h5.require_group(method)
             V = np.array(data_group["V"].tolist())
@@ -354,8 +352,6 @@ class affinity_scoring(affinity_mapping):
             if name in g:
                 del g[name]
 
-            g.create_dataset(name,
-                             data=V,
-                             compression='gzip')
+            g.create_dataset(name, data=V, compression="gzip")
 
         h5.close()

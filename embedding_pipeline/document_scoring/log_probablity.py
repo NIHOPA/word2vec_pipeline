@@ -33,17 +33,17 @@ def compute_stats(X, data, prefix):
 
 class document_log_probability(corpus_iterator):
 
-    table_name = 'log_prob'
-    method = 'document_log_probability'
+    table_name = "log_prob"
+    method = "document_log_probability"
 
     def __init__(self, *args, **kwargs):
-        '''
+        """
         Computes various measures of central tendency of a document.
         For Z_X scores, the raw word tokens are summed over the partition
         function. For I_X scores, the same statistics are computed over
         the similarity of all word pairs for words with top 10% Z values.
         This will precompute the partition function if it doesn't exist.
-        '''
+        """
         cfg_embed = simple_config.load()["embedding"]
         cfg_score = simple_config.load()["score"]
 
@@ -91,44 +91,53 @@ class document_log_probability(corpus_iterator):
         # (special care needed for h5py unicode strings)
         dt = h5py.special_dtype(vlen=unicode)
 
-        with h5py.File(f_h5, 'w') as h5:
+        with h5py.File(f_h5, "w") as h5:
 
-            h5.create_dataset("words", (len(words),),
-                              dtype=dt,
-                              data=[w.encode('utf8') for w in words])
+            h5.create_dataset(
+                "words",
+                (len(words),),
+                dtype=dt,
+                data=[w.encode("utf8") for w in words],
+            )
 
-            h5.attrs['vocab_N'] = len(words)
-            h5['Z'] = ZT
+            h5.attrs["vocab_N"] = len(words)
+            h5["Z"] = ZT
 
     def load_partition_function(self, f_h5):
-        '''
+        """
         The partition function is a dictionary of the
         Standardized (zero-mean, unit-variance) Z scores are returned
         that were precomputed over the corpus embedding.
 
-        '''
+        """
 
-        with h5py.File(f_h5, 'r') as h5:
+        with h5py.File(f_h5, "r") as h5:
             words = h5["words"][:]
-            Z = h5['Z'][:]
+            Z = h5["Z"][:]
 
         # Standardize Z scores
         Z = (Z - Z.mean()) / Z.std()
 
         # Sanity check that the number of words matches what was saved
-        assert(len(words) == len(Z))
+        assert len(words) == len(Z)
 
         return dict(zip(words, Z))
 
     def __call__(self, row):
-        '''
+        """
         Compute partition function stats over each document.
-        '''
-        text = row['text']
+        """
+        text = row["text"]
 
         stat_names = [
-            'Z_mu', 'Z_std', 'Z_skew', 'Z_kurtosis',
-            'I_mu', 'I_std', 'I_skew', 'I_kurtosis',
+            "Z_mu",
+            "Z_std",
+            "Z_skew",
+            "Z_kurtosis",
+            "I_mu",
+            "I_std",
+            "I_skew",
+            "I_kurtosis",
         ]
         stats = {}
         for key in stat_names:
@@ -158,7 +167,7 @@ class document_log_probability(corpus_iterator):
 
             compute_stats(dist, stats, "I")
 
-        stats['_ref'] = row['_ref']
+        stats["_ref"] = row["_ref"]
         return stats
 
     def reduce(self, stats):
@@ -167,14 +176,13 @@ class document_log_probability(corpus_iterator):
     def save(self, config):
 
         out_dir = config["output_data_directory"]
-        f_h5 = os.path.join(out_dir,
-                            config["document_log_probability"]["f_db"])
+        f_h5 = os.path.join(out_dir, config["document_log_probability"]["f_db"])
 
         df = pd.DataFrame(self.scores)
 
-        with h5py.File(f_h5, 'w') as h5:
-            h5['_ref'] = df['_ref'].astype(int)
-            del df['_ref']
+        with h5py.File(f_h5, "w") as h5:
+            h5["_ref"] = df["_ref"].astype(int)
+            del df["_ref"]
 
             for key in df.columns:
                 h5[key] = df[key].astype(float)

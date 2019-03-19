@@ -19,6 +19,7 @@ Usage:
 from docopt import docopt
 import simple_config
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -28,40 +29,49 @@ def main():
 
     if args["import_data"]:
         from import_data import import_data_from_config
+
         import_data_from_config(config)
 
     elif args["phrase"]:
         from phrase import phrases_from_config
+
         phrases_from_config(config)
 
     if args["parse"]:
         from parse import parse_from_config
+
         parse_from_config(config)
 
     if args["embed"]:
         from embed import embed_from_config
+
         embed_from_config(config)
 
     if args["score"]:
         from score import score_from_config
+
         score_from_config(config)
 
     if args["predict"]:
         from predict import predict_from_config
+
         predict_from_config(config)
 
     if args["metacluster"]:
         from metacluster import metacluster_from_config
+
         metacluster_from_config(config)
 
     if args["analyze"]:
 
         func = args["<target_function>"]
-        if func == 'metacluster':
+        if func == "metacluster":
             import postprocessing.analyze_metaclusters as pam
+
             pam.analyze_metacluster_from_config(config)
-        elif func == 'LIME':
+        elif func == "LIME":
             import postprocessing.lime_explainer as le
+
             le.explain_metaclusters(config)
         else:
             raise KeyError("Analyze Function {} not known".format(func))

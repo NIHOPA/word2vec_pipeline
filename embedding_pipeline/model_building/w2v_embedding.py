@@ -7,11 +7,11 @@ from gensim.models.word2vec import Word2Vec
 from utils.mapreduce import corpus_iterator
 
 import psutil
+
 CPU_CORES = max(4, psutil.cpu_count())
 
 
 class iterator_factory(object):
-
     def __init__(self, func, total=0, *args, **kwargs):
         self.func = func
         self.args = args
@@ -31,17 +31,17 @@ class w2v_embedding(corpus_iterator):
     """
 
     def __init__(
-            self,
-            epoch_n,
-            skip_gram,
-            hierarchical_softmax,
-            negative,
-            window,
-            sample,
-            size,
-            min_count,
-            *args,
-            **kwargs
+        self,
+        epoch_n,
+        skip_gram,
+        hierarchical_softmax,
+        negative,
+        window,
+        sample,
+        size,
+        min_count,
+        *args,
+        **kwargs
     ):
 
         super(w2v_embedding, self).__init__(*args, **kwargs)
@@ -54,8 +54,8 @@ class w2v_embedding(corpus_iterator):
         negative = int(negative)
 
         # Input bounds checks
-        assert(sg in [0, 1])
-        assert(hs in [0, 1])
+        assert sg in [0, 1]
+        assert hs in [0, 1]
 
         if hs and negative:
             msg = "If hierarchical_softmax is used negative must be zero"
@@ -73,19 +73,19 @@ class w2v_embedding(corpus_iterator):
             iter=int(epoch_n),
         )
 
-    def compute(self, target_column='text'):
+    def compute(self, target_column="text"):
 
-        ITR = iterator_factory(self.sentence_iterator,
-                               total=self.epoch_n + 1,
-                               target_column=target_column)
+        ITR = iterator_factory(
+            self.sentence_iterator,
+            total=self.epoch_n + 1,
+            target_column=target_column,
+        )
 
         self.clf.build_vocab(ITR)
 
         # Train the features
         self.clf.train(
-            ITR,
-            total_examples=self.clf.corpus_count,
-            epochs=self.clf.iter,
+            ITR, total_examples=self.clf.corpus_count, epochs=self.clf.iter
         )
 
         # Reduce the features

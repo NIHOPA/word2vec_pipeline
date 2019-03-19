@@ -12,6 +12,7 @@ import itertools
 from utils.os_utils import mkdir, grab_files
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Fix for pathological csv files
@@ -20,7 +21,7 @@ _ref_counter = itertools.count()
 
 
 def csv_iterator(f_csv, clean=True, _PARALLEL=False):
-    '''
+    """
     Creates an iterator over a CSV file, optionally cleans it.
     Reads in file using utf-8 encoding.
 
@@ -28,13 +29,14 @@ def csv_iterator(f_csv, clean=True, _PARALLEL=False):
         f_csv (str): Filename of the csv to open and iterate over
         clean (bool): Set whether to clean the csv file
         PARALLEL (bool): Set whether the iterator should be run in parallel
-    '''
+    """
 
-    with open(f_csv, encoding='utf-8') as FIN:
+    with open(f_csv, encoding="utf-8") as FIN:
         CSV = csv.DictReader(FIN)
-        
+
         for row in CSV:
             yield row
+
 
 def import_csv(item):
     """
@@ -54,7 +56,7 @@ def import_csv(item):
     if not merge_columns:
         raise ValueError("merge_columns must not be empty")
 
-    with open(f_csv_out, 'w') as FOUT:
+    with open(f_csv_out, "w") as FOUT:
         CSV_HANDLE = None
         total_rows = 0
 
@@ -79,10 +81,10 @@ def import_csv(item):
                 if not val:
                     continue
                 if val[-1] not in ".?!,":
-                    val += '.'
+                    val += "."
                 text.append(val)
 
-            output[target_column] = '\n'.join(text).strip()
+            output[target_column] = "\n".join(text).strip()
 
             if CSV_HANDLE is None:
                 CSV_HANDLE = csv.DictWriter(FOUT, sorted(output.keys()))
@@ -95,7 +97,7 @@ def import_csv(item):
 
 
 def import_directory_csv(d_in, d_out, target_column, merge_columns):
-    '''
+    """
     Takes a input_directory and output_directory and builds
     and cleaned (free of encoding errors) CSV for all input
     and attaches unique _ref numbers to each entry.
@@ -106,7 +108,7 @@ def import_directory_csv(d_in, d_out, target_column, merge_columns):
         target_column (str): Name of the column with concatenated text
         merge_columns (list): Names of the text columns that are to be
            concatenated
-    '''
+    """
 
     INPUT_FILES = grab_files("*.csv", d_in)
 
@@ -132,7 +134,7 @@ def import_data_from_config(config):
 
     merge_columns = config["import_data"]["merge_columns"]
 
-    if (not isinstance(merge_columns, list)):
+    if not isinstance(merge_columns, list):
         msg = "merge_columns (if used) must be a list"
         raise ValueError(msg)
 
@@ -141,7 +143,7 @@ def import_data_from_config(config):
 
     # Require 'input_data_directories' to be a list
     data_in_list = config["import_data"]["input_data_directories"]
-    if (not isinstance(data_in_list, list)):
+    if not isinstance(data_in_list, list):
         msg = "input_data_directories must be a list"
         raise ValueError(msg)
 
@@ -154,6 +156,7 @@ def import_data_from_config(config):
 if __name__ == "__main__":
 
     import simple_config
+
     config = simple_config.load()
 
     import_data_from_config(config)

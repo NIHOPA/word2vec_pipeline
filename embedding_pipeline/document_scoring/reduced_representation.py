@@ -3,10 +3,11 @@ from utils.data_utils import load_document_vectors
 from utils.os_utils import save_h5, get_h5save_object
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-class reduced_representation(object):
 
+class reduced_representation(object):
     def compute(self, method, n_components=10):
 
         DV = load_document_vectors(method)
@@ -33,5 +34,8 @@ class reduced_representation(object):
 
         save_h5(g[key], "VX", data["VX"][idx, :])
         save_h5(g[key], "VX_components_", data["VX_components_"])
-        save_h5(g[key], "VX_explained_variance_ratio_",
-                data["VX_explained_variance_ratio_"])
+        save_h5(
+            g[key],
+            "VX_explained_variance_ratio_",
+            data["VX_explained_variance_ratio_"],
+        )

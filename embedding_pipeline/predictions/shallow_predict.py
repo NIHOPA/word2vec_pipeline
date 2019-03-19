@@ -10,7 +10,9 @@ from utils.parallel_utils import jobmap
 from imblearn.over_sampling import SMOTE
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def clf_extratree_predictor(item):
     (clf_args, idx, X, y, use_SMOTE) = item
@@ -22,7 +24,7 @@ def clf_extratree_predictor(item):
     y_train = y[train_index]
 
     if use_SMOTE:
-        sampler = SMOTE(ratio='auto', kind='regular')
+        sampler = SMOTE(ratio="auto", kind="regular")
         X_train, y_train = sampler.fit_sample(X_train, y_train)
 
     clf.fit(X_train, y_train)
@@ -34,18 +36,12 @@ def clf_extratree_predictor(item):
 
 
 def categorical_predict(
-        X,
-        y_org,
-        method_name,
-        n_estimators=50,
-        use_SMOTE=False,
-        use_PARALLEL=True,
+    X, y_org, method_name, n_estimators=50, use_SMOTE=False, use_PARALLEL=True
 ):
 
     # Make sure the sizes match
     msg = "X shape {}, y_org shape {} (mismatch!)"
-    assert X.shape[0] == y_org.shape[0], msg.format(X.shape[0],
-                                                    y_org.shape[0])
+    assert X.shape[0] == y_org.shape[0], msg.format(X.shape[0], y_org.shape[0])
 
     enc = LabelEncoder()
     y = enc.fit_transform(y_org)
@@ -75,7 +71,7 @@ def categorical_predict(
     predict_scores = np.zeros([y.size, label_n], dtype=float)
 
     df = pd.DataFrame(index=range(y.shape[0]))
-    df['y_truth'] = y
+    df["y_truth"] = y
     df[method_name] = -1
 
     for result in ITR:
@@ -97,7 +93,7 @@ def categorical_predict(
         df.ix[test_index, method_name] = pred
 
     # Make sure all items have been scored
-    assert (~(df[method_name] == -1).any())
+    assert ~(df[method_name] == -1).any()
 
     # For StratifiedKFold, each test set is hit only once
     # so normalization is simple
@@ -108,5 +104,5 @@ def categorical_predict(
         np.array(F1_scores),
         error_counts,
         predict_scores,
-        df
+        df,
     )

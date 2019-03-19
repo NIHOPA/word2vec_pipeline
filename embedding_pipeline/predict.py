@@ -12,17 +12,19 @@ from predictions import categorical_predict
 import seaborn as sns
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def predict_from_config(config):
 
     ERROR_MATRIX = {}
     PREDICTIONS = {}
 
-    use_meta = config["predict"]['use_meta']
+    use_meta = config["predict"]["use_meta"]
 
     # For now, we can only deal with one column using meta!
-    assert(len(config["predict"]["categorical_columns"]) == 1)
+    assert len(config["predict"]["categorical_columns"]) == 1
 
     methods = uds.get_score_methods()
 
@@ -69,9 +71,9 @@ def predict_from_config(config):
             X=X,
             y_org=Y,
             method_name=method,
-            use_SMOTE=int(cfg['use_SMOTE']),
-            use_PARALLEL=int(cfg['_PARALLEL']),
-            n_estimators=int(cfg['n_estimators']),
+            use_SMOTE=int(cfg["use_SMOTE"]),
+            use_PARALLEL=int(cfg["_PARALLEL"]),
+            n_estimators=int(cfg["n_estimators"]),
         )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
@@ -99,8 +101,8 @@ def predict_from_config(config):
             X=X_META,
             y_org=Y,
             method_name=method,
-            n_estimators=int(cfg['n_estimators']),
-            use_PARALLEL=int(cfg['_PARALLEL']),
+            n_estimators=int(cfg["n_estimators"]),
+            use_PARALLEL=int(cfg["_PARALLEL"]),
         )
 
         text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
@@ -116,15 +118,14 @@ def predict_from_config(config):
         for col in extra_cols:
             df_scores[col] = df_ORG[col]
 
-    f_save = os.path.join(pred_output_dir,
-                          "{}_prediction.csv".format(cat_col))
-    df_scores.index.name = '_ref'
+    f_save = os.path.join(pred_output_dir, "{}_prediction.csv".format(cat_col))
+    df_scores.index.name = "_ref"
     df_scores.to_csv(f_save)
 
     names = methods
 
     if use_meta:
-        names += ["meta", ]
+        names += ["meta"]
 
     # Plotting methods here
 
@@ -140,7 +141,7 @@ def predict_from_config(config):
 
         df[na][nb] = idx.sum()
 
-    print(df) # Output result to stdout
+    print(df)  # Output result to stdout
 
     sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
     plt.yticks(rotation=0)
@@ -152,5 +153,6 @@ def predict_from_config(config):
 if __name__ == "__main__":
 
     import simple_config
+
     config = simple_config.load()
     predict_from_config(config)

@@ -6,10 +6,10 @@ from document_scores import score_unique_IDF
 
 class score_Z_weighted(score_unique_IDF, document_log_probability):
 
-    method = 'Z_weighted'
+    method = "Z_weighted"
 
     def __init__(self, *args, **kwargs):
-        '''
+        """
         The Z weighted method takes the Z scores from the log_probability
         and uses them as a proxy for an IDF weight. Before use, all Z scores
         are mean-centered and scaled to have unit variance. Values above the
@@ -17,7 +17,7 @@ class score_Z_weighted(score_unique_IDF, document_log_probability):
         set to zero, making all the highly specific words (Z>0) have the same
         weight. The final weighting is the exponential exp(z/kT) where z is the
         thresholded word-weight.
-        '''
+        """
 
         score_unique_IDF.__init__(self, *args, **kwargs)
         document_log_probability.__init__(self, *args, **kwargs)

@@ -1,6 +1,6 @@
-'''
+"""
 Builds the TF database for quick reference.
-'''
+"""
 import os
 import pandas as pd
 from bounter import bounter
@@ -9,10 +9,7 @@ from bounter import bounter
 class frequency_counter(object):
     function_name = "frequency_counter"
 
-    def __init__(
-            self,
-            bounter_size_mb=1024,
-            *args, **kwargs):
+    def __init__(self, bounter_size_mb=1024, *args, **kwargs):
         # Global counter for term frequency
         self.TF = bounter(size_mb=bounter_size_mb)
 
@@ -34,7 +31,7 @@ class term_frequency(frequency_counter):
     function_name = "term_frequency"
 
     def __call__(self, row):
-        '''
+        """
         Count frequency of terms in a single document and updates the
         class counters.
 
@@ -43,13 +40,13 @@ class term_frequency(frequency_counter):
 
         Returns:
             None
-        '''
+        """
 
-        text = row['text']
+        text = row["text"]
 
         tokens = unicode(text).split()
         self.TF.update(tokens)
-        self.TF.update(["__pipeline_document_counter", ])
+        self.TF.update(["__pipeline_document_counter"])
 
 
 class term_document_frequency(frequency_counter):
@@ -57,7 +54,7 @@ class term_document_frequency(frequency_counter):
     function_name = "term_document_frequency"
 
     def __call__(self, row):
-        '''
+        """
         Count apperance of terms in a single document and updates the
         class counters.
 
@@ -66,12 +63,12 @@ class term_document_frequency(frequency_counter):
 
         Returns:
             None
-        '''
+        """
 
-        text = row['text']
+        text = row["text"]
 
         # For document frequency keep only the unique items
         tokens = set(unicode(text).split())
 
         self.TF.update(tokens)
-        self.TF.update(["__pipeline_document_counter", ])
+        self.TF.update(["__pipeline_document_counter"])

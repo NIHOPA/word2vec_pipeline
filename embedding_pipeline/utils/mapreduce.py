@@ -1,6 +1,4 @@
-
 class corpus_iterator(object):
-
     def __init__(self, *args, **kwargs):
         # Set any function arguments for calling
         self.kwargs = kwargs
@@ -20,8 +18,9 @@ class corpus_iterator(object):
             yield unicode(text).split()
 
     def labelized_sentence_iterator(self):
-        
+
         import gensim.models.doc2vec
+
         LabeledSentence = gensim.models.doc2vec.LabeledSentence
         raise ValueError("doc2vec not implemented yet")
 
@@ -32,8 +31,8 @@ class corpus_iterator(object):
             idx = item[1]
             f_sql = item[-1]
 
-            for sentence in text.split('\n'):
+            for sentence in text.split("\n"):
                 sentence = unicode(sentence)
                 tokens = sentence.split()
                 label = "{}_{}".format(f_sql, idx)
-                yield LabeledSentence(tokens, [label, ])
+                yield LabeledSentence(tokens, [label])
