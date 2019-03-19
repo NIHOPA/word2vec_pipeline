@@ -118,7 +118,7 @@ def load_metacluster_data(*args):
 def get_score_methods():
     """
     Determines which scoring methods to return for each document,
-    based on what's set in config file
+    based on what's set in config file.
 
     Returns:
          h5.keys(): DOCUMENTATION_UNKNOWN
@@ -129,8 +129,14 @@ def get_score_methods():
         config_score["output_data_directory"], config_score["f_db"]
     )
 
+    if not os.path.exists(f_h5):
+        raise FileNotFoundError(f_h5)
+
+    
     with h5py.File(f_h5, "r") as h5:
-        return h5.keys()
+        keys = list(h5.keys())
+        
+    return keys
 
 
 def load_document_vectors(score_method, use_reduced=False):

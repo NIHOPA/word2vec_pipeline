@@ -3,17 +3,23 @@ import pandas as pd
 import os
 import itertools
 import collections
-import pylab as plt
-
 from utils.os_utils import mkdir
 import utils.data_utils as uds
 from predictions import categorical_predict
 
-import seaborn as sns
-
 import logging
 
+
+can_plot = True
+
 logger = logging.getLogger(__name__)
+
+try:
+    import seaborn as sns
+    import pylab as plt
+except ModuleNotFoundError:
+    can_plot = False
+    logger.warning("Pylab and Seaborn not installed, plots not being made")
 
 
 def predict_from_config(config):
@@ -41,7 +47,9 @@ def predict_from_config(config):
     X_META = []
 
     cfg = config["predict"]
-    cfg["_PARALLEL"] = config["_PARALLEL"]
+    #cfg["_PARALLEL"] = config["_PARALLEL"]
+    cfg["_PARALLEL"] = False
+    
     df_scores = None
 
     for (method, cat_col) in ITR:
@@ -56,7 +64,7 @@ def predict_from_config(config):
             X_META.append(X)
 
         Y = np.hstack(df[cat_col].values)
-        counts = np.array(collections.Counter(Y).values(), dtype=float)
+        counts = np.array(list(collections.Counter(Y).values()), dtype=float)
         counts /= counts.sum()
 
         msg = " Class balance for categorical prediction: {}"
@@ -76,7 +84,7 @@ def predict_from_config(config):
             n_estimators=int(cfg["n_estimators"]),
         )
 
-        text = "  F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
+        text = " F1 {:0.3f}; Accuracy {:0.3f}; baseline ({:0.3f})"
         logger.info(text.format(scores.mean(), F1.mean(), baseline_score))
 
         PREDICTIONS[method] = pred
@@ -143,11 +151,12 @@ def predict_from_config(config):
 
     print(df)  # Output result to stdout
 
-    sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
-    plt.yticks(rotation=0)
-    plt.xticks(rotation=45)
+    if can_plot:
+        sns.heatmap(df, annot=True, vmin=0, vmax=1.2 * max_offdiagonal, fmt="d")
+        plt.yticks(rotation=0)
+        plt.xticks(rotation=45)
 
-    plt.show()
+        plt.show()
 
 
 if __name__ == "__main__":

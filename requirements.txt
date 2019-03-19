@@ -29,7 +29,7 @@ joblib==0.11.0
 #nearpy
 
 # For SMOTE
-#imbalanced-learn
+imbalanced-learn
 
 # TO explain variables in predictions
 #lime

@@ -92,6 +92,9 @@ def categorical_predict(
 
         df.ix[test_index, method_name] = pred
 
+    print(error_counts)
+    exit()
+
     # Make sure all items have been scored
     assert ~(df[method_name] == -1).any()
 
