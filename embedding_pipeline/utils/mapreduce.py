@@ -15,7 +15,7 @@ class corpus_iterator(object):
     def sentence_iterator(self, target_column=None):
         for row in self:
             text = row[target_column]
-            yield unicode(text).split()
+            yield text.split()
 
     def labelized_sentence_iterator(self):
 
@@ -32,7 +32,6 @@ class corpus_iterator(object):
             f_sql = item[-1]
 
             for sentence in text.split("\n"):
-                sentence = unicode(sentence)
                 tokens = sentence.split()
                 label = "{}_{}".format(f_sql, idx)
                 yield LabeledSentence(tokens, [label])

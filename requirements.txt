@@ -5,13 +5,13 @@ pandas
 h5py
 
 # NLP core libraries
-#gensim>=3.3.0
+gensim==3.7.1
 nlpre>=2.0.3
 #flashtext
 #unidecode
 
 # Figures out how many cores on machine (for parallel)
-#psutil
+psutil
 
 # For loading configuration files
 configobj
