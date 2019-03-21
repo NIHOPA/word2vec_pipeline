@@ -3,6 +3,9 @@ import setuptools
 import os
 
 __local__ = os.path.abspath(os.path.dirname(__file__))
+f_version = os.path.join(__local__, 'embedding_pipeline', '_version.py')
+exec(open(f_version).read())
+
 
 # Get the long description from the relevant file
 
@@ -17,7 +20,7 @@ setuptools.setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.2.0',
+    version=__version__,
 
     description='NLP pipeline to parse, embed, and classify with word2vec',
     long_description=long_description,
@@ -49,7 +52,8 @@ setuptools.setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
+        #'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.7',
     ],
 
     # What does your project relate to?
@@ -73,17 +77,3 @@ setuptools.setup(
     # Fill this in when ready...
     download_url='',
 )
-
-'''
-setup(
-    name="w2v",
-    packages=['word2vec_pipeline'],
-    version=__version__,
-
-    description=desc,
-    license = "MIT License",
-    keywords = ["NLP", "modeling", "pipeline", ],
-    url="https://github.com/NIHOPA/word2vec_pipeline",
-    test_suite="tests",
-)
-'''

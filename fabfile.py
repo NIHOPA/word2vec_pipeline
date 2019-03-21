@@ -1,57 +1,49 @@
 from fabric.api import local
 
-package_dir = "word2vec_pipeline"
 
-def deploy():
-    local("flake8 word2vec_pipeline")
-    # local("nosetests -vs")
-    # local("aspell check README.md")
-    # local("check-manifest")
-
-
-
-def pep():
-    local("autopep8 . -aaa --in-place --recursive --jobs=0")
+def lint():
+    local("black -l 80 fabfile.py pipeline_src")
+    local("flake8 pipeline_src --ignore=E501,E203,W503,E402")
 
 
 def import_data():
-    local("python word2vec_pipeline import_data")
+    local("python pipeline_src import_data")
 
 
 def phrase():
-    local("python word2vec_pipeline phrase")
+    local("python pipeline_src phrase")
 
 
 def parse():
-    local("python word2vec_pipeline parse")
+    local("python pipeline_src parse")
 
 
 def embed():
-    local("python word2vec_pipeline embed")
+    local("python pipeline_src embed")
 
 
 def score():
-    local("python word2vec_pipeline score")
+    local("python pipeline_src score")
 
 
 def predict():
-    local("python word2vec_pipeline predict")
+    local("python pipeline_src predict")
 
 
 def cluster():
-    local("python word2vec_pipeline cluster")
+    local("python pipeline_src cluster")
 
 
 def metacluster():
-    local("python word2vec_pipeline metacluster")
+    local("python pipeline_src metacluster")
 
 
-def analyze_metaclusters():
-    local("python word2vec_pipeline analyze metacluster")
+def analyze():
+    local("python pipeline_src analyze")
 
 
 def LIME():
-    local("python word2vec_pipeline analyze LIME")
+    local("python pipeline_src analyze LIME")
 
 
 def test():
@@ -64,15 +56,16 @@ def test():
     score()
 
     metacluster()
-    analyze_metaclusters()
-    
-    LIME()
+    analyze()
+
     predict()
+
 
 def clean():
     local('find . -name "*~" | xargs -I {} rm {}')
     local('find . -name "*.pyc" | xargs -I {} rm {}')
-    local('rm -rvf w2v.egg-info')
+    local("rm -rvf w2v.egg-info")
     local(
         "rm -rf data_import data_parsed data_document_scores "
-        "data_clustering data_embeddings data_predict results")
+        "data_clustering data_embeddings data_predict results"
+    )
