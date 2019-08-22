@@ -3,7 +3,7 @@
 Word2vec is a research and exploration pipeline designed to analyze biomedical grants, publication abstracts, and other natural language corpora. 
 While this repository is primarily a research platform, it is used internally within the [Office of Portfolio Analysis](https://dpcpsi.nih.gov/opa/aboutus) at the [National Institutes of Health](https://www.nih.gov/).
 
-The word2vec pipeline is now **requires** python 3. When installing from a new environment the following may be useful
+The word2vec pipeline now **requires** python 3. When installing from a new environment the following may be useful
 
 ```
 sudo apt install libssl1.0* # For Ubuntu 18.04
