@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Fix for pathological csv files
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(2147483647)
 _ref_counter = itertools.count()
 
 
