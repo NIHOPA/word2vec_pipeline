@@ -11,7 +11,7 @@ from .os_utils import grab_files
 import simple_config
 
 # Fix for pathological csv files
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(2147483647)
 
 
 def CSV_list_columns(f_csv):
