@@ -20,7 +20,7 @@ configobj
 tqdm==4.19.9
 
 # Replaces pythons multiprocessing
-joblib==0.11.0
+joblib==1.2.0
 
 # For SMOTE
 imbalanced-learn
